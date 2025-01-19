@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Step-by-Step Guide to Creating a Personal Blog with GitHub Pages and Jekyll"
+title: "1. Step-by-Step Guide to Creating a Personal Blog with GitHub Pages and Jekyll"
 date: 2025-01-18 12:00:00 +0000
 categories: [Tech]
 tags: [GitHub, Jekyll, Blogging]
