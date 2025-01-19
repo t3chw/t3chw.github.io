@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "2. Mastering GitHub, Poetry, Ruff, and Black: A Step-by-Step Guide"
+title: "Mastering GitHub, Poetry, Ruff, and Black: A Step-by-Step Guide"
 date: 2025-01-18 12:00:00 +0000
 categories: [Tech]
 tags: [GitHub, Poetry, Ruff]
