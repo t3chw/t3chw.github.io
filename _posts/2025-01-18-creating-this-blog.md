@@ -170,4 +170,3 @@ Welcome to my personal blog! This post is a detailed step-by-step guide to creat
 
 Creating a personal blog using GitHub Pages and Jekyll is simple, cost-effective, and highly customizable. Follow these steps, and you’ll have a professional-looking blog in no time.
 
-Let me know in the comments if you have any questions or need further help. Happy blogging! 😊

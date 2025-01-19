@@ -254,4 +254,4 @@ export POETRY_HTTP_BASIC_ARTIFACT_PASSWORD=<your-token>
 
 ---
 
-By following this workflow, you’ll ensure your development process is collaborative, organized, and safe for production. Let me know if you have any questions!
+By following this workflow, you’ll ensure your development process is collaborative, organized, and safe for production.
