@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Unleashing the Power of Agents with the ReAct Framework"
-date: 2025-01-18 14:00:00 +0000
+date: 2025-01-18 12:00:00 +0000
 categories: [Tech]
 tags: [Agent, Langchain, ReAct]
 ---
@@ -196,10 +196,11 @@ ReAct uses multiple cycles of **Thought-Action-Observation** to reach accurate r
 
 ## **References:**
 - [Agents in LangChain](https://python.langchain.com/v0.1/doc)
+- [Awesome - LangChain](https://github.com/kyrolabs/awesome-langchain)
 - [LangChain Agents Tools](https://github.com/kyrolabs/awesome-l)
 - [ReAct Paper](https://arxiv.org/abs/2210.03629)
 - [Code Link](https://colab.research.google.com/github/HandsOnLLM/Hands-On-Large-Language-Models/blob/main/chapter07/Chapter%207%20-%20Advanced%20Text%20Generation%20Techniques%20and%20Tools.ipynb#scrollTo=6tAr1962vS4T)
-- [awesome-langchain](https://github.com/kyrolabs/awesome-langchain)
+
 ---
 
 Start your journey with agents today and unleash their potential to automate your workflows! 🚀
