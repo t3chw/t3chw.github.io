@@ -24,7 +24,7 @@ cd <repository-name>
 ### **2. Installing Dependencies with Poetry**
 If your project uses Poetry for dependency management, install all required dependencies:
 ```bash
-poetry install
+poetry install --sync
 ```
 
 This ensures all dependencies listed in `pyproject.toml` and `poetry.lock` are installed.
