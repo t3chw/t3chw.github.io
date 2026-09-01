@@ -89,7 +89,9 @@ It is tempting to call this a user's *lifetime*. That would be wrong, and a revi
 ![What we want versus what we can measure](/assets/img/vrchat-retention/p1-estimand.png)
 _The clock does not start at signup. It starts at a self-selected event partway through the user's life with the product._
 
-The clock starts at a **review**, not at signup or first session. A review is not a random point in someone's lifecycle — people write them because something happened. So the estimand is:
+The clock starts at a **review**, not at signup or first session — and a review is not a random point in someone's lifecycle. People write one *because* something happened: they hit a milestone, or a patch annoyed them, or a friend group dissolved. So anchoring everyone at their review conditions the whole sample on having reached and generated that event, and the clock starts at a moment that is itself correlated with satisfaction, tenure and recent activity.
+
+That is a second selection effect stacked on the first, and it is why "lifetime" is the wrong word. The estimand is:
 
 > **Post-review time to 14-day inactivity, right-censored at the collection date, for the population of people who wrote a Steam review.**
 
@@ -143,13 +145,26 @@ Models 1–3 fit the second part only, on the 245,102 people with `t > 0`, and s
 > **Two rows, for completeness.** One of the 22,801 zero-duration records is censored rather than an event (a person who reviewed on the collection day and was still active), which is why the count above is 22,800. And one review is dropped upstream for a Unix-epoch null timestamp, which is why 267,904 becomes 267,903. Neither moves any result — but a claim about data provenance is only worth something if it covers the rows you would rather not mention.
 {: .prompt-info }
 
-## 8. Two more decisions made before looking at any outcome
+## 8. Two processes are running, and only one of them is about users
+
+Everything measured in this series is a mixture of two things: **when a person stops playing**, and **when we stop being able to see them**. The second has nothing to do with the user — it is set by when they happened to write a review and when the collection ran.
+
+![The selection funnel, and the two clocks](/assets/img/vrchat-retention/p1-two-processes.png)
+_Left: every narrowing between "played VRChat" and "row in this dataset" is a selection step, and only the last two are measured. Right: the behavioural clock and the observation clock, and the fact that what gets recorded is the two combined._
+
+Keeping them apart is most of the analytical work in Part 2, and it has a concrete payoff there. The hazard rises after year three, which reads naturally as *"long-tenured users start leaving"*. It is not that. To still be at risk at year three you must have reviewed at least three years before collection, so the late data is increasingly a sample of old joiners rather than a measurement of what happens to users as they age.
+
+**The general form of the question to ask of any surprising retention pattern: could the way the data was collected have produced this?** If the answer is yes and you cannot rule it out, the pattern is not a finding.
+
+## 9. Two more decisions made before looking at any outcome
 
 **Segments.** Playtime bands are cut at order-of-magnitude boundaries — under 1h, 1–20h, 20–100h, 100–1000h, 1000h+ — chosen *before* looking at any outcome, so they cannot be reverse-engineered into a flattering story. They are a modelling convenience for asking whether the retention process differs by engagement level, not a claim that five natural kinds of user exist.
 
-**Missing data.** `games_owned == 0` is Steam's private-profile flag, not a count. 46% of profiles are private, and 83% of those users have written more than one review, which is impossible if they own nothing. Treating zero as data would have invented a 123,000-person segment of people who own no games. The field is median-imputed with an explicit `profile_public` flag alongside it — and Part 5 shows what that imputation costs, because it does cost something.
+**Missing data — and the difference between a value being *present* and a value being *usable*.** `games_owned == 0` is Steam's private-profile flag, not a count. It is populated, it is numeric, it will happily go into a model, and it means "we cannot see this". 46% of profiles are private, and 83% of those users have written more than one review, which is impossible if they own nothing. Treating zero as data would have invented a 123,000-person segment of people who own no games and then found that owning no games predicts churn.
 
-## 9. What this analysis will not claim
+The field is median-imputed with an explicit `profile_public` flag alongside it — and Part 5 shows what that imputation costs, because it does cost something.
+
+## 10. What this analysis will not claim
 
 Stating this up front is cheaper than defending it later.
 
@@ -165,13 +180,25 @@ One thing I cannot do is put a number on the selection. Steam does not publish h
 
 There is one more caveat with teeth: **churn here is Steam-only**. A user who moves to a standalone Quest headset looks churned and is not. Steam sees roughly half of VRChat's concurrent users, so this is a real source of false churn and it biases every estimate here toward pessimism.
 
-## 10. The question, restated so it can be answered
+## 11. The question, restated so it can be answered
 
 > Among users represented in the Steam review corpus, how does post-review retention evolve over time, when is the risk of operational churn highest, and how does that trajectory differ across engagement segments?
 
 That is narrower than where we started. It is also answerable, which the first version was not.
 
-## 11. What this part is worth to the business
+And it sets the order of the rest of the series. Each part asks one question, and the answer decides whether the next part is needed at all:
+
+| | Question | Answered in |
+|---|---|---|
+| 1 | What shape is the retention process, before any model is imposed? | [Part 2](/posts/vrchat-retention-2-what-the-data-said/) |
+| 2 | Can a constant hazard describe it? Can any single smooth shape? | [Part 3](/posts/vrchat-retention-3-when-simple-models-fail/) |
+| 3 | If not, can the hazard be estimated freely over time instead? | [Part 3](/posts/vrchat-retention-3-when-simple-models-fail/) |
+| 4 | Do different kinds of user follow different trajectories? | [Part 4](/posts/vrchat-retention-4-beyond-the-average-user/) |
+| 5 | Does the extra structure earn its place out of sample — and what should anyone do about any of it? | [Part 5](/posts/vrchat-retention-5-from-model-to-decision/) |
+
+No model in that sequence was chosen because it sounded sophisticated. Each one exists because the previous answer ruled something out.
+
+## 12. What this part is worth to the business
 
 Estimand work reads like overhead. It is the opposite: three of the four decisions above have a price tag attached, and a team that skipped them would have shipped numbers that were confidently wrong.
 
@@ -196,7 +223,22 @@ The 22,800 people who wrote a review *after* they had already stopped playing ar
 
 The consequence for anyone reading a review-sentiment dashboard: **a meaningful share of reviews are exit interviews, not satisfaction surveys.** A dip in review score can mean "more people left and said so on the way out", which is a *lagging* signal about churn that already happened, not a leading signal about how the product feels today. Splitting sentiment by whether the reviewer was still active costs nothing and separates the two. Nothing in this series required that finding — it fell out of taking the day-zero atom seriously instead of dropping it.
 
-And one thing this part quantifies about the data itself. Two of the biggest limitations — the clock cannot start at signup, and churn is Steam-only on a platform where Steam sees about half the users — are not analysis problems. They are instrumentation problems. **The single highest-leverage investment here is not a better model; it is a first-party event stream with a signup-anchored clock.** Part 5 puts a bound on what the Steam-only blind spot could be doing to the numbers.
+And one thing this part quantifies about the data itself. Two of the biggest limitations — the clock cannot start at signup, and churn is Steam-only on a platform where Steam sees about half the users — are not analysis problems. They are **instrumentation** problems, and no amount of modelling fixes either.
+
+Concretely, the table this analysis would want does not look exotic:
+
+```text
+user_id
+first_meaningful_activity      ← the clock should start here, not at a review
+session history                ← so a gap is visible as a gap, not as an ending
+engagement features, as at the prediction time
+acquisition cohort
+platform / device
+experiment exposure
+revenue
+```
+
+Three of those seven lines would remove a named limitation from this series outright. `first_meaningful_activity` turns post-review retention into account lifetime. A session history makes "churn" a measurement rather than a 14-day convention, and makes a user who left and came back distinguishable from one who never left. `platform` closes the Steam-only blind spot that Part 5 has to handle with a scenario sweep instead. **The single highest-leverage investment here is not a better model; it is a first-party event stream with a signup-anchored clock.**
 
 **Next:** [Part 2 — what the data said before I fitted anything](/posts/vrchat-retention-2-what-the-data-said/). Before choosing a model, I let the data tell me what shape the retention process has. The answer ruled out most of the standard survival toolkit in one figure — and produced a second finding that looked like a discovery until I checked who was left in the sample.
 
