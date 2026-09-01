@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "VRChat Retention, Part 3: When Simple Survival Models Are Not Enough"
-date: 2026-09-01 11:00:00 +0000
+date: 2026-09-01 07:30:00 +0000
 categories: [Data Science, VRChat Retention]
 tags: [Bayesian, Survival Analysis, NumPyro, Product Analytics, VRChat, Case Study]
 math: true

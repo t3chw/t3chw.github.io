@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "VRChat Retention, Part 4: Five Segments, Five Different Lifecycles"
-date: 2026-09-01 12:00:00 +0000
+date: 2026-09-01 07:45:00 +0000
 categories: [Data Science, VRChat Retention]
 tags: [Bayesian, Survival Analysis, NumPyro, Product Analytics, VRChat, Case Study]
 math: true

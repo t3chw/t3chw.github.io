@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "VRChat Retention, Part 2: Churn Risk Has Three Regimes, and Only One Is Addressable"
-date: 2026-09-01 10:00:00 +0000
+date: 2026-09-01 07:15:00 +0000
 categories: [Data Science, VRChat Retention]
 tags: [Bayesian, Survival Analysis, NumPyro, Product Analytics, VRChat, Case Study]
 math: true

@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "VRChat Retention, Part 1: Turning a Product Question Into a Defensible Statistical One"
-date: 2026-09-01 09:00:00 +0000
+date: 2026-09-01 07:00:00 +0000
 categories: [Data Science, VRChat Retention]
 tags: [Bayesian, Survival Analysis, NumPyro, Product Analytics, VRChat, Case Study]
 math: true

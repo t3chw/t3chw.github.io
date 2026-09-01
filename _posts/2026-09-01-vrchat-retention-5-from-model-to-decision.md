@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "VRChat Retention, Part 5: From a Survival Model to a Product Decision"
-date: 2026-09-01 13:00:00 +0000
+date: 2026-09-01 08:00:00 +0000
 categories: [Data Science, VRChat Retention]
 tags: [Bayesian, Survival Analysis, NumPyro, Product Analytics, VRChat, Case Study]
 math: true
