@@ -77,12 +77,14 @@ That error pattern is the signature of a shape mismatch. The families are not ba
 > | Model | as published | corrected, knot grid | corrected, daily grid |
 > |---|---:|---:|---:|
 > | M1 exponential | 7.13 pp | **3.78 pp** | 3.63 pp |
-> | M2 Weibull | 6.27 pp | **4.76 pp** | 5.60 pp |
-> | M2 log-logistic | 7.69 pp | **6.28 pp** | 7.82 pp |
-> | M2 log-normal | 8.22 pp | **9.96 pp** | 11.20 pp |
+> | M2 Weibull | 6.27 pp | **4.76 pp** | 5.59 pp |
+> | M2 log-logistic | 7.69 pp | **6.27 pp** | 7.81 pp |
+> | M2 log-normal | 8.22 pp | **9.96 pp** | 11.18 pp |
 > | M3 piecewise | 0.03 pp | 0.03 pp | **0.22 pp** |
 >
-> The knot grid flatters M3 badly. Its survival curve passes through the data exactly at its own cut points and bows away in between, so nine-of-nine knots is the one grid on which it cannot lose. On a daily grid its error is 7× larger — worst case 1.23 pp, at day 1,287 — and the gap to the best smooth family falls from **132× to 17×**.
+> Every cell in that table is now produced by `run_03`/`run_04`/`run_05` and gated by the verification script, so it cannot drift from this post again. It could before: the repository was still *generating* the superseded column long after the text called it corrected.
+>
+> The knot grid flatters M3 badly. Its survival curve passes through the data exactly at its own cut points and bows away in between, so nine-of-nine knots is the one grid on which it cannot lose. On a daily grid its error is 7.6× larger — worst case 1.23 pp, at day 1,287 — and the gap to the best smooth family falls from **132× to 17×**.
 >
 > **The conclusion does not move.** 17× is still decisive, and the both-ends compromise is still there. But two things do move, and both are worth having. First, the ranking *within* the smooth families changes: on the corrected metric the one-parameter exponential tracks the marginal curve better than Weibull, while sitting fifth of seven on out-of-sample predictive score. Second, the honest statement of M3's fit is 0.22 pp, not 0.03 pp.
 >
@@ -108,7 +110,7 @@ _Left: 18 free hazards with 95% credible bands, against the raw events-÷-exposu
 
 A stricter check is more convincing. The fitted hazard recovers the raw rate — events divided by time at risk — to within **0.1% in every one of the 18 bins**. That is harder to pass than the survival curve, because errors in a hazard do not cancel out the way errors in a running total can.
 
-So: from 5.60 to 0.22 by removing an assumption, not by adding information. M3 has no covariates at all.
+So: from 5.59 to 0.22 by removing an assumption, not by adding information. M3 has no covariates at all.
 
 ### Two priors, and why the simpler one is kept
 
