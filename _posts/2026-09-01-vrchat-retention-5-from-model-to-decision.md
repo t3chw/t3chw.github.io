@@ -19,11 +19,13 @@ image:
 
 ## The short version
 
-**The single most useful sentence in the project:** churn risk is concentrated *in time* in the first 90 days and *in people* in the weakest segments — so that is where a timed intervention has leverage. It is not where most of the loss is. Nearly twice as many people leave after day 90 as before it; that larger loss is spread evenly across three years, so it needs an always-on product mechanism rather than a campaign. Confusing those two is the easiest expensive mistake to make with this data, and [Part 2](/posts/vrchat-retention-2-what-the-data-said/) spells it out.
+**The single most useful sentence in the project:** churn risk is concentrated *in time* in the first 90 days, and *in people* in the weakest segments. That is where a timed intervention has leverage.
+
+It is not where most of the loss is. Nearly twice as many people leave after day 90 as before it. That larger loss is spread evenly across three years, so it needs an always-on product mechanism rather than a campaign. Confusing those two is the easiest expensive mistake to make with this data, and [Part 2](/posts/vrchat-retention-2-what-the-data-said/) spells it out.
 
 **The base, in one line.** Those 267,903 reviewers carry roughly **702,000 user-years** of expected retained time over five years. **18.5% of them — 49,591 people — are gone inside 90 days**, counting the 8.5% who had already stopped before they wrote their review. After that the rate flattens to about 1.5% a month and stays there for three years.
 
-*(Retained time means days on the roster before operational churn, not hours played. It is the denominator you would multiply a revenue rate against, not revenue itself. The 702,000 figure is the model's net expected days summed over segments; two independent non-parametric routes give about 704,000 and 697,000, so it is good to roughly ±0.7%.)*
+*(Retained time means days on the roster before someone goes quiet, not hours played. It is the number you would multiply a revenue rate by, not revenue itself. The 702,000 figure is the model's per-reviewer expected days added up across segments. Two other routes that assume no model at all give about 704,000 and 697,000, so it is good to roughly ±0.7%.)*
 
 ![Where the base is lost, and where a point of retention is worth most](/assets/img/vrchat-retention/p5-where-to-spend.png)
 _Left: how much of each band is inactive by day 90, counting everyone in the band. Right: the user-years bought by raising day-90 survival one percentage point. The per-user prize varies only 1.7× across bands while headcount varies 6.4×, so headcount is the lever — which puts the biggest one in the 1–20h band._
@@ -42,7 +44,7 @@ _Left: how much of each band is inactive by day 90, counting everyone in the ban
 | **8** | 8.5% of reviews are written by people who had *already stopped playing*, and they are 1.89× as likely to be negative (2.36× within playtime band). They are 8.5% of reviewers and 14.9% of negative reviews | **High** | Split review sentiment by whether the reviewer was still active. A falling score may be a lagging churn signal rather than a satisfaction signal — see [Part 1](/posts/vrchat-retention-1-a-defensible-question/) |
 | **9** | Steam sees only about half the platform, so an unknown share of "churn" is migration to standalone hardware | **Low on magnitude, high on direction** | The segment *ordering* survives every false-churn scenario I can construct; the 3.9× spread does not (2.3×–4.0×). This is fixed by first-party instrumentation, not by more modelling |
 
-The evidence for each is below. Sections 1–3 are what the numbers say; **§4 is why the model should be believed**, including the two places it fails; §5–§6 are the two limits I would raise before anyone acts on this. Along the way there is one error in my own work that changed a headline number by 72% and reversed the recommendation in row 4.
+The evidence for each is below. Sections 1–3 are what the numbers say. **§4 is why the model should be believed**, including the two places it fails. §5 and §6 are the two limits I would raise before anyone acts on this. Along the way there is one error in my own work that changed a headline number by 72% and reversed the recommendation in row 4.
 
 ---
 
@@ -53,14 +55,14 @@ _Left: expected active days averaged two ways — over every reviewer in the ban
 
 Here is a mistake that survived the first write-up and was caught by the audit.
 
-The value table mixed **two definitions** without saying so. In plain language:
+The value table mixed **two different definitions** without saying so. In plain language:
 
-- **Per still-active reviewer** (the *gross* figure) — the average over only the people who had not already stopped playing when they wrote their review.
-- **Per reviewer in the band** (the *net* figure) — the average over everyone, including the 8.5% who had already gone and therefore contribute zero days.
+- **Per still-active reviewer** (the *gross* figure) — the average over only the people who were still playing when they wrote their review.
+- **Per reviewer in the band** (the *net* figure) — the average over everyone in the band, including the 8.5% who had already gone and therefore contribute zero days.
 
-I published the first under a heading that reads as the second, while computing the "% of value" column from the second. Read plainly: *averaged over every reviewer in the weakest band, a user is worth 399 days; averaged over only the ones still playing when they reviewed, 687.* The first is the one to quote, because 41.9% of that band had already gone.
+I published the first under a heading that reads as the second, and then computed the "% of value" column from the second. Read plainly: *averaged over every reviewer in the weakest band, a user is worth 399 days. Averaged over only the ones still playing when they reviewed, 687.* The first is the one to quote, because 41.9% of that band had already gone.
 
-(These are the model's figures. Part 2's non-parametric table — 401 / 686 / 961 / 1,252 / 1,561 — is the same quantity measured without a model, and the two agree to within 0.5%. Quote either, but not both in one document.)
+(These are the model's figures. Part 2's table — 401 / 686 / 961 / 1,252 / 1,561 — is the same quantity measured straight from the data with no model at all, and the two agree to within 0.5%. Quote either, but not both in one document.)
 
 | Segment | published (gross) | **correct (net)** | overstatement |
 |---|---:|---:|---:|
@@ -70,7 +72,7 @@ I published the first under a heading that reads as the second, while computing 
 | 100–1000h | 1,269 | 1,248 | +1.6% |
 | 1000h+ | 1,563 | 1,557 | +0.4% |
 
-The distortion is largest exactly where it matters most, because 41.9% of the weakest segment had already gone. And it compresses the headline:
+The distortion is largest exactly where it matters most, because 41.9% of the weakest segment had already gone. It also squashes the headline:
 
 | Spread, weakest → strongest | |
 |---|---:|
@@ -78,11 +80,11 @@ The distortion is largest exactly where it matters most, because 41.9% of the we
 | **correct (net)** | **3.90×** |
 | non-parametric Kaplan–Meier check | 3.90× |
 
-One caveat to carry with that 3.90× wherever it is quoted: §6 shows it moving between **2.3× and 4.0×** once Steam-only false churn is allowed for. The *ordering* holds in every scenario; the magnitude is an assumption-dependent number, not a measured one.
+One caveat to carry with that 3.90× wherever it is quoted. §6 shows it moving between **2.3× and 4.0×** once Steam-only false churn is allowed for. The *ordering* holds in every scenario. The size of the gap depends on an assumption, so it is not a measured quantity.
 
-The non-parametric benchmark from Part 2 — 401 to 1,561 days — matches NET, which is what identifies NET as the figure comparable to the raw data. Two sections of the project were quoting different numbers for the same thing, and a cross-check that had been sitting there all along resolved it.
+The Part 2 benchmark — 401 to 1,561 days, measured without a model — matches NET. That is what identifies NET as the figure comparable to the raw data. Two sections of the project had been quoting different numbers for the same thing, and a cross-check that was sitting there all along resolved it.
 
-**The correction strengthens the business case**, and it points somewhere unexpected. Value is more concentrated than the published figures showed — but the striking thing is how *little* concentration there is in absolute terms:
+**The correction strengthens the business case**, and it points somewhere unexpected. Value is more concentrated than the published figures showed. But the striking thing is how *little* concentration there is in absolute terms:
 
 | Segment | % of users | % of expected future engagement | concentration |
 |---|---:|---:|---:|
@@ -92,7 +94,9 @@ The non-parametric benchmark from Part 2 — 401 to 1,561 days — matches NET, 
 | 100–1000h | 21.9% | 28.6% | 1.31× |
 | **1000h+** | **12.1%** | **19.6%** | **1.63×** |
 
-That 1.63× is worth pausing on. Expected days are capped at the 1,825-day horizon against a population mean of 956, so **no band can exceed 1.91×** by construction — the heaviest band is at 85% of the structural maximum, and the concentration curve is close to flat. "Value is concentrated" invites a Pareto reading this data does not support: **value tracks headcount almost exactly.** That is a more useful finding than a whale story, because it is precisely why §3's biggest prize turns out to sit in the biggest band rather than the richest one.
+That 1.63× is worth pausing on. Expected days are capped at the five-year horizon of 1,825 days, against a population average of 956. So **no band can exceed 1.91×**, whatever the data says. The heaviest band is at 85% of that ceiling, and the concentration curve is close to flat.
+
+"Value is concentrated" invites a Pareto reading this data does not support. **Value tracks headcount almost exactly.** That is a more useful finding than a whale story, and it is precisely why §3's biggest prize turns out to sit in the biggest band rather than the richest one.
 
 ## 2. Where the risk actually lives
 
@@ -107,18 +111,20 @@ _Left: how much of each band's five-year churn happens in the first 90 days — 
 | 100–1000h | 3.1% | 4.6% | 66.2% | 4.6% |
 | 1000h+ | 1.0% | 1.4% | 39.6% | **2.5%** |
 
-Columns 1, 3 and 4 are **conditional** — among people who had not already left at the origin. Column 2 is **unconditional**: it includes them, and it is the one to quote for "what fraction of this band is gone by day 90". The final column keeps numerator and denominator on the same conditional basis, which is why it is not mixed.
+Columns 1, 3 and 4 count only people who had not already left at the origin. Column 2 includes them, and it is the one to quote for "what fraction of this band is gone by day 90". The final column keeps the top and bottom of the fraction on the same basis, which is why it is not mixed.
 
 > **A third of everything the weakest segment will ever lose, it loses in the first 90 days.** For the strongest segment it is 2.5%.
 {: .prompt-tip }
 
-Read that against Part 2's plateau: after roughly day 90 the hazard is flat for three years. Post-90 churn is not a danger *window* — it is a constant background rate, and a campaign timed at it buys the same outcome whenever it runs. **Timed** retention effort therefore belongs on new and low-playtime users and should be judged on a 90-day window. That is not the same as saying the later loss is small: in headcount it is nearly twice as large, and reducing it is a product-structure problem rather than a campaign problem.
+Read that against Part 2's plateau: after roughly day 90 the hazard is flat for three years. Post-90 churn is not a danger *window*. It is a constant background rate, so a campaign timed at it buys the same outcome whenever it runs. **Timed** retention effort therefore belongs on new and low-playtime users, and should be judged on a 90-day window.
+
+That is not the same as saying the later loss is small. In headcount it is nearly twice as large. Reducing it is a question of how the product is built, not of when a campaign runs.
 
 ### Surviving makes you more valuable — but only if you were fragile
 
 > ### A second correction from the audit
 >
-> The original "expected remaining life" table integrated to a horizon fixed at 1,825 days **from the origin**, so the window shrank as tenure grew: 1,825 days of runway at day 0, but only 1,095 at day 730. Later tenures were being scored over a shorter span, which manufactured an apparent decline in value after day 90.
+> The original "expected remaining life" table added up the curve out to a fixed end point, 1,825 days **from the origin**. So the window shrank as tenure grew: 1,825 days of runway at day 0, but only 1,095 at day 730. Later rows were being measured over a shorter span, which manufactured an apparent decline in value after day 90.
 >
 > Re-derived on a **fixed 365-day forward window**, so every row is measured over the same span:
 >
@@ -139,13 +145,13 @@ Read that against Part 2's plateau: after roughly day 90 the hazard is flat for 
 > **The rise is real and survives the correction. The decline was largely the window closing, not users losing value.**
 {: .prompt-warning }
 
-The corrected version is also a sharper statement than the original. The effect is **almost entirely confined to the weak segments**: heavy users were never at meaningful risk, so surviving 90 days tells you nothing new about them. "Users become more valuable with tenure" is true — for newcomers.
+The corrected version is also a sharper statement than the original. The effect is **almost entirely confined to the weak segments**. Heavy users were never at meaningful risk, so surviving 90 days tells you nothing new about them. "Users become more valuable with tenure" is true — for newcomers.
 
 Which has a direct consequence: **an LTV model that depreciates new users as they age has the sign backwards.** For established users, age is close to irrelevant.
 
 ## 3. The line this analysis will not cross
 
-The most valuable-looking table in the project is the one that sizes onboarding — and it is where the per-reviewer correction of §1 does the most damage.
+The most valuable-looking table in the project is the one that sizes onboarding. It is also where the per-reviewer correction of §1 does the most damage.
 
 | Move | Extra expected days, **gross** | Extra expected days, **net** | 95% CrI (net) |
 |---|---:|---:|---|
@@ -156,8 +162,8 @@ The most valuable-looking table in the project is the one that sizes onboarding 
 
 The published version of this table was built by differencing the still-active column. On the corrected net basis the picture changes in a way that matters:
 
-- **The steps are roughly flat** — 274 to 308 days — not a ramp from 94 to 295. The gross version understated the bottom rung by a factor of three, because it silently excluded the 41.9% of that band who had already gone.
-- So **the per-user value of moving someone up a band is close to constant across the ladder**, which means the size of the prize is driven by *how many people are in the band*, not by which rung they sit on.
+- **The steps are roughly flat** — 274 to 308 days — not a ramp from 94 to 295. The gross version understated the bottom rung by a factor of three, because it quietly excluded the 41.9% of that band who had already gone.
+- So **the per-user value of moving someone up a band is close to constant across the ladder**. That means the size of the prize is driven by *how many people are in the band*, not by which rung they sit on.
 
 That reverses the recommendation. Sizing a 10% conversion at each rung:
 
@@ -170,32 +176,36 @@ That reverses the recommendation. Sizing a 10% conversion at each rung:
 
 The published conclusion was that the largest prize sits at the top of the ladder — 100–1000h → 1000h+, 4,738 user-years. That was wrong for **two independent reasons**, and it is worth separating them because only one is the correction above.
 
-**The objective was wrong.** The code picked the band with the largest *per-user step* and only then multiplied by that band's headcount. It never maximised headcount × step across bands. Doing that correctly on the *original gross* numbers already picks 1–20h → 20–100h at **6,121 user-years**, against 4,738 at the top rung. So the gross/net correction did not flip the band — a coding error did, and the flip was available before any of this.
+**The objective was wrong.** The code picked the band with the largest *per-user step*, and only then multiplied by that band's headcount. It never looked for the band with the largest headcount × step. Doing that correctly on the *original gross* numbers already picks 1–20h → 20–100h at **6,121 user-years**, against 4,738 at the top rung. So the gross/net correction did not flip the band. A coding error did, and the flip was available before any of this.
 
 **The basis was also wrong.** Moving to the correct per-reviewer figures then changes the winning band's magnitude from 6,121 to **7,667 user-years**, and compresses the ladder from a 94→295 ramp to a roughly flat 274→308.
 
-Both matter, and conflating them would have credited the statistical correction with a fix that belonged to a `max()` on the wrong key. That also resolves a tension the original created: §2 says the addressable risk is early and in the weak segments, while the published onboarding table pointed at the strongest segment. Corrected on both counts, the two agree.
+Both matter. Running them together would have credited the statistical correction with a fix that belonged to a `max()` on the wrong key.
+
+It also resolves a tension the original created. §2 says the addressable risk is early and in the weak segments, while the published onboarding table pointed at the strongest segment. Corrected on both counts, the two agree.
 
 Every one of these numbers is still an **observational gap**, not a treatment effect. The framing that survives is:
 
 > An intervention cannot be worth more than the observed gap. If 7,700 user-years does not justify the engineering cost, the idea can be dropped now, without further work. If it does, the next step is **an experiment, not more observational modelling.**
 {: .prompt-warning }
 
-One caveat specific to the net figures: part of the net gap between adjacent bands comes from a lower probability of having *already gone at the origin* — 41.9% in the weakest band against 12.4% in the next. An intervention can only capture that part if it reaches people before they stop, which is a harder product problem than retaining someone who is still active. The net step is an upper bound in that sense too.
+One caveat specific to the net figures. Part of the gap between adjacent bands comes from a lower chance of having *already gone at the origin*: 41.9% in the weakest band against 12.4% in the next. An intervention can only capture that part if it reaches people before they stop, which is a harder product problem than retaining someone who is still active. So the net step is an upper bound in that sense too.
 
 ## 4. Does the model deserve to be believed?
 
 Everything above rests on a 91-parameter Bayesian model, so this is where I show why it should be trusted — and the two places it should not.
 
-Convergence is necessary and nowhere near sufficient. R̂ and ESS answer *did the sampler explore the posterior of the model I wrote?* — not *is this the right model?* A perfectly converged model can be systematically wrong. So the project checks four separate things.
+Convergence is necessary and nowhere near sufficient. R̂ and ESS answer one question: *did the sampler explore the model I wrote properly?* They do not answer *is this the right model?* A perfectly converged model can be systematically wrong. So the project checks four separate things.
 
 **Does it reproduce the data?** M5's within-segment survival tracks the Kaplan–Meier curve to a mean absolute error of 0.10 pp across 45 segment-horizon cells, worst case 1.1 pp at day 1,825 in the heaviest segment. M3's pooled fit is 0.22 pp on a daily grid (see Part 3 — the 0.03 pp I originally published was measured only at the model's own knots).
 
-> **A check I have to withdraw.** Earlier versions of this project cited `(1 − π₀) × S₍t>0₎(t)` reproducing the all-users curve to 0.03 pp as "the empirical licence for the two-part split". It is not evidence of anything. When every zero-duration record is an event at t = 0, that relationship is an **algebraic identity** — I checked it at twelve horizons and the ratio is constant to 5e-14. It only re-tests whether M3 fits the `t > 0` curve, which a near-saturated 18-parameter model does by construction. The two-part structure is justified by the *shape* of the data (a continuous density cannot put mass on a point) and by the fact that the atom behaves differently, not by that identity.
+> **A check I have to withdraw.** Earlier versions of this project cited `(1 − π₀) × S₍t>0₎(t)` reproducing the all-users curve to 0.03 pp, and called it the evidence for splitting the population in two. It is not evidence of anything.
+>
+> When every zero-duration record is an event at t = 0, that relationship holds **as a matter of algebra**, whatever the data looks like. I checked it at twelve horizons and the ratio is constant to 5e-14. All it re-tests is whether M3 fits the `t > 0` curve, which an 18-parameter model does by construction. The two-part structure is justified by the *shape* of the data — a smooth curve cannot put weight on a single point — and by the fact that the atom behaves differently. Not by that identity.
 
-**Does the complexity generalise?** PSIS-LOO on a fixed 25,000-person subsample, identical across every model. The paired comparison against its nearest rival is 2,493 ± 66 — 38 standard errors. Bayesian stacking, run on the same pointwise log-likelihoods, gives M5 weight 0.948: a second summary of the same evidence, not a second source of it.
+**Does the complexity generalise?** Every model is scored on the same fixed 25,000 people. Compared person by person against its nearest rival, M5 is ahead by 2,493 ± 66 — 38 standard errors. A second method, which asks what mixture of the seven models predicts best, gives M5 a weight of 0.948. That is a second summary of the same evidence, not a second source of it.
 
-**Are the intervals honest?** Partly. Part 4 showed M5's population-RMST interval failing to cover the non-parametric value. I report that rather than only the tests it passes.
+**Are the intervals honest?** Partly. Part 4 showed that M5's interval for the population-wide number does not contain the value measured from the data. I report that rather than only the tests it passes.
 
 **Do the priors matter?**
 
@@ -204,9 +214,13 @@ _Left: the 5-year expected-days table (Kaplan–Meier, all users) re-estimated u
 
 The model was refit under four priors — a 50× span on the hierarchical scale and 17× on the level — including one deliberately centred on a hazard **55× too high**. **The largest movement in any published number was 0.09%.** (The saved table is rounded to a tenth of a day, so 0.09% is as precise as it can honestly be stated; at full precision it is 0.092%.)
 
-That converts "the prior is defensible" into "the prior does not matter", and only the second is testable. But I should be honest about what it proves: **almost nothing.** At n = 245,102 with 748 events in the thinnest interval, no prior on a location or scale parameter could have moved this posterior. I make exactly that argument in Part 3 to dismiss the random-walk smoothing prior, so presenting the same foregone conclusion here as evidence would be having it both ways. It is a null result I expected.
+That converts "the prior is defensible" into "the prior does not matter", and only the second can be tested. But I should be honest about what it proves: **almost nothing.**
 
-**The sensitivity that could actually have failed is the interval grid.** Every result in this series rests on 18 hand-chosen cut points, placed where Part 2 said the hazard was moving. If the answers depend on that choice, nothing else matters. Refitting on four grids — the published one, a coarser 9-interval grid, a 35-interval grid with midpoints added, and a 19-interval log-spaced grid deliberately *not* aligned with Part 2's descriptive bands:
+With 245,102 people and 748 events in the thinnest interval, no prior of this kind could have moved the answer. I make exactly that argument in Part 3 to dismiss the random-walk smoothing prior, so presenting the same foregone conclusion here as evidence would be having it both ways. It is a null result I expected.
+
+**The test that could actually have failed is the interval grid.** Every result in this series rests on 18 hand-chosen cut points, placed where Part 2 said the hazard was moving. If the answers depend on that choice, nothing else matters.
+
+So I refitted on four grids: the published one, a coarser 9-interval grid, a 35-interval grid with extra cuts in between, and a 19-interval grid spaced by powers of ten and deliberately *not* lined up with Part 2's bands.
 
 | Grid | Intervals | Plateau variation | S(90), lightest band | 5-year net days, lightest → heaviest | Spread |
 |---|---:|---:|---:|---:|---:|
@@ -215,9 +229,11 @@ That converts "the prior is defensible" into "the prior does not matter", and on
 | fine | 35 | 1.12× | 70.3% | 399 → 1,559 | 3.91× |
 | log-spaced, unaligned | 19 | 1.08× | 70.3% | 398 → 1,549 | 3.89× |
 
-Survival at day 90 is identical to a tenth of a point across all four; the segment spread moves by 0.5%; the plateau is flat on every grid. That one could have gone the other way, and it did not.
+Survival at day 90 is identical to a tenth of a point across all four. The segment spread moves by 0.5%. The plateau is flat on every grid. That one could have gone the other way, and it did not.
 
-The churn rule gets the same treatment. At 7, 14, 21 and 30 days of inactivity the *levels* move by up to 8.3% — as they must, since a 7-day rule labels more people churned. The **ordering of segments and the direction of every conclusion are unchanged across the whole range**, and the top-to-bottom spread stays between 3.80× and 3.96×. The decisions rest on the ordering, so they survive; absolute figures should always be quoted with the rule attached ("median 962 days on a 14-day inactivity rule").
+The churn rule gets the same treatment. At 7, 14, 21 and 30 days of inactivity the *levels* move by up to 8.3%, as they must — a 7-day rule labels more people churned. But the **ordering of segments and the direction of every conclusion are unchanged across the whole range**, and the top-to-bottom spread stays between 3.80× and 3.96×.
+
+The decisions rest on the ordering, so they survive. Absolute figures should always be quoted with the rule attached: "median 962 days on a 14-day inactivity rule".
 
 > **The audit, in numbers.** 123 automated checks, all of which I re-ran while writing this series. 30/30 likelihood checks: eight are direct comparisons against SciPy, at ordinary values *and* deep in the censored tail, agreeing to machine epsilon; the rest are internal identities, of which the loosest is a numerical-quadrature check agreeing to 2.8e−5. 30/30 estimator checks against independent implementations — Kaplan–Meier against `lifelines` to 1e-13, RMST to 1e-14. 63/63 published-number checks against the saved posteriors. The project also records a clean 14-step re-run from an empty output directory producing byte-identical tables, because the MCMC is seeded; I did not re-execute that for this write-up, so I am reporting it rather than confirming it.
 >
@@ -235,11 +251,13 @@ The churn rule gets the same treatment. At 7, 14, 21 and 30 days of inactivity t
 | median imputation (published) | ×1.30 |
 | complete cases only | ×1.44 |
 
-An 11% span, and no basis in this data for preferring one end. The honest statement is not a point estimate; it is that this coefficient is not pinned down better than about ±5% around its midpoint, and every version of it should be read that way.
+An 11% span, and nothing in this data prefers one end. The honest statement is not a single number. It is that this coefficient is not pinned down better than about ±5% around its midpoint, and every version of it should be read that way.
 
-A third treatment — Bayesian multiple imputation — returns ×1.20, and I am *not* offering it as a third estimate, because the project's own script says why not. Its imputation model is unconditional (`log_games ~ Normal(μ, σ)`, ignoring the other covariates and the outcome), which violates a standard requirement of multiple imputation and biases the pooled coefficient toward the null — exactly the direction observed. What that run *does* produce, and what is worth keeping, is the variance decomposition: **43.6% of the coefficient's posterior variance comes from the missingness itself**, against 0.6% for playtime.
+A third treatment, filling in the missing values from a model, returns ×1.20. I am *not* offering it as a third estimate, and the project's own script says why not. The filling-in model ignores everything else about the person (`log_games ~ Normal(μ, σ)`, with no other covariates and no outcome). That breaks a standard requirement of the method and pushes the pooled coefficient toward zero — exactly the direction observed.
 
-Even a correctly specified imputation would close only the *statistical* gap and leave the *identification* gap wide open: multiple imputation assumes missing at random, and people who hide their Steam profile are almost certainly not a random subset. Public data provides no way to test that, and saying so is more useful than picking whichever number reads best.
+What that run *does* produce, and what is worth keeping, is where the uncertainty comes from: **43.6% of this coefficient's uncertainty is caused by the missingness itself**, against 0.6% for playtime.
+
+Even a correctly built version would close only the *statistical* gap and leave the deeper one wide open. The method assumes the missing values are missing at random, and people who hide their Steam profile are almost certainly not a random subset. Public data gives no way to test that, and saying so is more useful than picking whichever number reads best.
 
 > Two more known issues, uncorrected because they are immaterial: 115 people (0.043%) sit in the under-1h segment because their playtime was *unknown* rather than low — imputation being read as data. And a piecewise-exponential with playtime as a *proportional* covariate on a shared baseline was never fitted. That model would separate two things M5 currently confounds: that playtime carries information at all, and that its effect changes shape over time. Part 2's non-parametric 34× decay in the hazard ratio is strong indirect evidence for the second, but it is indirect, and I would rather say so.
 {: .prompt-info }
@@ -250,7 +268,9 @@ The priors move the published numbers by 0.09%. The churn rule moves the levels 
 
 The thing that could break it is that **churn here is Steam-only**. A user who buys a standalone Quest and never opens Steam again is recorded as churned while still playing. That is false churn, it is almost certainly not evenly spread across segments, and no amount of prior sensitivity touches it.
 
-One thing I should not do is pretend to have measured it. Steam accounts for about 51.9% of VRChat's concurrent users (median across 31,936 hourly observations since 2023), and it is tempting to read that as a bound. **It is not.** That statistic describes the platform mix of the whole player base, most of which never used the Steam build at all. The quantity I need is the rate at which *Steam reviewers* — people who by construction owned and used the Steam build — later abandon Steam for standalone hardware. That is unmeasured, and nothing in public data measures it.
+One thing I should not do is pretend to have measured it. Steam accounts for about 51.9% of VRChat's concurrent users (median across 31,936 hourly observations since 2023), and it is tempting to read that as a limit on the damage. **It is not.**
+
+That statistic describes the platform mix of the whole player base, most of which never used the Steam build at all. The number I actually need is the rate at which *Steam reviewers* — people who by definition owned and used the Steam build — later abandon Steam for standalone hardware. That is unmeasured, and nothing in public data measures it.
 
 So this is a **scenario sweep**, not a bound. Suppose some fraction of each segment's *observed* churn events are really migrations off Steam, and re-label that fraction as censored:
 
@@ -266,9 +286,9 @@ _Scenario A is the plausible one — heavier users are the likeliest to own a st
 
 Two things come out of this, and only one of them is comfortable.
 
-**The ordering never changes.** In all four scenarios the five segments rank identically, and every level rises. The published figures are therefore the pessimistic ones, and every recommendation in this post rests on the ordering rather than on the levels — which is why they survive.
+**The ordering never changes.** In all four scenarios the five segments rank identically, and every level rises. So the published figures are the pessimistic ones. Every recommendation in this post rests on the ordering rather than on the levels, which is why they survive.
 
-**The magnitude is genuinely uncertain.** The spread runs from 2.3× to 4.0× depending on an assumption I cannot test. So "3.9×" should be read as "3.9× under the assumption that observed inactivity means inactivity", not as a measured quantity. Scenario B is the implausible direction — it requires light users to be *more* likely to have migrated to standalone hardware — and even it leaves a 2.3× gap.
+**The size of the gap is genuinely uncertain.** The spread runs from 2.3× to 4.0×, depending on an assumption I cannot test. So "3.9×" should be read as "3.9×, if going quiet on Steam means going quiet", not as a measured quantity. Scenario B is the implausible direction — it requires light users to be *more* likely to have moved to standalone hardware — and even it leaves a 2.3× gap.
 
 This is the largest threat to validity in the series. It is not bounded, only swept — and it is the one first-party data would eliminate outright.
 
@@ -281,7 +301,9 @@ This is the largest threat to validity in the series. It is not bounded, only sw
 | S(90), population | **M3** (−0.024 pp vs −0.033 pp) | which model gets the 90-day survival closest |
 | segment-level RMST | **M5**, by 26× over M4 | which model gets the *published* numbers closest |
 
-**M3 wins two of the four.** All four measurements are correct; they disagree because they ask different questions, and publishing any one alone would have justified a different model choice. The honest headline is not that M5 sweeps — it is that **M5 is chosen for the segment-level numbers and pays for it on every marginal quantity**, which is exactly the trade the project made on purpose. (The project's own log calls this "three metrics, three winners". Across those three there are two distinct winners, which is one fewer than advertised.)
+**M3 wins two of the four.** All four measurements are correct. They disagree because they ask different questions, and publishing any one alone would have justified a different model choice.
+
+The honest headline is not that M5 sweeps. It is that **M5 is chosen for the segment-level numbers and pays for it on every population-wide one**, which is exactly the trade the project made on purpose. (The project's own log calls this "three metrics, three winners". Across those three there are two distinct winners, which is one fewer than advertised.)
 
 > **The rule this project follows: score the model on the quantity you will actually use.** elpd picked the right model here, but partly by luck — the population-RMST comparison would have picked the wrong one, and it is the more natural thing to reach for.
 {: .prompt-tip }
@@ -293,13 +315,19 @@ _How the argument got here, and the two things that follow from it. Everything a
 
 **1. Run the experiment this model sized.** Randomise an early-engagement intervention among low-playtime users; the outcome stays survival-based (time to operational churn), so the analysis machinery transfers directly. That converts an upper bound into a treatment effect.
 
-Two bridges have to be built before that number is decision-ready, and neither is statistical. **First, units.** User-years are not money. Multiply by your own revenue per active day: at a nominal \$0.05 per active day, 7,700 user-years is about \$140,000 — the figure to hold against engineering cost. I use a made-up rate deliberately, because the point is the mechanics, and the real rate is something only VRChat has. **Second, addressability.** The 102,299 people in the 1–20h band are *reviewers*, identified by playtime at the moment they wrote a review. To run the experiment you need to identify the equivalent users prospectively, from first-party telemetry, without waiting for them to write anything. That is an instrumentation task, and it is the same one that fixes the Steam-only blind spot.
+Two bridges have to be built before that number is decision-ready, and neither of them is statistical.
 
-**2. Validate out of time, not just out of sample.** PSIS-LOO here is a random hold-out, which assumes cohorts are exchangeable — the assumption Part 2 shows to be false when it kills the year-3 hazard rise. It tells you the model predicts a held-out 2019 reviewer from other 2019 reviewers. It does not tell you it predicts 2026 reviewers from pre-2024 ones, which is the only prediction a retention team ever actually needs. Fitting on pre-2024 reviews and scoring S(90) on the 2024–2026 cohorts would answer that; the censoring gradient keeps the honest horizons short, but S(90) is exactly the horizon the recommendation rests on.
+**First, units.** User-years are not money. Multiply by your own revenue per active day: at a made-up \$0.05 per active day, 7,700 user-years is about \$140,000 — the figure to hold against engineering cost. I use a made-up rate deliberately. The point is the mechanics, and the real rate is something only VRChat has.
+
+**Second, reaching the people.** The 102,299 people in the 1–20h band are *reviewers*, identified by their playtime at the moment they wrote a review. To run the experiment you need to find the equivalent users in advance, from your own telemetry, without waiting for them to write anything. That is an instrumentation task, and it is the same one that fixes the Steam-only blind spot.
+
+**2. Validate across time, not just across people.** The model comparison here holds out a random sample, which assumes one year's cohort behaves like another's. Part 2 shows that assumption is false — it is what kills the year-3 hazard rise.
+
+So the score tells you the model predicts a held-out 2019 reviewer from other 2019 reviewers. It does not tell you the model predicts 2026 reviewers from pre-2024 ones, which is the only prediction a retention team ever actually needs. Fitting on pre-2024 reviews and scoring S(90) on the 2024–2026 cohorts would answer that. Recent cohorts have not been observed for long, so the honest horizons are short — but S(90) is exactly the horizon the recommendation rests on.
 
 **3. Move the clock to first meaningful activity.** Every limitation in Part 1 traces back to the origin being a self-selected review. With first-party data the clock starts at signup, the sample stops being reviewers, and the estimand becomes account lifetime rather than a proxy for it.
 
-**4. Attach a value rate.** Expected active days is not money. With a revenue rate `r(t)`, expected value over a horizon is `∫ S(t) r(t) dt` — the survival machinery is already the hard half of that integral. The dataset here simply has no revenue in it, so the project stops one step short and says so.
+**4. Attach a value rate.** Expected active days is not money. Given a revenue rate `r(t)`, the expected value over a horizon is `∫ S(t) r(t) dt`, and the survival curve is already the hard half of that. The dataset here simply has no revenue in it, so the project stops one step short and says so.
 
 **5. Fix the platform blind spot.** §6 bounds it; only first-party data eliminates it. Everything in this series would be sharper if "active" meant active on the platform rather than active on Steam.
 
@@ -318,9 +346,11 @@ Two bridges have to be built before that number is decision-ready, and neither i
 
 The final model is a hierarchical Bayesian survival model with 91 sampled parameters generating 90 hazard cells, and it is the least interesting thing in this series.
 
-What decided the outcome happened earlier, and mostly in plain language: what the unit of analysis is, when the clock starts, what counts as an event, which observations are censored and why, which features existed at the prediction time, who the sample actually represents, and which apparent findings are artefacts of how the data was collected.
+What decided the outcome happened earlier, and mostly in plain language. What one row represents. When the clock starts. What counts as an event. Which observations are cut short and why. Which features existed at the moment of prediction. Who the sample actually represents. And which apparent findings are side-effects of how the data was collected.
 
-The models are just the formalisation of those answers. Each rung on the ladder exists because the data rejected the assumption below it — never because a more complicated model would look better in a write-up. And several numbers in this series are different from the ones I first published, because I went back and checked my own work hard enough to find out they were wrong: the per-segment value table (gross quoted as if unconditional, +72% on the weakest segment), the expected-remaining-life table (a shrinking integration window that manufactured a decline), and the goodness-of-fit statistics for Models 1 and 2 (scored against the wrong population). Two convergence diagnoses were also wrong, and both were float32.
+The models are just those answers written down formally. Each rung on the ladder exists because the data rejected the assumption below it, never because a more complicated model would look better in a write-up.
+
+And several numbers in this series are different from the ones I first published, because I went back and checked my own work hard enough to find out they were wrong. The per-segment value table quoted the still-active average as if it covered everyone: +72% on the weakest segment. The expected-remaining-life table used a shrinking window, which manufactured a decline. The fit statistics for Models 1 and 2 were scored against the wrong population. Two convergence diagnoses were also wrong, and both were float32.
 
 For a retention problem, I would rather hand a team a model that says *here is what the evidence supports, here is where uncertainty remains, and here is the experiment I would run next* than one that says *here is the prediction*.
 
