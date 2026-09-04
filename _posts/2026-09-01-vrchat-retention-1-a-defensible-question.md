@@ -68,6 +68,9 @@ Two things are worth noticing immediately.
 > The rule I applied to every candidate feature: *if I froze the world at the review timestamp, would I have known this value?* If not, it cannot be a predictor of what happens after that timestamp.
 {: .prompt-tip }
 
+> **Not a statistics reader?** Every technical word in this series is explained in one line each in the [glossary on the series index](/vrchat-retention/). The business answer is there too, and it does not need any of them.
+{: .prompt-info }
+
 ## 3. What one observation is
 
 ![Four reviewers on a calendar timeline](/assets/img/vrchat-retention/p1-timeline.png)

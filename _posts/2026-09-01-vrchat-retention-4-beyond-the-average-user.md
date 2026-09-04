@@ -142,7 +142,7 @@ Because this is the load-bearing claim of the section, I re-ran both models from
 
 One thing I expected and did not get: float64 was **faster**, not slower — 72 s against 98 s for M3, 40 s against 78 s for M5. A double-precision gradient costs more per leapfrog step, but the float32 chains were mixing so badly that NUTS took many more steps per draw. On a well-behaved model float64 costs roughly 2×; on these two it cost nothing at all.
 
-The orthonormal Helmert sum-to-zero basis is still kept, but for two reasons that are *not* convergence: it makes μ<sub>k</sub> unambiguously the mean log-hazard in interval *k* rather than an arbitrary offset, and it runs 5.3× faster because there are 18 fewer parameters to move. Both parameterisations agree on the fitted hazards to **0.48%**, so nothing rests on the choice.
+The orthonormal Helmert sum-to-zero basis is still kept, but for two reasons that are *not* convergence: it makes μ<sub>k</sub> unambiguously the mean log-hazard in interval *k* rather than an arbitrary offset, and it runs 5.3× faster because there are 18 fewer parameters to move. Both parameterisations agree on the fitted hazards to **0.475%**, so nothing rests on the choice.
 
 **Convergence, final model:** max R̂ 1.0029, min ESS 1,464, zero divergences — from **4 chains × 8,000 draws after 6,000 warmup, at `target_accept` 0.99**.
 

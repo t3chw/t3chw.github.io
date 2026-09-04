@@ -55,8 +55,30 @@ What a user is worth, where the risk lives, the error in my own value table that
 
 ---
 
+## The words, in plain English
+
+Every technical term the series uses, in one line each. Nothing here is needed to follow the business answer above.
+
+| Term | What it means |
+|---|---|
+| **survival analysis** | The maths for "how long until something happens", when some cases have not happened yet |
+| **censored** | We know this person lasted *at least* this long, but not how long in total. 24.3% of this data |
+| **hazard** | The chance of leaving today, among the people still here. Different from "how many are left" |
+| **Kaplan–Meier** | A way to draw the retention curve that handles censored people correctly and assumes no shape |
+| **estimand** | The exact quantity you are trying to measure. Get this wrong and everything after it is precise and useless |
+| **prior / posterior** | What the model believed before seeing the data, and after. Here the prior barely matters — it moves the answers by 0.09% |
+| **credible interval** | The range the model thinks the answer sits in. At this sample size they are very narrow, which is not the same as being right |
+| **expected active days (RMST)** | Add up the retention curve over five years. Roughly, "how many days will this person still be around" |
+| **elpd / PSIS-LOO** | A score for how well a model predicts data it was not fitted on. Used here only to rank models against each other |
+| **piecewise-exponential** | Chop time into pieces and let the risk be a different constant inside each one. No overall shape is assumed |
+| **partial pooling / hierarchical** | Let groups differ, but pull thin groups toward the average. It bought almost nothing here — see Part 4 |
+| **proportional hazards vs AFT** | Proportional hazards says one group is always X times riskier. AFT says one group's clock simply runs slower. The first was rejected on the data |
+| **per reviewer vs per still-active reviewer** | Two ways to average a band: over everybody in it, or only over those still playing when they reviewed. The difference is worth 72% on the weakest band |
+| **R̂ / ESS / divergences** | Checks that the sampler explored the model properly. They say nothing about whether the model itself is right |
+| **float32 / float64** | How many digits the computer keeps. Two failures in this project looked statistical and were really this |
+
 ## What was checked rather than assumed
 
-97 automated checks, all re-run for this write-up: 30 likelihood checks against SciPy and internal identities, 30 estimator checks against `lifelines` and analytic values, 37 published-number checks against the saved posteriors. Proportional hazards, a cure fraction, the smoothing prior, the model parameterisation and the priors were each tested rather than argued for — the priors move the published numbers by 0.09%.
+123 automated checks, all re-run for this write-up: 30 likelihood checks against SciPy and internal identities, 30 estimator checks against `lifelines` and analytic values, 63 published-number checks against the saved posteriors — the last of those extended after the audit to cover the quantities the audit had disputed, which is what a verification gate is for. Proportional hazards, a cure fraction, the smoothing prior, the model parameterisation and the priors were each tested rather than argued for — the priors move the published numbers by 0.09%.
 
 None of those checks found any of the errors reported in the series. Reproducibility is not the same thing as correctness, and the difference is most of what Parts 3 and 5 are about.
