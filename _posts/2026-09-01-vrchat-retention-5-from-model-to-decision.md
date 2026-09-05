@@ -292,7 +292,7 @@ Two things come out of this, and only one of them is comfortable.
 
 This is the largest threat to validity in the series. It is not bounded, only swept — and it is the one first-party data would eliminate outright.
 
-It now has a companion. §8 describes a second measurement problem in the same family: because `last_played` is one timestamp rather than a history, **the 14-day rule mislabels more of a recent cohort than an old one**, which makes every figure here pessimistic by 2–9%. Both are instrumentation problems, both push the same way, and neither is fixed by modelling.
+It now has a companion, and that one is *not* so tidy. §8 describes a second measurement problem in the same family: because `last_played` is one timestamp rather than a history, **the 14-day rule mislabels more of a recent cohort than an old one**. Excluding the cohort it cannot correct moves the published figures by **2–6%** — but **not all in the same direction**: S(90) and the median improve, while the segment spread narrows from 3.90× to 3.76×, so *that* headline is the optimistic one rather than the pessimistic one. Both are instrumentation problems and neither is fixed by modelling — but only the sweep above pushes uniformly one way, and I should not have said otherwise.
 
 ## 7. Three metrics, and the winner changes — plus the rule that follows
 
