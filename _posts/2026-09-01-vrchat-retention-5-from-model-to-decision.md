@@ -224,10 +224,10 @@ So I refitted on four grids: the published one, a coarser 9-interval grid, a 35-
 
 | Grid | Intervals | Plateau variation | S(90), lightest band | 5-year net days, lightest → heaviest | Spread |
 |---|---:|---:|---:|---:|---:|
-| published | 18 | 1.08× | 70.3% | 399 → 1,558 | 3.91× |
-| coarse | 9 | 1.03× | 70.2% | 397 → 1,548 | 3.90× |
-| fine | 35 | 1.12× | 70.3% | 399 → 1,559 | 3.91× |
-| log-spaced, unaligned | 19 | 1.08× | 70.3% | 398 → 1,549 | 3.89× |
+| published | 18 | 1.08× | 70.4% | 399 → 1,557 | 3.90× |
+| coarse | 9 | 1.03× | 70.3% | 397 → 1,548 | 3.90× |
+| fine | 35 | 1.12× | 70.4% | 399 → 1,559 | 3.91× |
+| log-spaced, unaligned | 19 | 1.08× | 70.4% | 398 → 1,549 | 3.89× |
 
 Survival at day 90 is identical to a tenth of a point across all four. The segment spread moves by 0.5%. The plateau is flat on every grid. That one could have gone the other way, and it did not.
 
@@ -235,7 +235,7 @@ The churn rule gets the same treatment. At 7, 14, 21 and 30 days of inactivity t
 
 The decisions rest on the ordering, so they survive. Absolute figures should always be quoted with the rule attached: "median 962 days on a 14-day inactivity rule".
 
-> **The audit, in numbers.** 140 automated checks, all of which I re-ran while writing this series. 30/30 likelihood checks: eight are direct comparisons against SciPy, at ordinary values *and* deep in the censored tail, agreeing to machine epsilon; the rest are internal identities, of which the loosest is a numerical-quadrature check agreeing to 2.8e−5. 30/30 estimator checks against independent implementations — Kaplan–Meier against `lifelines` to 1e-13, RMST to 1e-14. 80/80 published-number checks against the saved posteriors. The project also records a clean 14-step re-run from an empty output directory producing byte-identical tables, because the MCMC is seeded; I did not re-execute that for this write-up, so I am reporting it rather than confirming it.
+> **The audit, in numbers.** 140 automated checks, all of which I re-ran while writing this series. 30/30 likelihood checks: eight are direct comparisons against SciPy, at ordinary values *and* deep in the censored tail, agreeing to machine epsilon; the rest are internal identities, of which the loosest is a numerical-quadrature check agreeing to 2.8e−5. 30/30 estimator checks against independent implementations — Kaplan–Meier against `lifelines` to about 1e-13, RMST to about 2e-14 (both are worst-case relative differences, and both sit a hair above the round tolerance I used to quote). 80/80 published-number checks against the saved posteriors. And a clean 23-step re-run from an empty output directory, which I *did* execute for this write-up: 21/21 tables and every posterior byte-identical, because the MCMC is seeded.
 >
 > **And none of those checks found any of the errors reported in this series.** Automated checks catch arithmetic. They do not catch a quantity being defined two ways in two sections, or a fit statistic scored against the wrong population. That is what the manual audit is for, and it is why reproducibility is not the same thing as correctness.
 >
@@ -377,4 +377,4 @@ For a retention problem, I would rather hand a team a model that says *here is w
 
 *Full series: [Part 1 — the estimand](/posts/vrchat-retention-1-a-defensible-question/) · [Part 2 — what the data said](/posts/vrchat-retention-2-what-the-data-said/) · [Part 3 — when simple models fail](/posts/vrchat-retention-3-when-simple-models-fail/) · [Part 4 — beyond the average user](/posts/vrchat-retention-4-beyond-the-average-user/) · Part 5*
 
-*Fit in NumPyro (Python 3.12 / JAX) in float64, 4 chains, seeded for bit-level reproducibility. Sampler settings vary by model: 1,000 warmup / 1,000 draws at `target_accept` 0.90 for M1, M2 and M4; 3,000/3,000 at 0.95 for M3; 6,000/8,000 at 0.99 for M5. Data: public Steam review corpus for app 438100, 267,903 reviewers, collected 2026-08-28. No user identifiers and no review text are reproduced anywhere in this series.*
+*Fit in NumPyro (Python 3.12 / JAX) in float64, 4 chains, seeded for bit-level reproducibility. Sampler settings vary by model: 1,000 warmup / 1,000 draws at `target_accept` 0.90 for M1, M2 and M4; 1,000/2,000 at 0.95 for M3 (the independent-prior variant, which is the one kept and used downstream — the discarded random-walk variant ran 3,000/3,000); 6,000/8,000 at 0.99 for M5. Data: public Steam review corpus for app 438100, 267,903 reviewers, collected 2026-08-28. No user identifiers and no review text are reproduced anywhere in this series.*

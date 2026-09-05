@@ -41,7 +41,7 @@ _Left: post-review retention for all 267,903 reviewers. Right: the same estimato
 | 5 years | 22.6% | 34,132 |
 | 7 years | 8.4% | 6,845 |
 
-Median post-review retention is **962 days**. That estimate is hand-rolled in this project, so I check it against `lifelines`. The two agree to within 1e-13 at every horizon, and the medians match exactly (961.54 days, zero relative error).
+Median post-review retention is **962 days**. That estimate is hand-rolled in this project, so I check it against `lifelines`. The two agree to about 1e-13 at every horizon — worst case 1.06e-13, marginally above the round number — and the medians match exactly (961.54 days, zero relative error).
 
 This is the reference curve. Every model in Part 3 is judged against it.
 

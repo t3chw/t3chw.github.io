@@ -185,7 +185,7 @@ _PSIS-LOO expected log predictive density, relative to the best model. Standard 
 | M2 log-logistic | 2 | −151,791 | −7,644 |
 | M2 log-normal | 2 | −154,951 | −10,804 |
 
-† Free sampled parameters. The project's own result table records M3 as **19** and M5 as **109**. Those counts include things the sampler never moves: for M3, a discarded alternative set-up (an intercept, a scale and 17 increments); for M5, the 90 cell hazards that are computed from the 19 values above them. The models actually fitted sample 18 and 91. I flag it because both sets of numbers appear in the same repository, and someone will notice.
+† Free sampled parameters. The project's own result table records M3 as **19** and M5 as **109**, and neither is what the sampler moves. M3's 19 counts a discarded alternative set-up (an intercept, a scale and 17 increments); the model actually fitted has **18** free hazards. M5's 109 counts 18 μ + 90 δ + 1 τ, but δ is drawn on an orthonormal sum-to-zero basis of 4 × 18 = 72 rather than 5 × 18 = 90, so the sampler moves 18 + 72 + 1 = **91**. The gap is exactly those 18 redundant directions, not a deterministic transform. I flag it because both sets of numbers appear in the same repository, and someone will notice.
 
 **Model 4 loses to Model 3 by 2,840 elpd, despite having five covariates that Model 3 does not have.** It also loses to a two-parameter Weibull with no covariates, by 166. And it beats a one-parameter constant hazard by only 409.
 
