@@ -79,6 +79,6 @@ Every technical term the series uses, in one line each. Nothing here is needed t
 
 ## What was checked rather than assumed
 
-177 automated checks, all re-run for this write-up: 30 likelihood checks against SciPy and internal identities, 30 estimator checks against `lifelines` and analytic values, 117 published-number checks against the saved posteriors — the last of those extended after the audit to cover the quantities the audit had disputed, which is what a verification gate is for. Proportional hazards, a cure fraction, the smoothing prior, the model parameterisation and the priors were each tested rather than argued for — the priors move the published numbers by 0.09%.
+192 automated checks, all re-run for this write-up: 30 likelihood checks against SciPy and internal identities, 30 estimator checks against `lifelines` and analytic values, 132 published-number checks against the saved posteriors — the last of those extended after the audit to cover the quantities the audit had disputed, which is what a verification gate is for. Proportional hazards, a cure fraction, the smoothing prior, the model parameterisation and the priors were each tested rather than argued for — the priors move the published numbers by 0.09%.
 
 None of those checks found any of the errors reported in the series. Reproducibility is not the same thing as correctness, and the difference is most of what Parts 3 and 5 are about.

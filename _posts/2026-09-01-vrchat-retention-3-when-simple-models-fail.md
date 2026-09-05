@@ -202,7 +202,7 @@ If I had started with a covariate model — the instinct most of us have — I w
 
 The original comparison used `se = √(se_A² + se_B²)`. That formula assumes the two models' errors are independent. They are not: every model is scored on the same 25,000 people, so a person who is hard to predict is hard for all of them. The correct method compares the two models person by person and takes the standard error of that difference: `√n · sd(pointwise differences)`.
 
-One labelling correction while I am here. The paired numbers below are computed on the **in-sample** score, not on the leave-one-out one — the script differences the raw values with no correction applied. Running the leave-one-out version properly gives 2,500.3 ± 65.6, which is 38.1 standard errors instead of 38.0, so nothing moves. But calling one score by the other's name is exactly the sloppiness this post spends a table correcting elsewhere:
+One labelling correction while I am here. The paired numbers below are computed on the **in-sample** score, not on the leave-one-out one — the script differences the raw values with no correction applied. Running the leave-one-out version properly gives **2,486.0 ± 65.7**, which is 37.8 standard errors instead of 38.0, so nothing moves — and 2,486 is the same margin quoted everywhere else in this series. *(I published "2,500.3 ± 65.6 = 38.1" here until 2026-09-05; it reproduces from nothing. The PSIS-LOO difference is 2,486.0 and the in-sample one is 2,493.2.)* But calling one score by the other's name is exactly the sloppiness this post spends a table correcting elsewhere:
 
 | Comparison | naive SE | paired SE | naive verdict | paired verdict |
 |---|---:|---:|---:|---:|
