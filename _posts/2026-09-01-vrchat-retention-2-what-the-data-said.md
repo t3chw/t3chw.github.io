@@ -121,10 +121,14 @@ The default reflex for covariates in survival analysis is a Cox model. It assume
 
 | Covariate | PH test χ² | p |
 |---|---:|---:|
-| log playtime at review | 2,511 | < 1e-6 |
-| recommended the game | 178 | < 1e-6 |
-| reviewed in English | 93 | < 1e-6 |
-| log games owned | 31 | < 1e-6 |
+| log playtime at review | 2,520 | < 1e-6 |
+| recommended the game | 169 | < 1e-6 |
+| reviewed in English | 96 | < 1e-6 |
+
+*(A fourth row, log games owned at χ² 31, was here until 2026-09-05. That
+covariate was dropped project-wide as a collection-time field — see Part 3 — and
+refitting the diagnostic without it moved the other three slightly. The verdict
+is unchanged, and it rests on playtime.)*
 
 That test was fitted on a 40,000-person sample. At that size **any** deviation reaches significance, so those p-values prove almost nothing. The question that matters is whether the violation is big enough to change a decision. So I measured the effect size directly:
 

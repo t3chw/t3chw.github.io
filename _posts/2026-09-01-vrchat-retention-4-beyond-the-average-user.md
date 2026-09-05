@@ -154,7 +154,7 @@ Those are not the project defaults (1,000/1,000 at 0.90, which M1, M2 and M4 use
 
 109 parameters can fit a lot. So the test is out-of-sample, on the same fixed 25,000-person subsample every model was scored on.
 
-**M5 wins by 2,486 elpd over M3 and 5,326 over M4** (PSIS-LOO). Here elpd scores how well a model predicts people it was not fitted on, and PSIS-LOO estimates that score by leaving each person out in turn. The paired comparison, computed person by person on the same people, puts those differences at 2,493 ± 66 and 5,334 ± 120. That is **38 and 44 standard errors**. The two sets of differences come from slightly different computations, so I quote them separately rather than dividing one into the other.
+**M5 wins by 2,486 elpd over M3 and 5,614 over M4** (PSIS-LOO). Here elpd scores how well a model predicts people it was not fitted on, and PSIS-LOO estimates that score by leaving each person out in turn. The paired comparison, computed person by person on the same people, puts those differences at 2,493 ± 66 and 5,334 ± 120. That is **38 and 44 standard errors**. The two sets of differences come from slightly different computations, so I quote them separately rather than dividing one into the other.
 
 ### What the free-in-time part is actually worth
 

@@ -154,11 +154,26 @@ The coefficients are genuinely useful, and they are the reason M4 survives into 
 
 | Covariate | Lifetime multiplier, per SD | 95% CrI |
 |---|---:|---|
-| **log playtime at review** | **×2.11** | [2.09, 2.13] |
-| games owned on Steam | ×1.30 | [1.29, 1.31] |
-| public profile | ×1.12 | [1.11, 1.13] |
-| recommended the game | ×1.10 | [1.09, 1.11] |
-| reviewed in English | ×1.05 | [1.05, 1.06] |
+| **log playtime at review** | **×2.18** | [2.16, 2.20] |
+| recommended the game | ×1.07 | [1.06, 1.07] |
+| reviewed in English | ×1.07 | [1.06, 1.08] |
+
+> ⚠️ **Refitted 2026-09-05 with three covariates, not five.** `games_owned`
+> (×1.30) and `profile_public` (×1.12) were dropped: both derive from a Steam
+> field read at **collection**, from the same `author` block and the same request
+> as `playtime_forever`, which I excluded for leakage. Steam's docs qualify
+> exactly one field in that block as review-time — and the fact that a separate
+> `playtime_at_review` field has to exist *is* the proof the others are not.
+>
+> It is confounding rather than leakage: a bigger Steam library does not encode
+> whether you kept playing VRChat, but a 2017 reviewer has had nine extra years
+> to buy games. Median games owned falls **260 (2017) → 51 (2026)**.
+>
+> **The refit cost 287 elpd** — the contaminated covariate had been helping —
+> **and improved the per-segment error, 76.3 → 75.0 days.** Selecting on elpd
+> would have kept the leak. No published business number moved: Model 5 never
+> used it.
+{: .prompt-warning }
 
 And for the hurdle — the odds of having *already left* before writing the review:
 
@@ -180,18 +195,18 @@ _PSIS-LOO expected log predictive density, relative to the best model. Standard 
 | **M5** hierarchical stratified PEM | 91 † | **−144,148** | — |
 | M3 piecewise-exponential | 18 † | −146,634 | −2,486 |
 | M2 Weibull | 2 | −149,307 | −5,160 |
-| **M4** two-part + 5 covariates | 13 | −149,474 | −5,326 |
+| **M4** two-part + 3 covariates | 9 | −149,761 | −5,614 |
 | M1 exponential | 1 | −149,882 | −5,735 |
 | M2 log-logistic | 2 | −151,791 | −7,644 |
 | M2 log-normal | 2 | −154,951 | −10,804 |
 
 † Free sampled parameters. The project's own result table records M3 as **19** and M5 as **109**, and neither is what the sampler moves. M3's 19 counts a discarded alternative set-up (an intercept, a scale and 17 increments); the model actually fitted has **18** free hazards. M5's 109 counts 18 μ + 90 δ + 1 τ, but δ is drawn on an orthonormal sum-to-zero basis of 4 × 18 = 72 rather than 5 × 18 = 90, so the sampler moves 18 + 72 + 1 = **91**. The gap is exactly those 18 redundant directions, not a deterministic transform. I flag it because both sets of numbers appear in the same repository, and someone will notice.
 
-**Model 4 loses to Model 3 by 2,840 elpd, despite having five covariates that Model 3 does not have.** It also loses to a two-parameter Weibull with no covariates, by 166. And it beats a one-parameter constant hazard by only 409.
+**Model 4 loses to Model 3 by 3,128 elpd, despite having three covariates that Model 3 does not have.** It also loses to a two-parameter Weibull with no covariates, by 454. And it beats a one-parameter constant hazard by only 121. *(Before the 2026-09-05 refit those margins were 2,840 / 166 / 409 on five covariates — dropping the two collection-time fields made every one of them larger.)*
 
 There are two honest ways to read that, and both belong in the write-up:
 
-- **Within its own family**, covariates are worth 2,318 elpd — log-logistic with them against log-logistic without. Covariates work.
+- **Within its own family**, covariates are worth 2,030 elpd — log-logistic with them against log-logistic without. Covariates work.
 - **Across families**, the shape choice dominates them completely.
 
 Reporting only the first would be flattering and misleading. Together the pair says: *for this dataset, get the time structure right before you get the people structure right.*
@@ -222,7 +237,7 @@ The requirement is now precise: **a hazard free to vary over time, and free to v
 
 This part has no customer-facing finding in it. It has a resourcing one, and it is the most transferable thing in the series.
 
-**Get the time structure right before you add features.** Five covariates fitted onto the wrong hazard shape lost to a model with no covariates at all, and lost to a *two-parameter* model with no covariates. If you have one week on a retention problem, the evidence here says spend it on the shape of the hazard, not on feature engineering.
+**Get the time structure right before you add features.** Covariates fitted onto the wrong hazard shape lost to a model with no covariates at all, and lost to a *two-parameter* model with no covariates. If you have one week on a retention problem, the evidence here says spend it on the shape of the hazard, not on feature engineering.
 
 The instinct most teams have is to start with a covariate model and iterate on features. That would have spent the week on the axis that mattered less, and the fit statistics would have looked respectable enough that nobody noticed.
 

@@ -30,7 +30,7 @@ That sets the strategy for *timed* effort: **the first 90 days, on the light-pla
 
 ## And the methodological answer
 
-- **Flexibility in *time* beat flexibility in *people*.** A model with five covariates lost to a model with none, by 2,840 elpd, because it had the wrong hazard shape. That is a resourcing lesson, not a curiosity.
+- **Flexibility in *time* beat flexibility in *people*.** A model with covariates lost to a model with none, by 3,128 elpd, because it had the wrong hazard shape. That is a resourcing lesson, not a curiosity.
 - **The hierarchy earned almost none of its margin.** Five independent per-segment fits with no pooling and no sampler tie with the 91-parameter hierarchical model (log predictive density −144,138.3 against −144,138.5). Stratifying is what mattered; the hierarchy was insurance that turned out not to be needed at this sample size.
 - **Several published numbers in this project were wrong and are corrected in place,** including one that reversed a business recommendation, and one "validation check" that turned out to be an algebraic identity.
 
@@ -45,7 +45,7 @@ Where the clock starts, what counts as churn, why 8.5% of the sample needed a tw
 Four questions answered non-parametrically before any model was fitted. The hazard shape rules out every smooth survival family; proportional hazards is rejected on a measured 34× effect-size decay rather than a p-value; and the most interesting-looking finding in the tail turns out to be an artefact of who is left in the risk set.
 
 **[Part 3 — When Simple Survival Models Are Not Enough](/posts/vrchat-retention-3-when-simple-models-fail/)**
-Four models, each fitted because the previous one failed in a nameable way. Includes the project's most informative comparison — five covariates losing to none — and a correction I found while writing: two models had been scored against the wrong population.
+Four models, each fitted because the previous one failed in a nameable way. Includes the project's most informative comparison — covariates losing to none — and a correction I found while writing: two models had been scored against the wrong population.
 
 **[Part 4 — Five Segments, Five Different Lifecycles](/posts/vrchat-retention-4-beyond-the-average-user/)**
 The hierarchical stratified piecewise-exponential model, why it is not proportional hazards in disguise, and a convergence failure I diagnosed as structural non-identifiability that turned out to be float32 — reproduced here in a controlled re-run.
@@ -79,6 +79,6 @@ Every technical term the series uses, in one line each. Nothing here is needed t
 
 ## What was checked rather than assumed
 
-192 automated checks, all re-run for this write-up: 30 likelihood checks against SciPy and internal identities, 30 estimator checks against `lifelines` and analytic values, 132 published-number checks against the saved posteriors — the last of those extended after the audit to cover the quantities the audit had disputed, which is what a verification gate is for. Proportional hazards, a cure fraction, the smoothing prior, the model parameterisation and the priors were each tested rather than argued for — the priors move the published numbers by 0.09%.
+199 automated checks, all re-run for this write-up: 30 likelihood checks against SciPy and internal identities, 30 estimator checks against `lifelines` and analytic values, 139 published-number checks against the saved posteriors — the last of those extended after the audit to cover the quantities the audit had disputed, which is what a verification gate is for. Proportional hazards, a cure fraction, the smoothing prior, the model parameterisation and the priors were each tested rather than argued for — the priors move the published numbers by 0.09%.
 
 None of those checks found any of the errors reported in the series. Reproducibility is not the same thing as correctness, and the difference is most of what Parts 3 and 5 are about.
