@@ -292,6 +292,8 @@ Two things come out of this, and only one of them is comfortable.
 
 This is the largest threat to validity in the series. It is not bounded, only swept — and it is the one first-party data would eliminate outright.
 
+It now has a companion. §8 describes a second measurement problem in the same family: because `last_played` is one timestamp rather than a history, **the 14-day rule mislabels more of a recent cohort than an old one**, which makes every figure here pessimistic by 2–9%. Both are instrumentation problems, both push the same way, and neither is fixed by modelling.
+
 ## 7. Three metrics, and the winner changes — plus the rule that follows
 
 | Metric | Winner | What it is asking |
@@ -321,9 +323,16 @@ Two bridges have to be built before that number is decision-ready, and neither o
 
 **Second, reaching the people.** The 102,299 people in the 1–20h band are *reviewers*, identified by their playtime at the moment they wrote a review. To run the experiment you need to find the equivalent users in advance, from your own telemetry, without waiting for them to write anything. That is an instrumentation task, and it is the same one that fixes the Steam-only blind spot.
 
-**2. Validate across time, not just across people.** The model comparison here holds out a random sample, which assumes one year's cohort behaves like another's. Part 2 shows that assumption is false — it is what kills the year-3 hazard rise.
+**2. ~~Validate across time, not just across people.~~ Done — and it found something.** The model comparison here holds out a random sample, which assumes one year's cohort behaves like another's. Part 2 shows that assumption is false — it is what kills the year-3 hazard rise. So the score tells you the model predicts a held-out 2019 reviewer from other 2019 reviewers, not that it predicts next year's from this year's.
 
-So the score tells you the model predicts a held-out 2019 reviewer from other 2019 reviewers. It does not tell you the model predicts 2026 reviewers from pre-2024 ones, which is the only prediction a retention team ever actually needs. Fitting on pre-2024 reviews and scoring S(90) on the 2024–2026 cohorts would answer that. Recent cohorts have not been observed for long, so the honest horizons are short — but S(90) is exactly the horizon the recommendation rests on.
+I have since run it. Fitting on cohorts up to 2022 and predicting 2023–24 costs **3.43 percentage points** of mean error in S(90) per segment, against **0.39 pp** for a random hold-out within the training cohorts. So **every elpd in this series flatters its model by roughly an order of magnitude** relative to the prediction a retention team actually needs. The ranking does not change, and stratification still helps out of time by 2.56×.
+
+> **And it turned up a data problem worth more than the validation.** `last_played` is a single timestamp, not a session history. For a reviewer we have only watched briefly, any lull in the 14 days before collection is recorded as terminal churn — while an identical lull by an old reviewer is invisible, because they came back and the timestamp moved forward. **So the churn rule's error rate depends on how long we have watched someone.** Measured S(90) by review cohort runs 87.0% (2020) down to **57.7%** for 2026, which has 149 days of median exposure; hold the observation window fixed and the collapse disappears entirely.
+>
+> Every published figure in this series is therefore **pessimistic by 2–9%** — S(90) 81.5% against 83.5%, the Kaplan–Meier median 962 days against 1,049, the segment spread 3.90× against 3.70×. The direction is the same as the Steam-only caveat in §6, and the ordering and every recommendation are unchanged. It is a limitation, not a retraction.
+>
+> One more correction, on my own reading of my own test. I first took a monotone decay in the train/test gap (−2.14 → −0.42 pp, as I demanded more exposure) as evidence that the leftover cohort drift was artefact too. It is not: tracking each cohort separately, every one of them is flat under that filter. Raising the bar does not move a cohort toward the training set, it **drops the worst cohorts out of the test set**. So the 3.43 pp is measured on 2023–24, the newest cohorts whose outcome can be observed reliably; including 2025 it is 5.08 pp, and 2026 cannot be assessed at all. A control that changes the population is not the same as a control that removes a bias, and both produce a tidy monotone line.
+{: .prompt-warning }
 
 **3. Move the clock to first meaningful activity.** Every limitation in Part 1 traces back to the origin being a self-selected review. With first-party data the clock starts at signup, the sample stops being reviewers, and the estimand becomes account lifetime rather than a proxy for it.
 
