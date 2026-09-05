@@ -60,6 +60,8 @@ That is 18 + 90 + 1 = **109 parameters** describing 5 × 18 = 90 segment-by-inte
 
 **δ is free in both s and k.** If it depended only on the segment, each segment would get one constant multiplier on a shared curve. That is exactly proportional hazards, the assumption Part 2 rejected. Because δ is free in both indices, each segment gets its own *shape*.
 
+Part 2 rejected proportional hazards on a measured 34× decay. Rejecting an assumption is not the same as showing it *costs* anything, though, so §7 now fits the proportional version and prices it. The short answer: it is worth 23% of this model's margin on predictive score, and a factor of 20 on the number this series actually publishes.
+
 ## 3. Why partial pooling, and not the two obvious alternatives
 
 Ninety cells sounds comfortable until you look at the corners. Segment membership is very uneven. The under-1h segment contributes 8,836 events, the 1–20h segment 81,558. **The thinnest cell in the grid holds 10 events**, and it is not where you would guess. It sits in the 1000h+ segment at days 1–3, an *early* interval where almost nobody in that segment churns. The next three thinnest are also 1000h+ early intervals (19, 22, 25 events). So the sparsity comes from the strongest segment, not only from the long tail.
@@ -153,6 +155,40 @@ Those are not the project defaults (1,000/1,000 at 0.90, which M1, M2 and M4 use
 109 parameters can fit a lot. So the test is out-of-sample, on the same fixed 25,000-person subsample every model was scored on.
 
 **M5 wins by 2,486 elpd over M3 and 5,326 over M4** (PSIS-LOO). Here elpd scores how well a model predicts people it was not fitted on, and PSIS-LOO estimates that score by leaving each person out in turn. The paired comparison, computed person by person on the same people, puts those differences at 2,493 ± 66 and 5,334 ± 120. That is **38 and 44 standard errors**. The two sets of differences come from slightly different computations, so I quote them separately rather than dividing one into the other.
+
+### What the free-in-time part is actually worth
+
+The 2,486 is against a model that cannot tell segments apart at all, so it bundles two claims together: that knowing someone's playtime band helps, and that its effect has to be allowed to *move*. Those deserve separate evidence. So I fitted the model in between — a shared piecewise baseline with one constant multiplier per segment, which is a proportional-hazards model with a free baseline shape:
+
+$$
+\log \lambda_{s,k} = \mu_k + \gamma_s
+$$
+
+That is M5 with the time-variation taken out, and nothing else changed.
+
+| | | elpd | vs M3 |
+|---|---|---:|---:|
+| **M5** | `μ[k] + τ·δ[s,k]` — free in time | **−144,148** | +2,486 |
+| **proportional** | `μ[k] + γ[s]` | −144,728 | **+1,905** |
+| continuous | `μ[k] + β · log playtime` | −144,729 | +1,904 |
+| M3 | `μ[k]` — no people | −146,634 | — |
+
+**Knowing the band is worth 1,905. Letting its effect move is worth 581 more — 23% of the margin.** That 581 is not noise: paired person by person on the same 25,000 people it is **+587 ± 32, or 18.4 standard errors**. But it is a much smaller share than "M5 beats M3 by 2,486" suggests when that number is quoted alone, and I had been quoting it alone.
+
+**On the published quantity the split is completely different.** Expected days per segment:
+
+| | M3, no people | proportional | M5, free in time |
+|---|---:|---:|---:|
+| mean absolute error | 280.3 days | **58.0 days** | **2.9 days** |
+
+The proportional model is **20× worse** than M5 on the number this series publishes, while sitting within 0.4% of it on elpd. Its errors are systematic in the way a rigid effect always is — +107 days on the weakest band, −66 on the strongest — because one multiplier has to compromise across a ratio the data moves from 153× to about 1.5×. It settles on **4.9× at all times**.
+
+![What proportional hazards has to assume, and what it costs](/assets/img/vrchat-retention/p4-proportional-control.png)
+_Left: the hazard ratio between the weakest and strongest band. The points are measured from the data; M5 tracks them; the proportional model is forced to one number. Right: what that costs on the per-segment expected-days figure, on a log scale._
+
+Two things fall out of this that I did not expect. **Binning playtime into five bands costs nothing** — the continuous version differs by 1 elpd, so `config.py`'s cut points are not quietly discarding information. And this is the *fourth* time in this project that a mechanism I was confident about turned out to be worth much less than the headline implied. The smoothing prior bought nothing; five covariates bought nothing; the hierarchy bought nothing; and now the non-proportionality — which Part 2 spends a whole section rejecting PH over — buys under a quarter of the margin on elpd.
+
+It is also the sharpest example in the series of the rule Part 5 ends on. **Score the model on the quantity you will actually use.** On elpd the proportional model looks like 97.7% of M5. On the published number it is off by 58 days a segment.
 
 ### The baseline that shows what actually earned that margin
 
