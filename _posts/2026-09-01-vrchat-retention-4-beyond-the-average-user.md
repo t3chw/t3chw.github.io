@@ -173,7 +173,7 @@ That is M5 with the time-variation taken out, and nothing else changed.
 | continuous | `μ[k] + β · log playtime` | −144,729 | +1,904 |
 | M3 | `μ[k]` — no people | −146,634 | — |
 
-**Knowing the band is worth 1,905. Letting its effect move is worth 581 more — 23% of the margin.** That 581 is not noise: paired person by person on the same 25,000 people it is **+587 ± 32, or 18.4 standard errors**. But it is a much smaller share than "M5 beats M3 by 2,486" suggests when that number is quoted alone, and I had been quoting it alone.
+**Knowing the band is worth 1,905. Letting its effect move is worth 581 more — 23% of the margin.** That 581 is not noise: paired person by person on the same 25,000 people it is **+581 ± 32, or 18.2 standard errors** on PSIS-LOO. (The in-sample version of the same comparison gives +587 ± 32 = 18.4 — quoting *that* as the paired PSIS-LOO figure is exactly the mislabelling Part 3 corrects elsewhere, so it is worth getting right here.) But it is a much smaller share than "M5 beats M3 by 2,486" suggests when that number is quoted alone, and I had been quoting it alone.
 
 **On the published quantity the split is completely different.** Expected days per segment:
 
@@ -181,14 +181,14 @@ That is M5 with the time-variation taken out, and nothing else changed.
 |---|---:|---:|---:|
 | mean absolute error | 280.3 days | **58.0 days** | **2.9 days** |
 
-The proportional model is **20× worse** than M5 on the number this series publishes, while sitting within 0.4% of it on elpd. Its errors are systematic in the way a rigid effect always is — +107 days on the weakest band, −66 on the strongest — because one multiplier has to compromise across a ratio the data moves from 153× to about 1.5×. It settles on **4.9× at all times**.
+The proportional model is **20× worse** than M5 on the number this series publishes, while recovering **77% of M5's margin over M3** on elpd. Its errors are systematic in the way a rigid effect always is — +107 days on the weakest band, −66 on the strongest — because one multiplier has to compromise across a ratio the data moves from 153× to about 1.5×. It settles on **4.9× at all times**.
 
 ![What proportional hazards has to assume, and what it costs](/assets/img/vrchat-retention/p4-proportional-control.png)
 _Left: the hazard ratio between the weakest and strongest band. The points are measured from the data; M5 tracks them; the proportional model is forced to one number. Right: what that costs on the per-segment expected-days figure, on a log scale._
 
 Two things fall out of this that I did not expect. **Binning playtime into five bands costs nothing** — the continuous version differs by 1 elpd, so `config.py`'s cut points are not quietly discarding information. And this is the *fourth* time in this project that a mechanism I was confident about turned out to be worth much less than the headline implied. The smoothing prior bought nothing; five covariates bought nothing; the hierarchy bought nothing; and now the non-proportionality — which Part 2 spends a whole section rejecting PH over — buys under a quarter of the margin on elpd.
 
-It is also the sharpest example in the series of the rule Part 5 ends on. **Score the model on the quantity you will actually use.** On elpd the proportional model looks like 97.7% of M5. On the published number it is off by 58 days a segment.
+It is also the sharpest example in the series of the rule Part 5 ends on. **Score the model on the quantity you will actually use.** On elpd the proportional model captures more than three-quarters of what M5 gains. On the published number it is off by 58 days a segment.
 
 ### The baseline that shows what actually earned that margin
 

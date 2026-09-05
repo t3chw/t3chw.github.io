@@ -23,7 +23,7 @@ image:
 
 It is not where most of the loss is. Nearly twice as many people leave after day 90 as before it. That larger loss is spread evenly across three years, so it needs an always-on product mechanism rather than a campaign. Confusing those two is the easiest expensive mistake to make with this data, and [Part 2](/posts/vrchat-retention-2-what-the-data-said/) spells it out.
 
-**The base, in one line.** Those 267,903 reviewers carry roughly **702,000 user-years** of expected retained time over five years. **18.5% of them — 49,591 people — are gone inside 90 days**, counting the 8.5% who had already stopped before they wrote their review. After that the rate flattens to about 1.5% a month and stays there for three years.
+**The base, in one line.** Those 267,903 reviewers carry roughly **702,000 user-years** of expected retained time over five years. **18.5% of them — about 49,500 people — are gone inside 90 days**, counting the 8.5% who had already stopped before they wrote their review. After that the rate flattens to about 1.5% a month and stays there for three years.
 
 *(Retained time means days on the roster before someone goes quiet, not hours played. It is the number you would multiply a revenue rate by, not revenue itself. The 702,000 figure is the model's per-reviewer expected days added up across segments. Two other routes that assume no model at all give about 704,000 and 697,000, so it is good to roughly ±0.7%.)*
 
@@ -259,7 +259,7 @@ What that run *does* produce, and what is worth keeping, is where the uncertaint
 
 Even a correctly built version would close only the *statistical* gap and leave the deeper one wide open. The method assumes the missing values are missing at random, and people who hide their Steam profile are almost certainly not a random subset. Public data gives no way to test that, and saying so is more useful than picking whichever number reads best.
 
-> Two more known issues, uncorrected because they are immaterial: 115 people (0.043%) sit in the under-1h segment because their playtime was *unknown* rather than low — imputation being read as data. And a piecewise-exponential with playtime as a *proportional* covariate on a shared baseline was never fitted. That model would separate two things M5 currently confounds: that playtime carries information at all, and that its effect changes shape over time. Part 2's non-parametric 34× decay in the hazard ratio is strong indirect evidence for the second, but it is indirect, and I would rather say so.
+> Two more known issues, uncorrected because they are immaterial: 115 people (0.043%) sit in the under-1h segment because their playtime was *unknown* rather than low — imputation being read as data. ~~And a piecewise-exponential with playtime as a *proportional* covariate on a shared baseline was never fitted.~~ **It has been now — [Part 4 §7](/posts/vrchat-retention-4-beyond-the-average-user/) fits it.** It separates the two things M5 confounds: knowing the playtime band is worth +1,905 elpd, letting its effect move over time only +581 more (23% of the margin). On the published per-segment number, though, the proportional version is 20× worse — 58.0 days of error against 2.9.
 {: .prompt-info }
 
 ## 6. The threat I actually worry about, and a scenario sweep on it
@@ -325,20 +325,30 @@ Two bridges have to be built before that number is decision-ready, and neither o
 
 **2. ~~Validate across time, not just across people.~~ Done — and it found something.** The model comparison here holds out a random sample, which assumes one year's cohort behaves like another's. Part 2 shows that assumption is false — it is what kills the year-3 hazard rise. So the score tells you the model predicts a held-out 2019 reviewer from other 2019 reviewers, not that it predicts next year's from this year's.
 
-I have since run it. Fitting on cohorts up to 2022 and predicting 2023–24 costs **3.43 percentage points** of mean error in S(90) per segment, against **0.39 pp** for a random hold-out within the training cohorts. So **every elpd in this series flatters its model by roughly an order of magnitude** relative to the prediction a retention team actually needs. The ranking does not change, and stratification still helps out of time by 2.56×.
+I have since run it, and it took four attempts to read correctly — the first three were wrong.
+
+**What it supports:** cross-cohort error is **1.8–4.4 percentage points** of mean error in S(90) per segment, against **0.30 pp** (sd 0.13 over 200 seeds) for a random hold-out *within* cohorts. So **every elpd in this series understates the error you would get on a genuinely different cohort** by roughly an order of magnitude — and a different cohort is the only thing a retention team ever predicts. The ranking does not change, and stratification still helps.
+
+**What it does not support** — and I claimed it for a while — is that the model degrades specifically going *forward in time*. Placebo forward splits run entirely inside the fully-observed region give 1.77–4.39 pp; the headline 3.43 pp sits inside that range. Nor is any tidy "8.7× degradation" defensible: its denominator was a single random draw from a 0.07–0.69 pp distribution.
 
 > **And it turned up a data problem worth more than the validation.** `last_played` is a single timestamp, not a session history. For a reviewer we have only watched briefly, any lull in the 14 days before collection is recorded as terminal churn — while an identical lull by an old reviewer is invisible, because they came back and the timestamp moved forward. **So the churn rule's error rate depends on how long we have watched someone.** Measured S(90) by review cohort runs 87.0% (2020) down to **57.7%** for 2026, which has 149 days of median exposure; hold the observation window fixed and the collapse disappears entirely.
 >
-> Every published figure in this series is therefore **pessimistic by 2–9%** — S(90) 81.5% against 83.5%, the Kaplan–Meier median 962 days against 1,049, the segment spread 3.90× against 3.70×. The direction is the same as the Steam-only caveat in §6, and the ordering and every recommendation are unchanged. It is a limitation, not a retraction.
+> The 2026 cohort has no reviewer with even a full year of follow-up, so it cannot be corrected — only excluded. Excluding it moves the published figures by **2–6%**, and **not all the same way**: S(90) 81.5% → 83.2% and the median 962 → 1,015 days, but the segment spread 3.90× → 3.76×, so *that* headline is the optimistic end rather than the pessimistic one. The day-zero atom is not part of this at all — it is fixed at review time with no follow-up, so it cannot be a window artefact. Ordering and every recommendation are unchanged. It is a limitation, not a retraction.
 >
-> One more correction, on my own reading of my own test. I first took a monotone decay in the train/test gap (−2.14 → −0.42 pp, as I demanded more exposure) as evidence that the leftover cohort drift was artefact too. It is not: tracking each cohort separately, every one of them is flat under that filter. Raising the bar does not move a cohort toward the training set, it **drops the worst cohorts out of the test set**. So the 3.43 pp is measured on 2023–24, the newest cohorts whose outcome can be observed reliably; including 2025 it is 5.08 pp, and 2026 cannot be assessed at all. A control that changes the population is not the same as a control that removes a bias, and both produce a tidy monotone line.
+> **Three corrections on my own reading of my own test, which is the more useful story.**
+>
+> I first "capped the observation window at 365 days" and credited that with removing a bias. **It removes nothing** — every statistic here is at day 90, and censoring at day 365 cannot change a survival curve at day 90. Measured: max difference 0.000e+00, over every subset and every cohort. The work was being done by the *eligibility filter* that came with it, which — because exposure is fixed by review month — is really a cohort filter.
+>
+> I then took a monotone decay in the train/test gap (−2.14 → −0.42 pp) as evidence the leftover drift was artefact too. It is not: each cohort is **flat** under that filter. Raising the bar does not move a cohort toward the training set, it **drops the worst cohorts out of the test set**.
+>
+> And I quoted a degradation multiple to three significant figures when its denominator was one random split. **A control that changes the population is not the same as a control that removes a bias, and both produce a tidy monotone line.**
 {: .prompt-warning }
 
 **3. Move the clock to first meaningful activity.** Every limitation in Part 1 traces back to the origin being a self-selected review. With first-party data the clock starts at signup, the sample stops being reviewers, and the estimand becomes account lifetime rather than a proxy for it.
 
 **4. Attach a value rate.** Expected active days is not money. Given a revenue rate `r(t)`, the expected value over a horizon is `∫ S(t) r(t) dt`, and the survival curve is already the hard half of that. The dataset here simply has no revenue in it, so the project stops one step short and says so.
 
-**5. Fix the platform blind spot.** §6 bounds it; only first-party data eliminates it. Everything in this series would be sharper if "active" meant active on the platform rather than active on Steam.
+**5. Fix the platform blind spot.** §6 *sweeps* it — deliberately not a bound, for the reason given there. Only first-party data eliminates it. Everything in this series would be sharper if "active" meant active on the platform rather than active on Steam.
 
 ## 9. What this actually establishes
 

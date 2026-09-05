@@ -143,7 +143,7 @@ P(\text{already gone at the origin}) \sim \text{Bernoulli}, \qquad
 T \mid \text{not already gone} \sim \text{survival distribution}
 $$
 
-Models 1–3 fit the second part only, on the 245,102 people with `t > 0`, and say so. Model 4 puts the halves back together. [Part 3](/posts/vrchat-retention-3-when-simple-models-fail/) shows the decomposition reproducing the full observed curve with a **mean absolute error of 0.03 percentage points** across horizons from 7 days to 7 years, worst case 0.08 pp. That is the empirical evidence that permits splitting it this way.
+Models 1–3 fit the second part only, on the 245,102 people with `t > 0`, and say so. Model 4 puts the halves back together. ~~Part 3 shows the decomposition reproducing the full observed curve to **0.03 percentage points**, and that is the empirical evidence that permits splitting it this way.~~ **That claim is withdrawn — see [Part 5 §4](/posts/vrchat-retention-5-from-model-to-decision/).** The arithmetic is right (0.03 pp, worst 0.08 pp) but it is an **algebraic identity**, not evidence: when every zero-duration row is an event at t = 0, the relationship holds by construction whatever the data looks like. The split is justified by the *shape* of the data instead — a continuous density cannot put mass on a single point — and by the atom behaving differently.
 
 **It is not evenly distributed.** 41.9% of the under-1-hour segment had already gone, against 0.4% of the 1000h+ segment. Any statistic that mixes these two populations flatters the weak segment. Part 5 shows this changing a headline number by 72%.
 

@@ -51,7 +51,7 @@ Four models, each fitted because the previous one failed in a nameable way. Incl
 The hierarchical stratified piecewise-exponential model, why it is not proportional hazards in disguise, and a convergence failure I diagnosed as structural non-identifiability that turned out to be float32 — reproduced here in a controlled re-run.
 
 **[Part 5 — From a Survival Model to a Product Decision](/posts/vrchat-retention-5-from-model-to-decision/)**
-What a user is worth, where the risk lives, the error in my own value table that changed a headline number by 72% and reversed an onboarding recommendation, a bound on the Steam-only blind spot, and the line between what this evidence supports and what needs an experiment.
+What a user is worth, where the risk lives, the error in my own value table that changed a headline number by 72% and reversed an onboarding recommendation, a scenario sweep on the Steam-only blind spot — deliberately not a bound, and the line between what this evidence supports and what needs an experiment.
 
 ---
 
