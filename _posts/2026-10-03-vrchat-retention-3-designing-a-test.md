@@ -155,3 +155,4 @@ Negative reviews were the right place to find and size the lead, but they are to
 ---
 
 _Data: Steam's public review feed for VRChat (app 438100), downloaded on 28 Aug 2026. No review text is quoted and no personal details were kept. Analysis in Python with pandas, lifelines and SciPy; [the notebook for this part](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_3_designing_a_test.ipynb) reproduces every result on this page._
+
