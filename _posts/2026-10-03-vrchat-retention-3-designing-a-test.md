@@ -43,6 +43,8 @@ Two things shape the whole design:
 
 You only know someone has quit in hindsight, so the test needs a rule to guess who is still playing. VRChat's login data could use "at least one session in the 7 days before the review". That drops most of the already gone, but about 3 in 10 of them, 1,006 of 3,450, would still pass.
 
+VRChat would match a review to a player through the Steam ID, which Steam's review feed includes for every author (I removed them from my data). Players it can't match to an account simply aren't eligible, and VRChat would need to confirm that this use of public reviews fits its privacy policy.
+
 ## 3. What to measure
 
 - Main measure: did the player play at all between day 76 and day 90 after the review? It's the login data version of "still playing at day 90", used all through this series.
@@ -99,6 +101,7 @@ _Months of reviews needed if the help keeps 1 in 5 or 3 in 10 leavers. A: alread
 
 - Help that keeps 3 in 10 leavers would add about 4 to 19 retained days per player over the next year, depending on how long the kept players stay.
 - In people it's small. About 145 new players still playing at a negative review arrive each month, and about 29 of them leave by day 90. Keeping 3 in 10 means about 9 extra players a month; keeping 1 in 5, about 6.
+- Across the arrival rates actually seen, 165 to 222 a month, and the 2017 to 2025 average versus recent players, that becomes about 5 to 7.5 players a month for 1 in 5, and 7 to 11 for 3 in 10. These are planning sums, not estimates; the real unknown is how well the help works, which is what the test measures.
 - That's the bar the cost of the help has to clear.
 - A test sized to find an effect can tell you the help works, but not whether it pays. In one simulated run, a 6.3 point lift came with a 95% interval of 2.1 to 10.6 points. If the decision needs that answer, size the test for the smallest lift that pays.
 
@@ -115,6 +118,8 @@ _Months of reviews needed if the help keeps 1 in 5 or 3 in 10 leavers. A: alread
 | Guardrails | complaints, reports and refunds. The help never asks the player to change their review |
 | Protest waves | flagged by a fixed rule and reported apart from the main result |
 | Size | redone with VRChat's own data before launch, with interim checks fixed in advance |
+
+What the help actually says is VRChat's product decision. I used no review text, so this data can't tell what new players complain about; the team would choose the content, for example from support tickets or a sample of negative reviews. The test measures whichever help they pick, and the 1 in 5 is a planning target, not a prediction for any particular help.
 
 Two rules protect the result:
 

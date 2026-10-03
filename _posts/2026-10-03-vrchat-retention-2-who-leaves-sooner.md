@@ -114,6 +114,7 @@ _Expected retained days over the next 365, for typical reviewers. The light bars
 - A typical new player with a thumbs down has about 70 fewer retained days than one with a thumbs up: 198 against 270.
 - Among those still playing at the review, the gap is only 14 days: 275 against 289.
 - So about 60 of the 70 days come from people who had already stopped. Help can only reach the small part that's left.
+- The range is tight: refitting the model on 200 bootstrap resamples gives 72 days (95% interval 70 to 75), about 59 (56 to 61) from people who had already stopped and about 14 (11.5 to 15) from people still playing. It's still an association, not a cause.
 - Heavy players stay near the maximum either way, at 360 and 354 days.
 
 ## 6. What I can and can't say
