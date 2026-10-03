@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "VRChat Part 1: How long do VRChat reviewers keep playing, and who stays?"
-date: 2026-10-03 06:00:00 +0000
+date: 2026-10-03 06:20:00 +0000
 categories: [Data Science]
 tags: [Survival Analysis, Product Analytics, VRChat, Case Study]
 description: "A case study on public Steam reviews: how long VRChat reviewers keep playing, the three decisions that make it measurable, and who stays."
@@ -9,11 +9,11 @@ description: "A case study on public Steam reviews: how long VRChat reviewers ke
 
 VRChat retention case study \| Part 1: Who stays \| [Part 2: Who leaves sooner]({% post_url 2026-10-03-vrchat-retention-2-who-leaves-sooner %}) \| [Part 3: A fair test]({% post_url 2026-10-03-vrchat-retention-3-designing-a-test %})
 
-VRChat doesn't publish how long players stick around. But Steam publishes every review, and each review tells you two things about the person who wrote it: how many hours they had played, and when Steam last saw them play. That's enough to measure retention.
+After someone reviews VRChat on Steam, how long do they keep playing? Most keep going for years: 82.1% are still playing 90 days after their review, and the median time to their last session is about three years, though newer reviewers leave sooner. What best predicts who stays is how many hours they had played when they wrote the review, far more than whether the review was positive or what language it was in.
+
+VRChat doesn't publish how long players stick around, but Steam publishes every review, and each one tells you two things about its author: how many hours they had played, and when Steam last saw them play. That's enough to measure retention.
 
 _267,904 Steam reviews \| Feb 2017 to Aug 2026 \| Kaplan Meier in Python \| [notebook](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_1_who_stays.ipynb)_
-
-**The question:** after someone reviews VRChat on Steam, how long do they keep playing?
 
 ## 1. The data
 
@@ -22,6 +22,7 @@ _267,904 Steam reviews \| Feb 2017 to Aug 2026 \| Kaplan Meier in Python \| [not
 - Two thirds are in English and three quarters are thumbs up.
 - The typical reviewer had about 30 hours of play when they wrote it.
 - I removed Steam IDs, names and profile links, and I don't use the review text.
+- Scope: this measures Steam reviewers, not all VRChat players. People who never write a review, or who play only on a standalone headset or phone, aren't in it, and "stopped playing" means stopped playing on Steam.
 
 ![Column chart of reviews written each year from 2017 to 2026, peaking at 63,171 in 2022](/assets/img/vrchat/p1_reviews_per_year.png){: .light style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 ![Column chart of reviews written each year from 2017 to 2026, peaking at 63,171 in 2022](/assets/img/vrchat/p1_reviews_per_year_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }

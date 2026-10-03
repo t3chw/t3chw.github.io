@@ -9,7 +9,9 @@ description: "A case study on public Steam reviews: the shape of the risk of lea
 
 VRChat retention case study \| [Part 1: Who stays]({% post_url 2026-10-03-vrchat-retention-1-data-and-question %}) \| Part 2: Who leaves sooner \| [Part 3: A fair test]({% post_url 2026-10-03-vrchat-retention-3-designing-a-test %})
 
-Part 1 used curves. Here I model the daily risk of leaving: how it changes over time, how it shifted in recent years, and how playtime, thumbs and language work together. Then I test the model on reviewers it hasn't seen.
+When do VRChat reviewers leave? The risk is about 70 times higher on the first day after a review than later on, then stays low and flat for years, though it rose in 2024 for people three or more years past their review, and in 2025 at every stage from day 30 on. Hours played at the review are the strongest signal of who leaves, especially early: on the first day, a player with under an hour is about 130 times as likely to stop as one with over 1,000 hours, and after two years about 5 times as likely.
+
+Part 1 used curves. Here I model the daily risk of leaving, check how it shifted over the years, and test the model on reviewers it hasn't seen.
 
 _229,920 reviewers \| piecewise exponential and Cox models \| lifelines \| [notebook](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_2_who_leaves_sooner.ipynb)_
 
@@ -42,9 +44,20 @@ _Risk per 1,000 players per day at each stage after the review. Grey bars: range
 - In 2024 the stages from year 3 on went up, to 0.57 and 0.60.
 - In 2025 every stage from day 30 on went up, most of all from year 3 on: 0.88 and 0.95.
 - Recent stops have had less time to be confirmed, so I checked again with a stricter rule: at least 18 months without play. Comparing early 2025 with the same weeks of 2024, from year 3 on, 2025 is still well above: 0.81 and 0.96, against 0.53 and 0.57.
-- The data can't say what changed: VRChat itself, who plays through Steam, or where people play.
-
 > While this lasts, a model trained on older years will be too optimistic about recent players.
+
+### What could explain it
+
+The data can't say what changed, but it can narrow the options.
+
+- **Not the mobile launch.** VRChat's Android open beta started in August 2025, and the full Android and iOS release came on 24 October 2025 ([Road to VR](https://roadtovr.com/vrchat-android-ios-release-user-surge/)). The rise is already there from January to early March 2025, before either. Until then, mobile was limited to subscribers and invited testers.
+- **Players moving off Steam.** Someone who switches from a PC headset to a standalone one keeps playing VRChat but disappears from Steam, and this data counts that as leaving. Standalone headsets have run VRChat since December 2018, and Meta's $299 Quest 3S came out on 15 October 2024, just before the 2025 rise.
+- **Players really playing less.** If so, it would show up in VRChat's own data too, not only on Steam.
+
+How I'd tell them apart:
+
+- With public data: compare VRChat's own concurrent user records with Steam's player counts for 2023 to 2025. If Steam's share fell, players were moving platforms.
+- With VRChat's data: for players who stopped on Steam, check whether their account stayed active on another platform. That settles it.
 
 ## 3. Playtime, thumbs and language together
 
@@ -63,7 +76,7 @@ Two checks changed the picture.
 _Risk multiplier for each playtime group against under 1 hour, fitted separately in six time windows. The over 1,000 hour group goes from 0.0076 on the first day to 0.19 after year two._
 
 - On the first day the gap between the lightest and heaviest players is about 130 times. After year two it's about 5 times. So one fixed multiplier, about 0.09, is wrong at every point in time.
-- Two likely reasons: playtime at review is a snapshot that gets older, and the light players who will leave go first, so the ones who remain are keener.
+- Two possible reasons: playtime at review is a snapshot that gets older, and the light players who will leave go first, so the ones who remain are keener.
 - My fix: one small model per playtime group, so each group gets its own risk over time and its own multipliers.
 
 What the per group models show:

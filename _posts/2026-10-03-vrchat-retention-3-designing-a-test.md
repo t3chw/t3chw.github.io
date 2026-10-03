@@ -1,13 +1,15 @@
 ---
 layout: post
 title: "VRChat Part 3: From patterns to a fair test"
-date: 2026-10-03 06:20:00 +0000
+date: 2026-10-03 06:00:00 +0000
 categories: [Data Science]
 tags: [Experimentation, Product Analytics, VRChat, Case Study]
 description: "A case study on public Steam reviews: turning retention patterns into a fair, well sized experiment for new players at the moment of a negative review."
 ---
 
 VRChat retention case study \| [Part 1: Who stays]({% post_url 2026-10-03-vrchat-retention-1-data-and-question %}) \| [Part 2: Who leaves sooner]({% post_url 2026-10-03-vrchat-retention-2-who-leaves-sooner %}) \| Part 3: A fair test
+
+Can VRChat keep more new players by helping them at the moment they leave a negative review? A fair test of that is possible but slow: about 28 months of reviews, plus 3 months to the answer, for an effect bigger than the whole thumbs gap. So I would first test help for every new player who writes any review, which takes about 4.5 months, and the group with the worst retention, players in their first hour, may be the bigger opportunity.
 
 Parts 1 and 2 show who leaves and when, but not what would make anyone stay. For that you need an experiment. This part designs one, works out how big it has to be, and says what I would actually run.
 
@@ -125,7 +127,21 @@ Negative reviews were the right place to find and size this idea, but they're to
 
 So I would start wider: help for every new player who writes any review (C above), about 4.5 months in the best case, and look at the negative reviewers inside it. The plan above is still the right design for the narrower question: does help work for the players who complained?
 
-## 10. What I can and can't say
+## 10. The bigger opportunity: the first hour
+
+The test above is narrow on purpose. The biggest losses come earlier.
+
+- Players with under an hour at their review have the worst retention in this data: only 32.9% are still playing a year later.
+- On the first day, their risk of stopping is about 130 times that of the heaviest players.
+- Together with the 1 to 20 hour group, they are 46% of reviewers but 67% of everyone who stops.
+
+I left them out of the test above because helping someone who has barely played is an onboarding question, not a reply to a review. But that also makes it a strong candidate for the next experiment:
+
+- It can run on every new player through login data (D above). It doesn't wait for anyone to write a review, so it has far more players to draw on.
+- It aims at the players most likely to leave.
+- The catch: some of these players tried VRChat and simply didn't like it, and no onboarding change will keep them. How many can be kept, and how big that test needs to be, can only come from VRChat's own data.
+
+## 11. What I can and can't say
 
 **I can say**
 
