@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VRChat Retention, Part 3</title>
+<meta name="description" content="A case study on public Steam reviews: turning retention patterns into a fair, well sized experiment for new players at the moment of a negative review.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#18202C; --ink-2:#364052; --muted:#687285;
+  --line:#D7DCE4; --soft:#E8ECF2; --code:#EAEEF4;
+  --accent:#3452C4; --play:#0F7D69; --left:#C0512F; --gone:#96741A; --bar:#B3BCCA;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F131A; --surface:#161B24; --ink:#E7EAF0; --ink-2:#C4CAD5; --muted:#97A1B1;
+    --line:#2B3241; --soft:#1C2230; --code:#1B212B;
+    --accent:#90A7FF; --play:#3DC4A8; --left:#EF8465; --gone:#D6AF4E; --bar:#4B5567;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F131A; --surface:#161B24; --ink:#E7EAF0; --ink-2:#C4CAD5; --muted:#97A1B1;
+  --line:#2B3241; --soft:#1C2230; --code:#1B212B;
+  --accent:#90A7FF; --play:#3DC4A8; --left:#EF8465; --gone:#D6AF4E; --bar:#4B5567;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.66;
+  padding-inline:20px;padding-block:0 80px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto}
+header.top{padding-block:56px 28px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.eyebrow{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(32px,5.4vw,50px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px;text-wrap:balance}
+.stand{font-size:20px;color:var(--ink-2);margin:0 0 18px}
+.meta{font-family:var(--display);font-size:15px;color:var(--muted);margin:0;font-variant-numeric:tabular-nums}
+nav.toc{font-family:var(--display);font-size:15.5px;margin:0 0 8px}
+nav.toc p{font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+nav.toc ol{margin:0;padding-left:26px;columns:2;column-gap:36px}
+nav.toc li{margin:0 0 4px;break-inside:avoid}
+nav.toc a{color:var(--ink-2);text-decoration:none}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent);text-decoration:underline}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(25px,3.6vw,31px);line-height:1.2;letter-spacing:-.01em;
+  margin:72px 0 18px;text-wrap:balance;display:flex;gap:14px;align-items:baseline;scroll-margin-top:24px}
+h2 .n{font-size:17px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums;min-width:22px}
+h3{font-family:var(--display);font-weight:600;font-size:21px;margin:40px 0 10px;text-wrap:balance}
+p{margin:0 0 18px}
+a{color:var(--accent)}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.8em;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:normal;word-break:normal}
+.nw{white-space:nowrap}
+pre{background:var(--code);border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 22px}
+pre code{background:none;padding:0;font-size:13.5px;line-height:1.6;overflow-wrap:normal;white-space:pre;font-variant-ligatures:none}
+ul,ol{padding-left:24px;margin:0 0 20px}
+li{margin:0 0 8px}
+.callout{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin:26px 0}
+.callout .label{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+.biz{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 22px 6px;margin:26px 0}
+.biz .label{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--play);margin:0 0 8px}
+.biz.short .label{color:var(--accent)}
+.biz ul{margin:0 0 10px;padding-left:20px;font-size:16.5px;line-height:1.55}
+.biz li{margin:0 0 8px}
+.ln{fill:none;stroke-width:2.6;stroke-linejoin:round} .ln-14{stroke:var(--left)} .ln-conf{stroke:var(--play)}
+.sw-14{fill:var(--left)} .sw-conf{fill:var(--play)}
+.legend-box{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.callout .big{font-family:var(--display);font-size:clamp(19px,2.6vw,22px);line-height:1.4;margin:0;font-weight:500}
+.tablewrap{overflow-x:auto;margin:22px 0 26px}
+table{width:100%;border-collapse:collapse;font-family:var(--display);font-size:15px;line-height:1.45}
+th{text-align:left;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);padding:8px 10px}
+td{border-bottom:1px solid var(--line);padding:9px 10px;vertical-align:top;color:var(--ink-2)}
+td code{font-size:13px}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+th.num{white-space:normal}
+tr.hl td{background:var(--soft);color:var(--ink);font-weight:600}
+.tag{display:inline-block;font-size:13px;font-weight:600;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.tag.play{color:var(--play);background:color-mix(in srgb,var(--play) 14%,transparent)}
+.tag.left{color:var(--left);background:color-mix(in srgb,var(--left) 14%,transparent)}
+.tag.gone{color:var(--gone);background:color-mix(in srgb,var(--gone) 16%,transparent)}
+.figure{margin:30px 0}
+.figure .scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 10px 8px}
+.figure svg{display:block;width:100%;min-width:560px;height:auto}
+figcaption{font-family:var(--display);font-size:14.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+svg text{font-family:var(--display);font-size:13.5px;fill:var(--ink-2)}
+.s-muted{fill:var(--muted)} .s-bold{font-weight:600;fill:var(--ink)} .s-strong{font-weight:600}
+.s-play{fill:var(--play)} .s-left{fill:var(--left)} .s-val{fill:var(--ink);font-weight:600;font-size:12.5px}
+.s-ref{fill:var(--muted);font-size:12.5px}
+.axis{stroke:var(--line);stroke-width:2} .grid{stroke:var(--line);stroke-width:1}
+.ref{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:5 5}
+.fill-line{fill:var(--line)}
+.ln-play{stroke:var(--play);stroke-width:5;stroke-linecap:round}
+.ln-quiet{stroke:var(--muted);stroke-width:2;stroke-dasharray:3 6;stroke-linecap:round}
+.ln-mark{stroke:var(--ink-2);stroke-width:2}
+.ln-end{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 5}
+.dt-left{fill:var(--left)} .dt-play{fill:var(--play)} .dt-gone{fill:var(--gone)} .dt-last{fill:var(--ink-2)}
+.dt-hollow{fill:var(--surface);stroke:var(--muted);stroke-width:2}
+.bar{fill:var(--bar)} .bar-accent{fill:var(--accent)} .bar-play{fill:var(--play)} .bar-left{fill:var(--left)}
+.claims{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0 26px}
+.claims > div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px}
+.claims h4{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px}
+.claims .yes h4{color:var(--play)} .claims .no h4{color:var(--left)}
+.claims ul{margin:0;padding-left:20px;font-size:16.5px}
+footer{margin-top:72px;padding-top:20px;border-top:1px solid var(--line);font-family:var(--display);font-size:14.5px;color:var(--muted)}
+@media (max-width:620px){
+  body{font-size:17px}
+  nav.toc ol{columns:1}
+  .claims{grid-template-columns:1fr}
+  table.cols .idx,table.cols .ex{display:none}
+  .tag{white-space:normal;border-radius:6px}
+  table{font-size:14px}
+  th,td{padding:8px 6px}
+  header.top{padding-block:36px 22px}
+}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+html{scroll-behavior:smooth}
+.nbref{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 18px;margin:0 0 26px;font-family:var(--display);font-size:15px;line-height:1.5}
+.nbref .label{font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.nbref p{margin:0 0 6px} .nbref code{font-size:13px}
+.learn{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gone);border-radius:10px;padding:14px 20px 8px;margin:26px 0}
+.learn .label{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--gone);margin:0 0 8px}
+.learn p,.learn li{font-size:16.5px;line-height:1.6}
+.learn ol,.learn ul{margin:0 0 10px;padding-left:22px}
+.gloss dt{font-family:var(--display);font-weight:600;margin-top:12px;color:var(--ink)} .gloss dd{margin:2px 0 0 0;color:var(--ink-2)}
+.where{font-family:var(--display);font-size:13.5px;color:var(--muted);margin:-8px 0 16px}
+
+.figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px} .figure img.dk{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .figure img.lt{display:none}:root:not([data-theme="light"]) .figure img.dk{display:block}}
+:root[data-theme="dark"] .figure img.lt{display:none} :root[data-theme="dark"] .figure img.dk{display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 26px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px}
+.stat .v{font-family:var(--display);font-size:clamp(24px,3.4vw,30px);font-weight:600;line-height:1.1;color:var(--ink)}
+.stat .l{font-family:var(--display);font-size:14.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+.stat .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:1px}
+.c1{background:var(--c1)} .c2{background:var(--c2)} .c3{background:var(--c3)}
+:root{--c1:#2a78d6;--c2:#eb6834;--c3:#1baf7a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--c1:#3987e5;--c2:#d95926;--c3:#199e70}}
+:root[data-theme="dark"]{--c1:#3987e5;--c2:#d95926;--c3:#199e70}
+.callout ul{margin:0;padding-left:20px;font-size:17px;line-height:1.55} .callout li{margin:0 0 8px}
+.series{font-family:var(--display);font-size:14.5px;color:var(--muted);margin:0 0 6px}
+.series a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line)} .series a:hover{color:var(--accent)}
+.series .here{color:var(--ink);font-weight:600}
+.take{font-family:var(--display);font-size:16.5px;line-height:1.5;color:var(--ink);border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:22px 0 26px}
+.next{font-family:var(--display);font-size:16.5px;line-height:1.55;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin:34px 0 10px}
+h3{margin-top:34px}
+.cansay{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0 26px}
+.cansay > div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px 6px}
+.cansay .label{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;margin:0 0 8px}
+.cansay .can .label{color:var(--play)} .cansay .cannot .label{color:var(--left)}
+.cansay ul{margin:0 0 8px;padding-left:18px;font-size:16px;line-height:1.5} .cansay li{margin:0 0 8px}
+@media (max-width:620px){.cansay{grid-template-columns:1fr}}
+@media (max-width:620px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+<p class="series">VRChat retention case study | <a href="VRChat_1_data_and_question.html">Part 1: Who stays</a> | <a href="VRChat_2_who_leaves_sooner.html">Part 2: Who leaves sooner</a> | <span class="here">Part 3: A fair test</span></p>
+  <h1>From patterns to a fair test</h1>
+  <p class="stand">Parts 1 and 2 show who leaves and when, but not what would make anyone stay. This part designs an experiment for the lead Part 2 ends on, sizes it with the same data, and says what I would run.</p>
+  <p class="meta">12,629 new players with a negative review | power analysis and simulation | SciPy and lifelines | <a href="https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_3_designing_a_test.ipynb">notebook</a></p>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="v">27.3%</div><div class="l">of new players with a negative review outside the July 2022 protest week had stopped before writing it</div></div>
+  <div class="stat"><div class="v">20%</div><div class="l">of new players still playing at a negative review who leave by day 90 had their last session within an hour of it</div></div>
+  <div class="stat"><div class="v">28 months</div><div class="l">of reviews to collect the planned test's players, then 3 more to the answer, for help that keeps 1 in 5 leavers and lands at the review itself</div></div>
+</div>
+
+<div class="callout">
+  <p class="label">At a glance</p>
+  <ul>
+    <li><strong>The lead.</strong> Help for new players, 1 to 20 hours at the review, at the moment they leave a negative review. The case rests on the moment of contact and the high early risk; among those still playing, the thumbs down itself goes with only 2.8 more in 100 gone by day 90, and about 4 to 5 by a year. Whether help changes anything needs a test.</li>
+    <li><strong>Who and when.</strong> Of 12,629 such reviews outside the protest week, 27.3% came from players who had already stopped. Among the rest, 364 of the 1,831 who leave by day 90, about 20%, had their last observed session within the hour of their review, so help that needs another login after that hour can't reach them.</li>
+    <li><strong>How big and how long.</strong> With the plan's 7 day login rule, which on past data would let in about 1 in 10 players already gone, help that keeps 1 in 5 leavers needs about 2,300 players per group: about 28 months of reviews at 161 eligible a month, plus 3 months to the answer, if it lands at the moment of the review, and about 3,600 per group, 44.5 months, if it lands an hour later. The best case, knowing exactly who is still playing, is 19.7 months.</li>
+    <li><strong>What the target means.</strong> Keeping 1 in 5 leavers lifts day 90 by 4.0 points, more than the whole 2.8 point day 90 gap to thumbs up players, which would keep about 1 in 7; in people it would keep about 6 players a month.</li>
+    <li><strong>What I would run first.</strong> Help for every new player who writes any review (design C below), which this data sizes at about 4.5 months of reviews in the best case; a login based test on all new players (D) would be wider again, and only VRChat's data can size it.</li>
+  </ul>
+</div>
+
+<h2><span class="n">1</span>Why the patterns can't answer this</h2>
+<p>Every finding in Parts 1 and 2 is an association, and help given only to the players someone expects to recover would look effective even if it did nothing. Random assignment breaks that link: it makes the two groups comparable on average, with any remaining differences due to chance, so a difference in outcomes can be put down to the help rather than to who received it. The size of the test controls the chance. The hypothesis to test: among new players who leave a negative review after playing in the 7 days before it, help at that moment raises the share who play again between day 76 and day 90. The 7 day rule is how login data can approximate who is still playing at the review (section 2).</p>
+
+<h2><span class="n">2</span>Who to test, and when</h2>
+<p>The lead from Part 2 is help for new players, 1 to 20 hours at the review, at the moment of a thumbs down. I leave out players under 1 hour: about half of their negative reviews came after they had already stopped, and help for someone who has barely played is onboarding, a different product with its own test. I also leave out the July 2022 protest week, 25 to 31 July, where negative reviews went with no extra risk of leaving in the first two years (Part 2). Its negative reviews from new players came more often from people already gone, 34.6% against 27.3% in other weeks, which is why the share below sits under Part 1's 28.7%.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>New players with a thumbs down, outside the protest week</th><th class="num">Value</th></tr></thead>
+<tbody>
+<tr><td>Reviewers</td><td class="num">12,629</td></tr>
+<tr><td>Already stopped when they wrote the review</td><td class="num">27.3%</td></tr>
+<tr><td>Still playing at day 90, everyone</td><td class="num">58.0%</td></tr>
+<tr><td>Still playing at day 90, if playing at the review</td><td class="num">79.8%</td></tr>
+</tbody></table></div>
+<p>Two facts shape everything below. More than a quarter had stopped before writing or editing, so no help in game can reach them, and they dilute any effect. And among the players still there at the review, leaving is fast: about half of the leaving by day 90 happens within 3 days, nearly 4 in 10 on the first day, and 364 of the 1,831 who leave, about 20%, had their last session within an hour of the review. To reach them as well, the help has to be ready at the review itself: shown at once in game if the player is online, or else at the first login after the review, which some of them never make. Later help can still reach the others, at the cost in size shown in section 4.</p>
+<p>Eligibility can only use what is known when the review arrives. Steam reveals who was already gone only in hindsight, and so would any data, since a session is the last one only once no other follows. VRChat's login data can approximate it with a rule such as at least one session in the 7 days before the review. That drops most of the already gone, but 1,006 of these 3,450, about 3 in 10, wrote within a week of their final session and would pass it. If everyone still playing at the review passes, which this data can't check, about 90% of those let in are still playing; any who fail it make the test slower.</p>
+<p>A live test also needs one trigger moment per player. Parts 1 and 2 start each clock at a review's last edit, which is known only in hindsight. The test triggers instead at the first moment a player has an eligible negative review, newly posted or edited to negative, and never again, so each player enters once. For the 82% of these reviews never edited, that is the same moment as the clock behind the sizing; for the rest, Steam keeps only the final review, so the data can't show when it first turned negative.</p>
+
+<h2><span class="n">3</span>What to measure</h2>
+<p>The primary measure, fixed in advance, is day 76 to 90 activity: any play from day 76 to day 90 after the review, in VRChat's login data. It is the login counterpart of the day 90 share used throughout this series, and it can be read on day 90 itself. Breaks push it below the Steam figure and play outside Steam pushes it above, but the same definition applies to both randomised groups, so the difference between them is still a fair comparison. The effect to estimate is that difference between everyone assigned to help and everyone assigned to none, each player counted in the group they were assigned to, whether or not they saw the help: the intention to treat (ITT) effect. Secondary measures guard against misreading it. Retained days in the first 180 say what the help is worth. Retained days are the calendar days from the review to the last observed session, capped at the horizon, here 180: they measure how long players stay, not how many days they play. Day 166 to 180 activity, the same 15 day window at day 180, and the curves past day 90 show whether it keeps players, only delays leaving, or only makes them play more often, which a two week window alone can't tell apart.</p>
+
+<h2><span class="n">4</span>How big the test has to be</h2>
+<p>Sizing uses the standard test for two shares, two sided at 95% confidence, with 80% power. For planning I state the effect as the share of would be leavers the help keeps. No one can tell who those leavers are, and the test doesn't need to: it estimates the ITT difference in day 76 to 90 activity, and the planning figure translates into it. Among players still playing at the review 20.2% leave by day 90, so help that keeps 1 in 5 of them lifts the day 90 share by 4.0 points. These shares come from each player's last observed session on Steam, which can't reproduce the login measure exactly, so they are a planning proxy: the final size has to be recomputed from VRChat's login data with the exact measure. The 1 in 5 is a planning target, not an estimate of the effect I expect. Who is let in changes both the lift and the day 90 share the test starts from:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Who is let in</th><th class="num">only those still playing (best case)</th><th class="num">the plan's 7 day rule</th><th class="num">already gone included</th></tr></thead>
+<tbody>
+<tr><td>Already gone</td><td class="num">0%</td><td class="num">9.9%</td><td class="num">27.3%</td></tr>
+<tr><td>Day 90 share without help</td><td class="num">79.8%</td><td class="num">71.9%</td><td class="num">58.0%</td></tr>
+<tr><td>Lift for 1 in 5, points</td><td class="num">4.0</td><td class="num">3.6</td><td class="num">2.9</td></tr>
+<tr><td>Players per group</td><td class="num">1,429</td><td class="num">2,293</td><td class="num">4,393</td></tr>
+</tbody></table></div>
+<p>The already gone cost more than their numbers suggest. They can't be helped, so they shrink the lift, and since they won't be playing at day 90 in either group, they pull the day 90 share toward one half, where a share varies most from sample to sample. On the plan's rule the smaller lift alone multiplies the size by one over 0.9 squared, taking the best case's 1,429 to about 1,800; the lower day 90 share takes it to 2,293. With every already gone player let in, 27% of the group, the size triples.</p>
+<figure class="figure"><img class="lt" src="images/p3_sample_size.png" alt="Line chart on a log scale of people per group against the share of leavers the help keeps: with the already gone included from 17,683 at 10% to 686 at 50%, players still playing from 5,970 to 194, and the plan's 7 day rule between them at 2,293 for 20%" width="1440" height="860" loading="lazy"><img class="dk" src="images/p3_sample_size_dark.png" alt="Line chart on a log scale of people per group against the share of leavers the help keeps: with the already gone included from 17,683 at 10% to 686 at 50%, players still playing from 5,970 to 194, and the plan's 7 day rule between them at 2,293 for 20%" width="1440" height="860" loading="lazy"><figcaption>People per group for 80% power, by the share of would be leavers the help keeps; the lines follow the sizing formula. Including the already gone multiplies the size 3.0 to 3.5 times; the plan's 7 day rule sits between, at 2,293 per group for 1 in 5.</figcaption></figure>
+<p>The size grows with one over the lift squared, so small effects are expensive: help that keeps 1 in 10 leavers would need 5,970 players per group even in the best case, about 7 years at the 145 a month still playing at the review. And 1 in 5 is more than the whole thumbs gap at day 90: among new players still playing at the review, 82.6% of thumbs up reviewers are still playing at day 90 against 79.8% of thumbs down ones, and closing that 2.8 point gap would keep about 1 in 7 leavers.</p>
+<p>Timing costs as much as strength. Keeping 1 in 5 of the leavers still there when the help lands needs 2,293 per group on the plan's 7 day rule if it lands at the review, about 3,600 an hour later and 5,900 a day later; in the best case the same delays take 1,429 to 2,250 and 3,750.</p>
+<p>The sizes also assume every player still playing in the help group sees the help. If only some do, then under the simple planning assumption that missing the help dilutes the effect in proportion, the lift shrinks by that share and the size grows with about one over it squared: if half see it, about four times as many players, and would be leavers are the least likely to log in again. Adjusting for playtime and language adds little information in this already narrow group, so it is unlikely to recover much of the lost power; recent play, which this data lacks, may do more. The main analysis therefore stays as assigned, the ITT difference, and for planning the expected share who see the help goes into the assumed lift, and so into the size. I would record, in both groups, when the help was shown or would have been shown, to measure delivery and how much exposure was lost. Comparing only the players who actually saw the help with everyone else would break the randomisation, since seeing it depends on coming back.</p>
+<p class="take">Who is still there, when the help lands and who sees it matter as much as the help's strength: letting in every already gone player triples the size, help that lands a day late multiplies it by about 2.6, and help that only half the players see quadruples it, about what halving the strength does.</p>
+
+<h2><span class="n">5</span>How long it would take</h2>
+<p>A size only means something next to the rate at which eligible players arrive. I size with about 200 negative reviews from new players a month, between the 165 a month of January 2023 to July 2025 and the 222 of September 2025 to July 2026, so about 145 a month are still playing at the review and about 161 a month would pass the plan's 7 day rule; and with about 830 new players a month who write any review, from January 2023 to July 2025.</p>
+<figure class="figure"><img class="lt" src="images/p3_months.png" alt="Paired bars of months needed: 43.9 and 19.4 with the already gone included, 28.4 and 12.3 for the plan's 7 day rule, 19.7 and 8.3 for players still playing at the review, 4.5 and 1.9 for new players with any review" width="1440" height="919" loading="lazy"><img class="dk" src="images/p3_months_dark.png" alt="Paired bars of months needed: 43.9 and 19.4 with the already gone included, 28.4 and 12.3 for the plan's 7 day rule, 19.7 and 8.3 for players still playing at the review, 4.5 and 1.9 for new players with any review" width="1440" height="919" loading="lazy"><figcaption>Months of eligible reviews needed, if the help keeps 1 in 5 or 3 in 10 leavers. A includes the already gone; the plan uses the 7 day login rule; B is the best case, with only players still playing at the review; C opens the test to new players with any review, a wider question and, like B, a best case. D, a login based test on every new player, can't be sized from reviews.</figcaption></figure>
+<p>On the plan as written, help that keeps 1 in 5 leavers needs 2,293 players per group, about 28 months of reviews at 161 a month if the help lands at the review itself, and the day 90 answer comes three months after the last player joins. Keeping about 3 in 10 would collect the players in about a year, 12.3 months, with the answer three months after that. The baseline pools 2017 to 2025. Recent reviewers still playing at the review leave sooner (76.8% still playing at day 90 since 2023, against 79.8% pooled), which leaves more leavers for the same help to keep, and they arrive faster (about 245 a month in early 2025). The three weeks after the protest week, the rest of the 2022 protest wave that the plan's protest rule would set apart, raise the pooled day 90 share: it is 78.6% without them, which means more leavers for the test than the pooled sizing assumes. So if the help keeps the same share of leavers, the current population would need fewer players and less time than this pooled sizing, and the final sizing should use VRChat's current baseline.</p>
+<p>Opening the test to every new player who writes any review and is still playing (C), with help after any review, would take about 4.5 months of reviews if that broader help also keeps 1 in 5 leavers: about 740 of the 830 a month are still playing at the review, and 82.3% of them are still playing at day 90. Like B, this assumes VRChat knows exactly who is still playing. That answers a wider question, help for new players in general; the effect for players who complained would still need the negative review sample. D, a login based test on every new player, reviewer or not, would be wider again, and its speed depends on numbers this data doesn't have.</p>
+<p class="take">Negative reviews are good for finding the lead and sizing the test, but slow to run it on. A faster test has to widen the question, so the plan has to say which question it answers.</p>
+
+<h2><span class="n">6</span>Checking the arithmetic by simulation</h2>
+<p>A simulation that draws real players at random from those still playing at the review, the best case, with help that keeps 3 in 10 leavers and 2,000 experiments per size, confirms the arithmetic: 79% power at 600 per group against the 80% the formula promises at 605, and 49% at 300. On the plan's 7 day rule the same effect needs about 990 per group. It makes the same assumptions as the formula, so the real risks to power sit elsewhere: VRChat's own baseline, players who never see the help, and how fast leavers go. Even a well sized test misses a real effect one time in five, so a single null result from an undersized test says little.</p>
+
+<h2><span class="n">7</span>What success would be worth</h2>
+<p>As an illustration, help that kept 3 in 10 leavers would add between about 4 and 19 retained days per player in the help group over the next year, from a cautious assumption to a deliberately generous one: 4 if the kept players stop right after day 90, 19 if each instead follows the future of a randomly chosen player still playing at day 90, which is generous for people about to leave (272.6 days without help against 291.2 with it in a large simulated sample). In people the prize is small: about 145 players still playing at the review arrive a month and about 29 of them leave by day 90, so help that keeps 3 in 10 keeps about 9 players a month, and 1 in 5 about 6. Multiplied by the value of a retained day, that sets the bar the help's cost has to clear.</p>
+
+<h2><span class="n">8</span>Reading the result</h2>
+<p>The readout is fixed in advance. Primary: the ITT difference in day 76 to 90 activity between the two groups, with its 95% confidence interval. Beside it, for precision, the same ITT difference adjusted for playtime and recent play, specified in advance. Secondary: day 166 to 180 activity, retained days in the first 180, and the survival curves, to see when the groups part, with a log rank test across the whole curve.</p>
+<div class="callout"><p class="label">Simulated illustration, not a result</p><p>One simulated best case experiment with 600 per group reads 79.7% against 86.0%: a lift of 6.3 points with a 95% confidence interval of 2.1 to 10.6, and a log rank p value of 0.020.</p></div>
+<p>Even with a 6 point lift, the 95% interval runs from about 2 to 11 points, so a test sized to detect an effect can say that help works but not whether it pays; if the decision needs the value, the plan should size for the smallest lift that pays.</p>
+
+<h2><span class="n">9</span>The plan, written first</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Part</th><th>Decision</th></tr></thead>
+<tbody>
+<tr><td>Who</td><td>new players with 1 to 20 hours at a negative review and at least one session in the 7 days before it, by login data</td></tr>
+<tr><td>Trigger</td><td>the first eligible negative review per player, newly posted or edited to negative; later edits never trigger again, so each player enters once</td></tr>
+<tr><td>Protest waves</td><td>a week with at least 100 negative reviews from new players and over three times the median of the eight weeks before, checked when each week ends; its players are randomised as usual and reported apart from the main estimate, so the flag never changes anyone's assignment. On past data it flags one wave, 25 July to 21 August 2022: the protest week and the three weeks after it</td></tr>
+<tr><td>Assignment</td><td>random, 50/50, at the trigger, in small blocks within each calendar week so the groups stay level over time; playtime and recent play recorded</td></tr>
+<tr><td>Help</td><td>one clear action shown at once in game if the player is online at the review, or else at the first login after it; the same for everyone in the help group, given privately</td></tr>
+<tr><td>Exposure</td><td>the moment each player saw the help, or would have seen it under the same delivery rule, recorded in both groups for delivery reporting</td></tr>
+<tr><td>Estimand</td><td>the difference in day 76 to 90 activity between the groups as assigned (ITT)</td></tr>
+<tr><td>Primary measure</td><td>day 76 to 90 activity: any play from day 76 to day 90 after the review</td></tr>
+<tr><td>Secondary measures</td><td>day 166 to 180 activity (any play in that window); retained days in the first 180; survival curves with a log rank test</td></tr>
+<tr><td>Guardrails</td><td>complaints and reports about the help, and refunds, watched for harm alongside the primary measure; changes to the review only described, and the help never asks for one</td></tr>
+<tr><td>Size and length</td><td>redone with VRChat's own baseline, the share who see the help and the smallest lift that pays; interim looks and stopping boundaries fixed in advance, and a stop for harm if the guardrails move</td></tr>
+<tr><td>Subgroups</td><td>chosen in advance, for example English or not, and only described</td></tr>
+</tbody></table></div>
+<p>Two rules protect the result. First, check the integrity of the randomisation with a sample ratio check: if the split between the groups is one that chance would produce less than once in 1,000 experiments of this size, given the planned 50/50, assignment and logging are checked. It is a diagnostic, never a reason to reassign players, and by itself it doesn't prove the randomisation failed. Baseline characteristics are reported by group; chance imbalances there are expected and don't invalidate the test. Second, look only at the interim points fixed in advance, because checking every week and stopping at the first good result inflates false wins. And since both groups are assigned within the same calendar weeks, a shift like 2025's reaches both alike.</p>
+<p>Negative reviews were the right place to find and size the lead, but they are too slow for the first test: on them alone, the test collects its players in about a year only if the help's effect is twice the whole thumbs gap, for a prize of a few players a month. So what I would run first is wider: help for every new player who writes any review (C), which this data sizes at about 4.5 months of reviews in the best case, with the negative reviewers described inside it. D, a login based test on all new players, reviewer or not, would answer a wider question again. Either would run on VRChat's own new players, so its size and baseline have to come from VRChat's login data. The plan above stays the design for the narrower question, whether help works for the players who complained.</p>
+
+<h2><span class="n">10</span>What I can and cannot say</h2>
+<div class="cansay"><div class="can"><p class="label">I can say</p><ul><li>Among new players with a negative review outside the protest week, 58% are still playing at day 90, and 27% had already stopped when they wrote it.</li><li>Among those still playing, about half of the leaving by day 90 happens within 3 days and about 20% of those who leave had their last session within an hour of the review, so help that needs another login after that hour misses them.</li><li>On the plan as written, a test on these reviews has to collect players for about 28 months for help that keeps 1 in 5 leavers and about 12 for 3 in 10, with the day 90 answer three months after that.</li><li>Keeping 1 in 5 leavers is more than closing the whole day 90 gap to thumbs up players, about 1 in 7.</li><li>Help that keeps 3 in 10 leavers would be worth between about 4 and 19 retained days per person over the next year.</li></ul></div><div class="cannot"><p class="label">I cannot say</p><ul><li>Whether any kind of help works. That is exactly what the test is for.</li><li>What VRChat's own baseline is. A login measure counts breaks as leaving and sees play outside Steam, so it can sit on either side of the Steam figure; the sizing should be redone with it.</li><li>Whether help for new players in general works for those who complained; that needs the negative review sample.</li><li>How well these numbers carry over to VRChat's whole player base, or how many new players it has: the sizing comes from Steam reviewers only.</li><li>How public replies would spill over. A reply on Steam can reach other players and mix the groups, which is why the plan uses private help.</li></ul></div></div>
+<div class="callout"><p class="label">In one sentence</p><p class="big">A randomised test is the cleanest way to show whether help at a new player's negative review works, and the numbers make that test hard: even with help ready at the review itself, the planned test needs about 28 months of reviews, plus three to the answer, for an effect larger than the whole thumbs gap, so I would first test help for every new player who writes a review.</p></div>
+
+<div class="next"><strong>Where this leaves the question.</strong> Public reviews took it a long way: a defensible definition of leaving and a clear picture of who stays (<a href="VRChat_1_data_and_question.html">Part 1</a>), a model of the risk that matches held out reviewers from the same years to within about a point and misses reviewers from later years by about 4 (<a href="VRChat_2_who_leaves_sooner.html">Part 2</a>), and a test designed and sized. The next step needs VRChat's own data, and a coin.</div>
+
+<footer>
+  <p>Data: Steam's public review feed for VRChat (app 438100), downloaded on 28 Aug 2026. No review text is quoted and no personal details were kept. Analysis in Python with pandas, lifelines and SciPy; <a href="https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_3_designing_a_test.ipynb">the notebook for this part</a> reproduces every result on this page.</p>
+</footer>
+</div>
+</body>
+</html>

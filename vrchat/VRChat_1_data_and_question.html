@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VRChat Retention, Part 1</title>
+<meta name="description" content="A case study on public Steam reviews: how long VRChat reviewers keep playing, the three decisions that make it measurable, and who stays.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#18202C; --ink-2:#364052; --muted:#687285;
+  --line:#D7DCE4; --soft:#E8ECF2; --code:#EAEEF4;
+  --accent:#3452C4; --play:#0F7D69; --left:#C0512F; --gone:#96741A; --bar:#B3BCCA;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F131A; --surface:#161B24; --ink:#E7EAF0; --ink-2:#C4CAD5; --muted:#97A1B1;
+    --line:#2B3241; --soft:#1C2230; --code:#1B212B;
+    --accent:#90A7FF; --play:#3DC4A8; --left:#EF8465; --gone:#D6AF4E; --bar:#4B5567;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F131A; --surface:#161B24; --ink:#E7EAF0; --ink-2:#C4CAD5; --muted:#97A1B1;
+  --line:#2B3241; --soft:#1C2230; --code:#1B212B;
+  --accent:#90A7FF; --play:#3DC4A8; --left:#EF8465; --gone:#D6AF4E; --bar:#4B5567;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.66;
+  padding-inline:20px;padding-block:0 80px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto}
+header.top{padding-block:56px 28px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.eyebrow{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(32px,5.4vw,50px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px;text-wrap:balance}
+.stand{font-size:20px;color:var(--ink-2);margin:0 0 18px}
+.meta{font-family:var(--display);font-size:15px;color:var(--muted);margin:0;font-variant-numeric:tabular-nums}
+nav.toc{font-family:var(--display);font-size:15.5px;margin:0 0 8px}
+nav.toc p{font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+nav.toc ol{margin:0;padding-left:26px;columns:2;column-gap:36px}
+nav.toc li{margin:0 0 4px;break-inside:avoid}
+nav.toc a{color:var(--ink-2);text-decoration:none}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent);text-decoration:underline}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(25px,3.6vw,31px);line-height:1.2;letter-spacing:-.01em;
+  margin:72px 0 18px;text-wrap:balance;display:flex;gap:14px;align-items:baseline;scroll-margin-top:24px}
+h2 .n{font-size:17px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums;min-width:22px}
+h3{font-family:var(--display);font-weight:600;font-size:21px;margin:40px 0 10px;text-wrap:balance}
+p{margin:0 0 18px}
+a{color:var(--accent)}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.8em;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:normal;word-break:normal}
+.nw{white-space:nowrap}
+pre{background:var(--code);border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 22px}
+pre code{background:none;padding:0;font-size:13.5px;line-height:1.6;overflow-wrap:normal;white-space:pre;font-variant-ligatures:none}
+ul,ol{padding-left:24px;margin:0 0 20px}
+li{margin:0 0 8px}
+.callout{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin:26px 0}
+.callout .label{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+.biz{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 22px 6px;margin:26px 0}
+.biz .label{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--play);margin:0 0 8px}
+.biz.short .label{color:var(--accent)}
+.biz ul{margin:0 0 10px;padding-left:20px;font-size:16.5px;line-height:1.55}
+.biz li{margin:0 0 8px}
+.ln{fill:none;stroke-width:2.6;stroke-linejoin:round} .ln-14{stroke:var(--left)} .ln-conf{stroke:var(--play)}
+.sw-14{fill:var(--left)} .sw-conf{fill:var(--play)}
+.legend-box{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.callout .big{font-family:var(--display);font-size:clamp(19px,2.6vw,22px);line-height:1.4;margin:0;font-weight:500}
+.tablewrap{overflow-x:auto;margin:22px 0 26px}
+table{width:100%;border-collapse:collapse;font-family:var(--display);font-size:15px;line-height:1.45}
+th{text-align:left;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);padding:8px 10px}
+td{border-bottom:1px solid var(--line);padding:9px 10px;vertical-align:top;color:var(--ink-2)}
+td code{font-size:13px}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+th.num{white-space:normal}
+tr.hl td{background:var(--soft);color:var(--ink);font-weight:600}
+.tag{display:inline-block;font-size:13px;font-weight:600;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.tag.play{color:var(--play);background:color-mix(in srgb,var(--play) 14%,transparent)}
+.tag.left{color:var(--left);background:color-mix(in srgb,var(--left) 14%,transparent)}
+.tag.gone{color:var(--gone);background:color-mix(in srgb,var(--gone) 16%,transparent)}
+.figure{margin:30px 0}
+.figure .scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 10px 8px}
+.figure svg{display:block;width:100%;min-width:560px;height:auto}
+figcaption{font-family:var(--display);font-size:14.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+svg text{font-family:var(--display);font-size:13.5px;fill:var(--ink-2)}
+.s-muted{fill:var(--muted)} .s-bold{font-weight:600;fill:var(--ink)} .s-strong{font-weight:600}
+.s-play{fill:var(--play)} .s-left{fill:var(--left)} .s-val{fill:var(--ink);font-weight:600;font-size:12.5px}
+.s-ref{fill:var(--muted);font-size:12.5px}
+.axis{stroke:var(--line);stroke-width:2} .grid{stroke:var(--line);stroke-width:1}
+.ref{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:5 5}
+.fill-line{fill:var(--line)}
+.ln-play{stroke:var(--play);stroke-width:5;stroke-linecap:round}
+.ln-quiet{stroke:var(--muted);stroke-width:2;stroke-dasharray:3 6;stroke-linecap:round}
+.ln-mark{stroke:var(--ink-2);stroke-width:2}
+.ln-end{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 5}
+.dt-left{fill:var(--left)} .dt-play{fill:var(--play)} .dt-gone{fill:var(--gone)} .dt-last{fill:var(--ink-2)}
+.dt-hollow{fill:var(--surface);stroke:var(--muted);stroke-width:2}
+.bar{fill:var(--bar)} .bar-accent{fill:var(--accent)} .bar-play{fill:var(--play)} .bar-left{fill:var(--left)}
+.claims{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0 26px}
+.claims > div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px}
+.claims h4{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px}
+.claims .yes h4{color:var(--play)} .claims .no h4{color:var(--left)}
+.claims ul{margin:0;padding-left:20px;font-size:16.5px}
+footer{margin-top:72px;padding-top:20px;border-top:1px solid var(--line);font-family:var(--display);font-size:14.5px;color:var(--muted)}
+@media (max-width:620px){
+  body{font-size:17px}
+  nav.toc ol{columns:1}
+  .claims{grid-template-columns:1fr}
+  table.cols .idx,table.cols .ex{display:none}
+  .tag{white-space:normal;border-radius:6px}
+  table{font-size:14px}
+  th,td{padding:8px 6px}
+  header.top{padding-block:36px 22px}
+}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+html{scroll-behavior:smooth}
+.nbref{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 18px;margin:0 0 26px;font-family:var(--display);font-size:15px;line-height:1.5}
+.nbref .label{font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.nbref p{margin:0 0 6px} .nbref code{font-size:13px}
+.learn{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gone);border-radius:10px;padding:14px 20px 8px;margin:26px 0}
+.learn .label{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--gone);margin:0 0 8px}
+.learn p,.learn li{font-size:16.5px;line-height:1.6}
+.learn ol,.learn ul{margin:0 0 10px;padding-left:22px}
+.gloss dt{font-family:var(--display);font-weight:600;margin-top:12px;color:var(--ink)} .gloss dd{margin:2px 0 0 0;color:var(--ink-2)}
+.where{font-family:var(--display);font-size:13.5px;color:var(--muted);margin:-8px 0 16px}
+
+.figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px} .figure img.dk{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .figure img.lt{display:none}:root:not([data-theme="light"]) .figure img.dk{display:block}}
+:root[data-theme="dark"] .figure img.lt{display:none} :root[data-theme="dark"] .figure img.dk{display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 26px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px}
+.stat .v{font-family:var(--display);font-size:clamp(24px,3.4vw,30px);font-weight:600;line-height:1.1;color:var(--ink)}
+.stat .l{font-family:var(--display);font-size:14.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+.stat .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:1px}
+.c1{background:var(--c1)} .c2{background:var(--c2)} .c3{background:var(--c3)}
+:root{--c1:#2a78d6;--c2:#eb6834;--c3:#1baf7a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--c1:#3987e5;--c2:#d95926;--c3:#199e70}}
+:root[data-theme="dark"]{--c1:#3987e5;--c2:#d95926;--c3:#199e70}
+.callout ul{margin:0;padding-left:20px;font-size:17px;line-height:1.55} .callout li{margin:0 0 8px}
+.series{font-family:var(--display);font-size:14.5px;color:var(--muted);margin:0 0 6px}
+.series a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line)} .series a:hover{color:var(--accent)}
+.series .here{color:var(--ink);font-weight:600}
+.take{font-family:var(--display);font-size:16.5px;line-height:1.5;color:var(--ink);border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:22px 0 26px}
+.next{font-family:var(--display);font-size:16.5px;line-height:1.55;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin:34px 0 10px}
+h3{margin-top:34px}
+.cansay{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0 26px}
+.cansay > div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px 6px}
+.cansay .label{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;margin:0 0 8px}
+.cansay .can .label{color:var(--play)} .cansay .cannot .label{color:var(--left)}
+.cansay ul{margin:0 0 8px;padding-left:18px;font-size:16px;line-height:1.5} .cansay li{margin:0 0 8px}
+@media (max-width:620px){.cansay{grid-template-columns:1fr}}
+@media (max-width:620px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+<p class="series">VRChat retention case study | <span class="here">Part 1: Who stays</span> | <a href="VRChat_2_who_leaves_sooner.html">Part 2: Who leaves sooner</a> | <a href="VRChat_3_designing_a_test.html">Part 3: A fair test</a></p>
+  <h1>How long do VRChat reviewers keep playing, and who stays?</h1>
+  <p class="stand">Public Steam reviews give every reviewer a review date and a last session seen. Turning them into a retention measure took three decisions before any model. With those in place, one curve and a few fair comparisons already say a lot about who stays.</p>
+  <p class="meta">267,904 Steam reviews | Feb 2017 to Aug 2026 | Kaplan Meier in Python | <a href="https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_1_who_stays.ipynb">notebook</a></p>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="v">82.1%</div><div class="l">still playing 90 days after their review</div></div>
+  <div class="stat"><div class="v">72.5%</div><div class="l">still playing a year after their review</div></div>
+  <div class="stat"><div class="v">1,165 days</div><div class="l">estimated median time to the last observed session</div></div>
+</div>
+
+<div class="callout">
+  <p class="label">At a glance</p>
+  <ul>
+    <li><strong>Question.</strong> After someone reviews VRChat on Steam, how long do they keep playing?</li>
+    <li><strong>Three decisions before any model.</strong> Use only inputs known when the clock starts. Count a last observed session as a departure only when a year without play follows it. Start each clock at the review's last edit.</li>
+    <li><strong>Retention.</strong> 82.1% are still playing 90 days after their review and 72.5% after a year. The estimated median time to the last observed session is 1,165 days.</li>
+    <li><strong>Who stays.</strong> Playtime at review separates players most: 33% of reviewers with under an hour are still playing a year later, against 97% with over 1,000 hours. Holding playtime fixed shrinks the language gap and widens the thumbs gap for new players, 1 to 20 hours, to 14 points, most of it people who had stopped before they wrote or last edited the review.</li>
+  </ul>
+</div>
+
+<h2><span class="n">1</span>The question</h2>
+<p>VRChat doesn't publish retention. Steam publishes every review, and each one carries two facts about its author: the hours of play recorded on the review, and the last time Steam saw them play. Next to the review date, that gives every reviewer a starting point. For people who stopped, that last observed session marks the end; for the rest, I only know that they were still playing when the analysis ended.</p>
+<div class="callout"><p class="big">After someone reviews VRChat on Steam, how long do they keep playing?</p></div>
+<p>That is a time to event question with incomplete follow up, so it calls for survival analysis. The raw columns can't go straight into a survival model, though. Three measurement decisions come first, and they drive every number after them.</p>
+
+<h2><span class="n">2</span>The data</h2>
+<p>I downloaded every public Steam review of VRChat on 28 August 2026: 267,904 reviews in 30 languages, from launch day, 1 February 2017, to the morning of the download. Steam allows one review per account and game, and an edit changes that review instead of adding one, so each review is one reviewer. Two thirds are in English and three quarters are thumbs up. The typical reviewer had about 30 hours of play recorded at the review. Steam IDs, names and profile links were removed before saving, and no review text is used.</p>
+<figure class="figure"><img class="lt" src="images/p1_reviews_per_year.png" alt="Column chart of reviews written each year from 2017 to 2026, peaking at 63,171 in 2022" width="1440" height="740" loading="lazy"><img class="dk" src="images/p1_reviews_per_year_dark.png" alt="Column chart of reviews written each year from 2017 to 2026, peaking at 63,171 in 2022" width="1440" height="740" loading="lazy"><figcaption>2022 was the busiest year: one week in July, after VRChat announced new anti cheat software, produced 21,699 reviews. 2026 runs to 28 August.</figcaption></figure>
+
+<h2><span class="n">3</span>Three decisions before any model</h2>
+<p>Each decision answers one way the raw data would mislead a survival model: by leaking the future into the inputs, by counting breaks as departures, or by starting the clock at the wrong moment.</p>
+<h3>Use only inputs known when the clock starts</h3>
+<p>Most of the columns about the reviewer describe them on the download day, often years after the review. Total playtime is bigger than playtime at review for 90.7% of people, so it was measured at the download and already holds part of the future. I dropped the four columns of this kind, along with columns that are the same for everyone, almost always empty, or votes from other readers that keep growing after the review. That leaves three inputs known when the clock starts: playtime at review, the thumbs, and the language, used as English or not because half of the 30 languages have fewer than 1,000 reviews.</p>
+<p>A second leak was hidden in the edits. 18% of reviews were edited, and since 29 August 2024 the data show an edit resetting playtime at review to the playtime on the day of the edit, a change I could not verify in Steam's public documentation. It affects 19,655 reviews, about 7% of the data. Some earlier edits were reset too: before the switch about one in five of the edits in the test below matched (18%), against 0.7% for never edited reviews whose authors also played after posting. The third decision makes both cases safe.</p>
+<figure class="figure"><img class="lt" src="images/p1_edit_reset.png" alt="Column chart by month of edit in 2024: the share of matching playtimes jumps from between 8% and 26% to 100% in September 2024" width="1440" height="740" loading="lazy"><img class="dk" src="images/p1_edit_reset_dark.png" alt="Column chart by month of edit in 2024: the share of matching playtimes jumps from between 8% and 26% to 100% in September 2024" width="1440" height="740" loading="lazy"><figcaption>For people who played after posting and stopped before editing, the two playtimes can only match if Steam reset the first one at the edit. The four months shown after the switch all match; across every such edit from 29 August 2024 to the download, 96% match. Each bar rests on 27 to 48 edits.</figcaption></figure>
+<h3>Confirm each departure with a year without play</h3>
+<p>Nobody tells Steam they quit, so a quiet player has to be called gone by a rule. The obvious rule, no play in the 14 days before the download, breaks in a single snapshot: a break that ended in the past is invisible because the player came back, while a break still going on at the download looks exactly like quitting.</p>
+<figure class="figure"><img class="lt" src="images/p1_two_week_rule.png" alt="Column chart of stops per 1,000 players per day by calendar year under a two week rule: 0.35 to 0.56 from 2018 to 2024, 0.67 in 2025 and 2.70 in 2026" width="1440" height="740" loading="lazy"><img class="dk" src="images/p1_two_week_rule_dark.png" alt="Column chart of stops per 1,000 players per day by calendar year under a two week rule: 0.35 to 0.56 from 2018 to 2024, 0.67 in 2025 and 2.70 in 2026" width="1440" height="740" loading="lazy"><figcaption>People at the same stage, 90 days to two years after their review. The two week rule gives 0.35 to 0.56 stops per 1,000 players per day from 2018 to 2024, 0.67 in 2025 and 2.70 in 2026. 2025 is higher too, and Part 2 checks it with the confirmed rule; one snapshot can't fully separate players on a break from a real change in 2026, so that jump stays unconfirmed.</figcaption></figure>
+<p>The fix is to end the analysis a year before the download, on 28 August 2025, and use the final year only to confirm: someone counts as gone only when a full year without play follows their last observed session, which keeps breaks shorter than a year from being counted as departures. The cost is that 37,983 reviews whose clock starts in the final year, older reviews edited then included, can't be measured yet. The day 90 share barely depends on how long a silence I require: 81.6% to 82.3% for half a year to a year and a half. The median does, from 1,088 to 1,216 days in the same order. In one snapshot the required silence and the end of follow up are the same choice, so this spread mixes long breaks with the months each rule adds or drops, including the higher risk of 2025 that Part 2 finds. I always quote the median with the one year rule.</p>
+<h3>Start the clock at the last edit</h3>
+<p>Each reviewer needs a time zero. The thumbs, and since August 2024 the playtime, belong to the review's last edit, which can come more than a year after the post. Starting the clock at the post would use facts that weren't true yet, so the clock starts at the last edit: the posting day for the 82% of reviews never edited. The estimate is therefore the time from the review as it finally stands, when its inputs were recorded, to the last observed session. For the same reviewers, a clock at the first post would give a median of 1,287 days; the last edit gives 1,165.</p>
+<p class="take">The last two choices move the headline far more than sampling error does: the silence rule moves the median across 128 days and the clock by about 120, while its 95% confidence interval is 1,157 to 1,173 days. A two week rule would show 2026 as six times worse than 2018 to 2024.</p>
+
+<h2><span class="n">4</span>The retention curve</h2>
+<p>With those rules, 229,920 reviewers can be followed: all 267,904 except the 37,983 whose clock starts in the final year and one with no session on record. Each falls into one of three groups.</p>
+<div class="stats">
+  <div class="stat"><div class="v"><span class="dot c1"></span>50.1%</div><div class="l">still playing: seen playing after 28 Aug 2025 (115,113)</div></div>
+  <div class="stat"><div class="v"><span class="dot c2"></span>41.3%</div><div class="l">left after the review, then at least a year without play (94,968)</div></div>
+  <div class="stat"><div class="v"><span class="dot c3"></span>8.6%</div><div class="l">already gone: last played before the review or edit (19,839)</div></div>
+</div>
+<p>The already gone were inactive before their clock started, so they are a different group, with no time to follow; for 15% of them the clock starts at a later edit, so they stopped after posting but before their last edit. I report them as their own share; in the curve for all reviewers they appear only as the drop at time zero, which is why it starts at 91.4%. Their reviews lean negative, 57% thumbs up against 78% for everyone else, and they wrote 15.7% of all thumbs down reviews.</p>
+<p>The 50.1% still playing were seen playing after the cutoff, so for them I know only a lower limit, and simple summaries handle exactly these people badly. A raw churn percentage counts 77.1% of 2017 reviewers as gone against 22.3% of 2025 reviewers, mostly because they had 7.7 and 0.3 years to leave: at the same age the two years match, 79.2% of each still playing at day 90. The median of the raw durations is 625 days if people still playing are counted as stopped at the end, and 310 if they are dropped. The Kaplan Meier estimator uses each person for exactly as long as they were watched.</p>
+<figure class="figure"><img class="lt" src="images/p1_survival_curve.png" alt="Survival curve falling from 91.4% at the review to 82.1% at day 90, 72.5% after a year, 50% at day 1,165 and 33.3% after five years" width="1440" height="819" loading="lazy"><img class="dk" src="images/p1_survival_curve_dark.png" alt="Survival curve falling from 91.4% at the review to 82.1% at day 90, 72.5% after a year, 50% at day 1,165 and 33.3% after five years" width="1440" height="819" loading="lazy"><figcaption>Kaplan Meier estimate for all 229,920 reviewers. 8.6% had already stopped at the review; 82.1% were still playing at day 90, 72.5% after a year and 33.3% after five years, and the estimated median time to the last observed session is 1,165 days (95% confidence interval 1,157 to 1,173). Past three years the curve rests only on reviewers whose clock started by August 2022, and Part 2 finds reviewers from 2023 on leave sooner at every playtime, so the median describes earlier reviewers. The curve stops where fewer than 100 people are still followed.</figcaption></figure><p class="take">Leaving is front loaded: of the 9.3 points lost between the review and day 90, 4.5 go in the first week. After that the curve declines slowly for years. One curve, though, mixes very different players.</p>
+
+<h2><span class="n">5</span>Who keeps playing longest</h2>
+<p>The natural next step is to split the curve by what is known when the clock starts. These comparisons are descriptive, holding one input fixed at a time; Part 2 asks what each adds once all the others are held fixed. Each comparison here needs one check, because the groups differ in more than the input being compared.</p>
+<h3>Playtime at review separates players most</h3>
+<p>I split playtime into five bands with round edges fixed in advance: under 1 hour, 1 to 20, 20 to 100, 100 to 1,000 and over 1,000 hours.</p>
+<figure class="figure"><img class="lt" src="images/p1_playtime_bands.png" alt="Five survival curves by playtime band, in order: the more hours at the review, the higher the curve" width="1440" height="819" loading="lazy"><img class="dk" src="images/p1_playtime_bands_dark.png" alt="Five survival curves by playtime band, in order: the more hours at the review, the higher the curve" width="1440" height="819" loading="lazy"><figcaption>Kaplan Meier curves by playtime at review. A year later 32.9% of the under 1 hour band are still playing, against 96.9% of the over 1,000 hour band, whose median is not reached. Each curve stops where fewer than 100 people are still followed.</figcaption></figure>
+<p>The curves never cross, and the order holds at every horizon. The two lightest bands are 46% of reviewers but account for 67% of all stops, counting those already gone at the review. The top band's result doesn't depend on its edge: starting it at 900 or 1,100 hours gives 96.9% and 97.0% a year later. With the 229,805 reviewers who have a recorded playtime, a log rank test across the five bands gives a p value too small to print, so the effect sizes carry the argument here.</p>
+<h3>A new player's thumbs down often comes after they stopped</h3>
+<p>The raw comparison says the thumbs barely matter: 73.1% of thumbs up and 70.5% of thumbs down reviewers are still playing a year later. That comparison is confounded. Thumbs down reviewers are more often heavy players, 17.7% with over 1,000 hours against 8.5%, and heavy players keep playing at high rates either way. Inside the 1 to 20 hour band, the new players of this series, the gap is 14 points, the largest of the five bands, and most of it comes from people who had already stopped when they wrote.</p>
+<figure class="figure"><img class="lt" src="images/p1_thumbs_new_players.png" alt="Paired bars for new players: a year later 61.5% against 47.3%; already stopped at the review 8.5% against 28.7%; a year later if playing at the review 67.2% against 66.3%" width="1440" height="720" loading="lazy"><img class="dk" src="images/p1_thumbs_new_players_dark.png" alt="Paired bars for new players: a year later 61.5% against 47.3%; already stopped at the review 8.5% against 28.7%; a year later if playing at the review 67.2% against 66.3%" width="1440" height="720" loading="lazy"><figcaption>Players with 1 to 20 hours at the review. 28.7% of thumbs down reviewers had already stopped when they wrote it, against 8.5% of thumbs up reviewers. Among those still playing at the review, the gap a year later is under a point.</figcaption></figure>
+<p>The gap among those still playing is that small partly because of the July 2022 protest, when many players wrote a thumbs down and kept playing: leaving that week out, it is about 4 points, 67.2% against 62.8%.</p>
+<h3>Much of the language gap is mix, and all of the protest gap</h3>
+<p>The same check shrinks the language gap. Reviews in other languages show 66.5% still playing a year later against 75.5% in English, but light players write in English less often: 48% under 1 hour, over 70% from 20 hours up. Inside the bands the gap is about 7 points under 20 hours, about 1 point at 20 to 100 hours and none from 100 hours up. So much of it is mix, but a real gap remains for players under 20 hours.</p>
+<p>The July 2022 protest week, 25 to 31 July, is the sharpest case. 19,959 clocks started that week (fewer than its 21,699 reviews, since some were edited later), against about 528 in the median week; 91% were thumbs down, and 26% came from players with over 1,000 hours, against 9% of everyone else. The protesters look far more loyal overall, 83.6% still playing a year later against 73.8% for the other weeks of June to September 2022. Inside all five bands they kept playing about as well as reviewers from those other weeks, never more than 0.6 points worse and up to 2.3 points better: 55.3% against 55.9% at 1 to 20 hours, 93.3% against 91.0% at 100 to 1,000, and 98.0% against 98.0% over 1,000 hours.</p>
+<p class="take">Holding playtime at review fixed changed all three comparisons: it widened the thumbs gap for new players, shrank the language gap, and removed the protest group's apparent loyalty, largely accounted for by its veterans.</p>
+
+<h2><span class="n">6</span>What I can and cannot say</h2>
+<div class="cansay"><div class="can"><p class="label">I can say</p><ul><li>About 82% of reviewers are still playing 90 days after their review and 72.5% a year later; the estimated median time to the last observed session is 1,165 days.</li><li>Leaving is front loaded: about half of the drop between the review and day 90, not counting those already gone, happens in the first week.</li><li>Reviewers who had played more when they reviewed keep playing much longer: 33% of the under 1 hour band are still playing a year later, against 97% over 1,000 hours.</li><li>With playtime held fixed, fewer new players with a thumbs down are still playing a year later, mostly because many had already stopped when they wrote.</li><li>At every playtime, the July 2022 protesters kept playing about as well as similar players from other summer weeks, or slightly better.</li><li>A two week rule on a single snapshot counts players who are on a break at the download as gone; a confirmed year without play keeps breaks shorter than a year from being counted as departures.</li></ul></div><div class="cannot"><p class="label">I cannot say</p><ul><li>That playing more makes people stay. Heavy players may simply be people who already love the game.</li><li>That a negative review makes people leave. Both can come from the same bad experience.</li><li>Whether someone left VRChat or only stopped playing through Steam, or how many days they actually played; retention here is the time until the last observed session.</li><li>Anything about countries from language, about players who never wrote a review, or about how long ago anyone started playing: Steam gives hours played at the review, not a first play date.</li><li>How much of the 2026 jump under the two week rule is people on a break and how much is real change.</li></ul></div></div>
+<div class="callout"><p class="label">In one sentence</p><p class="big">Once leakage, breaks and the clock are handled, the estimated median time to the last observed session is about three years, a figure that rests on earlier reviewers, and playtime at review separates those who stay from those who leave far more than the thumbs or the language do.</p></div>
+
+<div class="next"><strong>Next.</strong> Split curves can hold only one input fixed at a time, and they give no rate that can be compared across stages or calendar years. <a href="VRChat_2_who_leaves_sooner.html">Part 2</a> models the daily risk of leaving: when it peaks, whether it shifted over the calendar, and what playtime, the thumbs and language add once each is held fixed. That model is then tested on reviewers it was not fitted on and on later years, and Part 3 turns the most actionable lead into a sized experiment.</div>
+
+<footer>
+  <p>Data: Steam's public review feed for VRChat (app 438100), downloaded on 28 Aug 2026. No review text is quoted and no personal details were kept. Analysis in Python with pandas, lifelines and SciPy; <a href="https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_1_who_stays.ipynb">the notebook for this part</a> reproduces every result on this page.</p>
+</footer>
+</div>
+</body>
+</html>
