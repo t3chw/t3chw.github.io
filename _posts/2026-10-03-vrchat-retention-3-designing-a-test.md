@@ -136,9 +136,9 @@ So I would start wider: help for every new player who writes any review (C above
 
 The test above is narrow on purpose. The biggest losses come earlier.
 
-- Players with under an hour at their review have the worst retention in this data: only 32.9% are still playing a year later.
-- On the first day, their risk of stopping is about 130 times that of the heaviest players.
-- Together with the 1 to 20 hour group, they are 46% of reviewers but 67% of everyone who stops.
+- Players with under an hour at their review have the worst retention in this data: only 32.9% are still playing a year later (Part 1).
+- On the first day, their risk of stopping is about 130 times that of the heaviest players (Part 2).
+- Together with the 1 to 20 hour group, they are 46% of reviewers but 67% of everyone who stops (Part 1).
 
 I left them out of the test above because helping someone who has barely played is an onboarding question, not a reply to a review. But that also makes it a strong candidate for the next experiment:
 
