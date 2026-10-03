@@ -7,11 +7,11 @@ tags: [Survival Analysis, Product Analytics, VRChat, Case Study]
 description: "A case study on public Steam reviews: the shape of the risk of leaving, a 2025 shift, what playtime, thumbs and language add, and a model checked on held out reviewers and later years."
 ---
 
-VRChat retention case study | [Part 1: Who stays]({% post_url 2026-10-03-vrchat-retention-1-data-and-question %}) | Part 2: Who leaves sooner | [Part 3: A fair test]({% post_url 2026-10-03-vrchat-retention-3-designing-a-test %})
+VRChat retention case study \| [Part 1: Who stays]({% post_url 2026-10-03-vrchat-retention-1-data-and-question %}) \| Part 2: Who leaves sooner \| [Part 3: A fair test]({% post_url 2026-10-03-vrchat-retention-3-designing-a-test %})
 
 Part 1 described retention with curves. Here I model the daily risk of leaving: its shape over time, a shift in 2025, and how playtime, the thumbs and language act together once each is held fixed. Then I test the final model on reviewers it was not fitted on, and on reviewers from later years.
 
-_229,920 reviewers | piecewise exponential and Cox models | lifelines | [notebook](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_2_who_leaves_sooner.ipynb)_
+_229,920 reviewers \| piecewise exponential and Cox models \| lifelines \| [notebook](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_2_who_leaves_sooner.ipynb)_
 
 - **31.0** stops per 1,000 players per day on the first day after a review
 - **130x to 5x** risk under 1 hour against over 1,000 hours, on day one and after year two

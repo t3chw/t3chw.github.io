@@ -7,11 +7,11 @@ tags: [Survival Analysis, Product Analytics, VRChat, Case Study]
 description: "A case study on public Steam reviews: how long VRChat reviewers keep playing, the three decisions that make it measurable, and who stays."
 ---
 
-VRChat retention case study | Part 1: Who stays | [Part 2: Who leaves sooner]({% post_url 2026-10-03-vrchat-retention-2-who-leaves-sooner %}) | [Part 3: A fair test]({% post_url 2026-10-03-vrchat-retention-3-designing-a-test %})
+VRChat retention case study \| Part 1: Who stays \| [Part 2: Who leaves sooner]({% post_url 2026-10-03-vrchat-retention-2-who-leaves-sooner %}) \| [Part 3: A fair test]({% post_url 2026-10-03-vrchat-retention-3-designing-a-test %})
 
 Public Steam reviews give every reviewer a review date and a last session seen. Turning them into a retention measure took three decisions before any model. With those in place, one curve and a few fair comparisons already say a lot about who stays.
 
-_267,904 Steam reviews | Feb 2017 to Aug 2026 | Kaplan Meier in Python | [notebook](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_1_who_stays.ipynb)_
+_267,904 Steam reviews \| Feb 2017 to Aug 2026 \| Kaplan Meier in Python \| [notebook](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_1_who_stays.ipynb)_
 
 - **82.1%** still playing 90 days after their review
 - **72.5%** still playing a year after their review

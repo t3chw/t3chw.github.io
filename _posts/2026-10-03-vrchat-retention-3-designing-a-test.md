@@ -7,11 +7,11 @@ tags: [Experimentation, Product Analytics, VRChat, Case Study]
 description: "A case study on public Steam reviews: turning retention patterns into a fair, well sized experiment for new players at the moment of a negative review."
 ---
 
-VRChat retention case study | [Part 1: Who stays]({% post_url 2026-10-03-vrchat-retention-1-data-and-question %}) | [Part 2: Who leaves sooner]({% post_url 2026-10-03-vrchat-retention-2-who-leaves-sooner %}) | Part 3: A fair test
+VRChat retention case study \| [Part 1: Who stays]({% post_url 2026-10-03-vrchat-retention-1-data-and-question %}) \| [Part 2: Who leaves sooner]({% post_url 2026-10-03-vrchat-retention-2-who-leaves-sooner %}) \| Part 3: A fair test
 
 Parts 1 and 2 show who leaves and when, but not what would make anyone stay. This part designs an experiment for the lead Part 2 ends on, sizes it with the same data, and says what I would run.
 
-_12,629 new players with a negative review | power analysis and simulation | SciPy and lifelines | [notebook](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_3_designing_a_test.ipynb)_
+_12,629 new players with a negative review \| power analysis and simulation \| SciPy and lifelines \| [notebook](https://github.com/t3chw/VRCHAT_analysis/blob/main/VRChat_3_designing_a_test.ipynb)_
 
 - **27.3%** of new players with a negative review outside the July 2022 protest week had stopped before writing it
 - **20%** of new players still playing at a negative review who leave by day 90 had their last session within an hour of it
