@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSA Sheet</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background: #fff; color: #000; max-width: 820px; margin: 0 auto; padding: 16px; line-height: 1.4; }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  .sub { margin: 0 0 12px; font-size: 14px; }
+  #top { border: 2px solid #000; padding: 10px; margin-bottom: 16px; position: sticky; top: 0; background: #fff; z-index: 1; }
+  #bar { height: 10px; border: 1px solid #000; margin: 6px 0; }
+  #fill { height: 100%; width: 0; background: #000; }
+  #stats { font-size: 13px; margin-bottom: 6px; }
+  #top label { margin-right: 12px; font-size: 14px; }
+  .ctrl { margin-top: 6px; }
+  button { font: inherit; font-size: 13px; background: #fff; color: #000; border: 1px solid #000; padding: 2px 8px; cursor: pointer; }
+  button:hover, button.on { background: #000; color: #fff; }
+  details.sec { border: 1px solid #000; margin-bottom: 10px; }
+  details.sec > summary { font-size: 18px; font-weight: bold; padding: 8px 10px; cursor: pointer; }
+  details.sec[open] > summary { border-bottom: 1px solid #000; }
+  .subsec { padding: 6px 10px 2px; }
+  .subsec h3 { margin: 6px 0; font-size: 15px; text-decoration: underline; }
+  .count { font-weight: normal; font-size: 14px; float: right; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 4px 0; border-bottom: 1px dotted #999; font-size: 15px; }
+  .row:last-child { border-bottom: none; }
+  .row label { flex: 1; cursor: pointer; }
+  .row input { width: 16px; height: 16px; margin-right: 8px; vertical-align: middle; accent-color: #000; cursor: pointer; }
+  .row.done label span.name { text-decoration: line-through; color: #666; }
+  .tag { font-size: 11px; border: 1px solid #000; padding: 0 5px; min-width: 44px; text-align: center; }
+  .tag.Easy { border-style: dotted; }
+  .tag.Medium { font-weight: bold; }
+  .tag.Hard { background: #000; color: #fff; font-weight: bold; }
+  .row a { color: #000; font-size: 13px; white-space: nowrap; }
+  .row a:hover { background: #000; color: #fff; }
+  .hide-done .row.done { display: none; }
+  .f-Easy .row:not([data-d="Easy"]),
+  .f-Medium .row:not([data-d="Medium"]),
+  .f-Hard .row:not([data-d="Hard"]) { display: none; }
+  footer { font-size: 12px; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<h1 id="title">DSA Sheet</h1>
+<p class="sub">Tick what you've solved. Progress is saved in this browser. Inside every topic, problems go Easy, then Medium, then Hard.</p>
+
+<div id="top">
+  <b id="total">0 / 0 solved</b>
+  <div id="bar"><div id="fill"></div></div>
+  <div id="stats"></div>
+  <div class="ctrl">
+    Show:
+    <button data-f="All" class="on">All</button>
+    <button data-f="Easy">Easy</button>
+    <button data-f="Medium">Medium</button>
+    <button data-f="Hard">Hard</button>
+  </div>
+  <div class="ctrl">
+    <label><input type="checkbox" id="hideDone"> Hide solved</label>
+    <button id="openAll">Expand all</button>
+    <button id="closeAll">Collapse all</button>
+    <button id="reset">Reset progress</button>
+  </div>
+</div>
+
+<div id="app"></div>
+
+<footer>
+  Links: "LeetCode" = exact problem. "LeetCode (similar)" = closest equivalent on LeetCode.
+  "LeetCode (search)" = no exact match, opens a LeetCode search. "premium" = needs LeetCode Premium.
+</footer>
+
+<script>
+// E = exact LeetCode problem, S = similar LeetCode problem, Q = LeetCode search.
+// Arguments: name, difficulty, slug (or search text for Q), premium (true/omitted).
+const E = (n, d, slug, p) => ({ n, d, k: "e", v: slug, p });
+const S = (n, d, slug, p) => ({ n, d, k: "s", v: slug, p });
+const Q = (n, d, query)   => ({ n, d, k: "q", v: query });
+
+const DATA = [
+  { title: "Arrays", subs: [
+    { title: "Linear Scan", items: [
+      E("Majority Element-I", "Easy", "majority-element"),
+      E("Best Time to Buy and Sell Stock", "Easy", "best-time-to-buy-and-sell-stock"),
+      E("Kadane's Algorithm", "Medium", "maximum-subarray"),
+      E("Majority Element-II", "Medium", "majority-element-ii"),
+      E("Maximum Product Subarray in an Array", "Medium", "maximum-product-subarray"),
+      E("Product of Array Except Self", "Medium", "product-of-array-except-self"),
+    ]},
+    { title: "Matrix", items: [
+      E("Pascal's Triangle", "Easy", "pascals-triangle"),
+      E("Rotate Image", "Medium", "rotate-image"),
+      E("Spiral Matrix", "Medium", "spiral-matrix"),
+      E("Set Matrix Zeroes", "Medium", "set-matrix-zeroes"),
+    ]},
+    { title: "Two Pointers", items: [
+      S("Merge two sorted arrays without extra space", "Easy", "merge-sorted-array"),
+      E("Move Zeroes", "Easy", "move-zeroes"),
+      E("Sort an array of 0's 1's and 2's", "Medium", "sort-colors"),
+      E("3 Sum", "Medium", "3sum"),
+      E("Next Permutation", "Medium", "next-permutation"),
+      E("4 Sum", "Medium", "4sum"),
+      E("Container With Most Water", "Medium", "container-with-most-water"),
+      E("Trapping Rainwater", "Hard", "trapping-rain-water"),
+    ]},
+    { title: "Divide and Conquer", items: [
+      Q("Count Inversions", "Hard", "count inversions"),
+      E("Reverse Pairs", "Hard", "reverse-pairs"),
+    ]},
+  ]},
+
+  { title: "Hashing", subs: [
+    { title: "Hashing & Prefix Sums", items: [
+      E("Two Sum", "Easy", "two-sum"),
+      E("Contains Duplicate", "Easy", "contains-duplicate"),
+      E("Longest Consecutive Sequence in an Array", "Medium", "longest-consecutive-sequence"),
+      S("Longest subarray with sum K", "Medium", "maximum-size-subarray-sum-equals-k", true),
+      E("Count subarrays with given sum", "Medium", "subarray-sum-equals-k"),
+      Q("Count subarrays with given xor K", "Medium", "subarray xor"),
+    ]},
+  ]},
+
+  { title: "Binary Search", subs: [
+    { title: "Binary Search", items: [
+      E("Binary Search", "Easy", "binary-search"),
+      E("Search Insert Position", "Easy", "search-insert-position"),
+      E("Sqrt(x)", "Easy", "sqrtx"),
+      E("Find peak element", "Medium", "find-peak-element"),
+      E("Find minimum in Rotated Sorted Array", "Medium", "find-minimum-in-rotated-sorted-array"),
+      E("Search in rotated sorted array-II", "Medium", "search-in-rotated-sorted-array-ii"),
+      E("Single element in sorted array", "Medium", "single-element-in-a-sorted-array"),
+      E("Search in 2D matrix - II", "Medium", "search-a-2d-matrix-ii"),
+      E("Find Peak Element - II", "Medium", "find-a-peak-element-ii"),
+      E("Search in Rotated Sorted Array", "Medium", "search-in-rotated-sorted-array"),
+      E("Find First and Last Position of Element in Sorted Array", "Medium", "find-first-and-last-position-of-element-in-sorted-array"),
+    ]},
+    { title: "Search on Answer", items: [
+      Q("Find Nth root of a number", "Easy", "nth root"),
+      E("Koko eating bananas", "Medium", "koko-eating-bananas"),
+      S("Aggressive Cows", "Medium", "magnetic-force-between-two-balls"),
+      S("Book Allocation Problem", "Hard", "split-array-largest-sum"),
+      Q("Matrix Median", "Hard", "median row wise sorted matrix"),
+    ]},
+    { title: "Partition Search", items: [
+      S("Kth element of 2 sorted arrays", "Hard", "median-of-two-sorted-arrays"),
+      E("Median of 2 sorted arrays", "Hard", "median-of-two-sorted-arrays"),
+    ]},
+  ]},
+
+  { title: "Sliding Window and Two Pointers", subs: [
+    { title: "Sliding Window", items: [
+      E("Longest Substring Without Repeating Characters", "Medium", "longest-substring-without-repeating-characters"),
+      E("Maximum Points You Can Obtain from Cards", "Medium", "maximum-points-you-can-obtain-from-cards"),
+      E("Max Consecutive Ones III", "Medium", "max-consecutive-ones-iii"),
+      E("Longest Repeating Character Replacement", "Medium", "longest-repeating-character-replacement"),
+      E("Longest Substring With At Most K Distinct Characters", "Medium", "longest-substring-with-at-most-k-distinct-characters", true),
+      E("Minimum Window Substring", "Hard", "minimum-window-substring"),
+    ]},
+    { title: "Counting Windows", items: [
+      E("Number of Substrings Containing All Three Characters", "Medium", "number-of-substrings-containing-all-three-characters"),
+      E("Binary Subarrays With Sum", "Medium", "binary-subarrays-with-sum"),
+      E("Count number of Nice subarrays", "Medium", "count-number-of-nice-subarrays"),
+    ]},
+  ]},
+
+  { title: "Recursion and Backtracking", subs: [
+    { title: "Subsets & Combinations", items: [
+      E("Power Set", "Medium", "subsets"),
+      E("Generate Parentheses", "Medium", "generate-parentheses"),
+      E("Letter Combinations of a Phone Number", "Medium", "letter-combinations-of-a-phone-number"),
+      E("Combination Sum", "Medium", "combination-sum"),
+      E("Combination Sum II", "Medium", "combination-sum-ii"),
+      E("Subsets II", "Medium", "subsets-ii"),
+      E("Palindrome partitioning", "Medium", "palindrome-partitioning"),
+      E("Permutations", "Medium", "permutations"),
+      E("Pow(x, n)", "Medium", "powx-n"),
+    ]},
+    { title: "Backtracking", items: [
+      E("Word Search", "Medium", "word-search"),
+      E("N Queen", "Hard", "n-queens"),
+      E("Sudoku Solver", "Hard", "sudoku-solver"),
+    ]},
+  ]},
+
+  { title: "Linked List", subs: [
+    { title: "Fast & Slow Pointers", items: [
+      E("Find Middle of Linked List", "Easy", "middle-of-the-linked-list"),
+      E("Find the intersection point of Y LL", "Easy", "intersection-of-two-linked-lists"),
+      E("Check if LL is palindrome or not", "Easy", "palindrome-linked-list"),
+      E("Detect a loop in LL", "Easy", "linked-list-cycle"),
+      E("Remove Nth node from the back of the LL", "Medium", "remove-nth-node-from-end-of-list"),
+      E("Find the starting point in LL", "Medium", "linked-list-cycle-ii"),
+      S("Length of loop in LL", "Medium", "linked-list-cycle-ii"),
+    ]},
+    { title: "Reversal & Rewiring", items: [
+      E("Reverse a LL", "Easy", "reverse-linked-list"),
+      E("Merge two Sorted Lists", "Easy", "merge-two-sorted-lists"),
+      Q("Sort a Linked List of 0's 1's and 2's", "Medium", "sort linked list 0 1 2"),
+      E("Add two numbers in Linked List", "Medium", "add-two-numbers"),
+      E("Rotate a LL", "Medium", "rotate-list"),
+      E("Sort LL", "Medium", "sort-list"),
+      E("Clone a LL with random and next pointer", "Medium", "copy-list-with-random-pointer"),
+      S("Flattening of LL", "Medium", "flatten-a-multilevel-doubly-linked-list"),
+      E("Reorder List", "Medium", "reorder-list"),
+      E("Reverse LL in group of given size K", "Hard", "reverse-nodes-in-k-group"),
+      E("Merge K Sorted Lists", "Hard", "merge-k-sorted-lists"),
+    ]},
+  ]},
+
+  { title: "Stack and Queues", subs: [
+    { title: "Monotonic Stack / Queue", items: [
+      E("Next Greater Element", "Easy", "next-greater-element-i"),
+      E("Next Greater Element - 2", "Medium", "next-greater-element-ii"),
+      E("Stock span problem", "Medium", "online-stock-span"),
+      E("Sum of Subarray Minimums", "Medium", "sum-of-subarray-minimums"),
+      E("Sum of Subarray Ranges", "Medium", "sum-of-subarray-ranges"),
+      E("Remove K Digits", "Medium", "remove-k-digits"),
+      E("Daily Temperatures", "Medium", "daily-temperatures"),
+      E("Sliding Window Maximum", "Hard", "sliding-window-maximum"),
+      E("Largest rectangle in a histogram", "Hard", "largest-rectangle-in-histogram"),
+      E("Maximum Rectangles", "Hard", "maximal-rectangle"),
+    ]},
+    { title: "Data Structure Design", items: [
+      E("Valid Parentheses", "Easy", "valid-parentheses"),
+      E("Implement Queue using Stacks", "Easy", "implement-queue-using-stacks"),
+      E("Implement Min Stack", "Medium", "min-stack"),
+      E("Asteroid Collision", "Medium", "asteroid-collision"),
+      E("Celebrity Problem", "Medium", "find-the-celebrity", true),
+      E("LRU Cache", "Medium", "lru-cache"),
+      E("LFU Cache", "Hard", "lfu-cache"),
+    ]},
+  ]},
+
+  { title: "Greedy Algorithms", subs: [
+    { title: "Greedy", items: [
+      E("Assign Cookies", "Easy", "assign-cookies"),
+      E("Jump Game - I", "Medium", "jump-game"),
+      E("Valid Paranthesis Checker", "Medium", "valid-parenthesis-string"),
+      E("Jump Game II", "Medium", "jump-game-ii"),
+      E("Gas Station", "Medium", "gas-station"),
+      E("Candy", "Hard", "candy"),
+    ]},
+    { title: "Intervals & Scheduling", items: [
+      Q("N meetings in one room", "Easy", "meeting rooms"),
+      E("Insert Interval", "Medium", "insert-interval"),
+      E("Non-overlapping Intervals", "Medium", "non-overlapping-intervals"),
+      S("Minimum number of platforms required for a railway", "Medium", "meeting-rooms-ii", true),
+      Q("Job sequencing Problem", "Medium", "job scheduling"),
+      E("Merge Intervals", "Medium", "merge-intervals"),
+    ]},
+  ]},
+
+  { title: "Heaps", subs: [
+    { title: "Heap / Priority Queue", items: [
+      Q("Implement Min Heap", "Easy", "min heap"),
+      E("Last Stone Weight", "Easy", "last-stone-weight"),
+      Q("Heapify Algorithm", "Medium", "heap"),
+      S("Build heap from a given Array", "Medium", "sort-an-array"),
+      E("K-th Largest element in an array", "Medium", "kth-largest-element-in-an-array"),
+      E("Top K Frequent Elements", "Medium", "top-k-frequent-elements"),
+      E("K Closest Points to Origin", "Medium", "k-closest-points-to-origin"),
+      E("Task Scheduler", "Medium", "task-scheduler"),
+      E("Find Median from Data Stream", "Hard", "find-median-from-data-stream"),
+    ]},
+  ]},
+
+  { title: "Binary Trees", subs: [
+    { title: "BFS", items: [
+      E("Level Order Traversal", "Medium", "binary-tree-level-order-traversal"),
+      E("Maximum Width of BT", "Medium", "maximum-width-of-binary-tree"),
+      E("Right/Left View of BT", "Medium", "binary-tree-right-side-view"),
+      S("Top View of BT", "Medium", "binary-tree-vertical-order-traversal", true),
+      E("Print all nodes at a distance of K in BT", "Medium", "all-nodes-distance-k-in-binary-tree"),
+      E("Minimum time taken to burn the BT from a given Node", "Medium", "amount-of-time-for-binary-tree-to-be-infected"),
+      E("Vertical Order Traversal", "Hard", "vertical-order-traversal-of-a-binary-tree"),
+    ]},
+    { title: "DFS / Tree DP", items: [
+      E("Print root to leaf path in BT", "Easy", "binary-tree-paths"),
+      E("Diameter of Binary Tree", "Easy", "diameter-of-binary-tree"),
+      E("Invert Binary Tree", "Easy", "invert-binary-tree"),
+      E("Maximum Depth of Binary Tree", "Easy", "maximum-depth-of-binary-tree"),
+      E("Same Tree", "Easy", "same-tree"),
+      E("Symmetric Tree", "Easy", "symmetric-tree"),
+      E("Balanced Binary Tree", "Easy", "balanced-binary-tree"),
+      E("LCA in BT", "Medium", "lowest-common-ancestor-of-a-binary-tree"),
+      E("Boundary Traversal", "Medium", "boundary-of-binary-tree", true),
+      E("Construct a BT from Preorder and Inorder", "Medium", "construct-binary-tree-from-preorder-and-inorder-traversal"),
+      S("Morris Inorder Traversal", "Medium", "binary-tree-inorder-traversal"),
+      E("Maximum path sum", "Hard", "binary-tree-maximum-path-sum"),
+      E("Serialize and De-serialize BT", "Hard", "serialize-and-deserialize-binary-tree"),
+    ]},
+  ]},
+
+  { title: "Binary Search Trees", subs: [
+    { title: "Inorder Traversal", items: [
+      E("Two sum in BST", "Easy", "two-sum-iv-input-is-a-bst"),
+      E("Insert a given node in BST", "Medium", "insert-into-a-binary-search-tree"),
+      E("LCA in BST", "Medium", "lowest-common-ancestor-of-a-binary-search-tree"),
+      E("Delete a node in BST", "Medium", "delete-node-in-a-bst"),
+      S("Inorder successor and predecessor in BST", "Medium", "inorder-successor-in-bst", true),
+      E("Kth Smallest and Largest element in BST", "Medium", "kth-smallest-element-in-a-bst"),
+      E("Check if a tree is a BST or not", "Medium", "validate-binary-search-tree"),
+      E("Construct a BST from a preorder traversal", "Medium", "construct-binary-search-tree-from-preorder-traversal"),
+      E("Correct BST with two nodes swapped", "Medium", "recover-binary-search-tree"),
+      E("Largest BST in Binary Tree", "Medium", "largest-bst-subtree", true),
+      E("Binary Search Tree Iterator", "Medium", "binary-search-tree-iterator"),
+    ]},
+  ]},
+
+  { title: "Graphs", subs: [
+    { title: "BFS / DFS", items: [
+      E("Flood fill algorithm", "Easy", "flood-fill"),
+      E("Number of islands", "Medium", "number-of-islands"),
+      E("Rotten Oranges", "Medium", "rotting-oranges"),
+      E("Distance of nearest cell having one", "Medium", "01-matrix"),
+      E("Surrounded Regions", "Medium", "surrounded-regions"),
+      E("Number of distinct islands", "Medium", "number-of-distinct-islands", true),
+      Q("Detect a cycle in an undirected graph", "Medium", "cycle undirected graph"),
+      E("Bipartite graph", "Medium", "is-graph-bipartite"),
+      E("Clone Graph", "Medium", "clone-graph"),
+      E("Pacific Atlantic Water Flow", "Medium", "pacific-atlantic-water-flow"),
+    ]},
+    { title: "Ordering & Connectivity", items: [
+      S("Detect a cycle in a directed graph", "Medium", "course-schedule"),
+      S("Topological sort or Kahn's algorithm", "Medium", "course-schedule-ii"),
+      E("Course Schedule II", "Medium", "course-schedule-ii"),
+      E("Alien Dictionary", "Hard", "alien-dictionary", true),
+      Q("Kosaraju's algorithm", "Hard", "strongly connected components"),
+      S("Bridges in graph", "Hard", "critical-connections-in-a-network"),
+      Q("Articulation point in graph", "Hard", "articulation point"),
+    ]},
+    { title: "Shortest Path", items: [
+      S("Shortest path in undirected graph with unit weights", "Medium", "shortest-path-in-binary-matrix"),
+      Q("Shortest path in DAG", "Medium", "shortest path directed acyclic graph"),
+      S("Dijkstra's algorithm", "Medium", "network-delay-time"),
+      E("Path with minimum effort", "Medium", "path-with-minimum-effort"),
+      E("Cheapest flight within K stops", "Medium", "cheapest-flights-within-k-stops"),
+      S("Bellman ford algorithm", "Medium", "cheapest-flights-within-k-stops"),
+      S("Floyd warshall algorithm", "Medium", "find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance"),
+      E("Word ladder I", "Hard", "word-ladder"),
+      E("Word ladder II", "Hard", "word-ladder-ii"),
+    ]},
+    { title: "DSU / MST", items: [
+      S("Disjoint Set", "Medium", "number-of-provinces"),
+      S("Find the MST weight", "Medium", "min-cost-to-connect-all-points"),
+      E("Number of operations to make network connected", "Medium", "number-of-operations-to-make-network-connected"),
+      E("Redundant Connection", "Medium", "redundant-connection"),
+      E("Making a large island", "Hard", "making-a-large-island"),
+      E("Number of islands II", "Hard", "number-of-islands-ii", true),
+    ]},
+  ]},
+
+  { title: "Dynamic Programming", subs: [
+    { title: "State Transition DP", items: [
+      S("Frog jump with K distances", "Easy", "min-cost-climbing-stairs"),
+      E("Climbing Stairs", "Easy", "climbing-stairs"),
+      E("House robber", "Medium", "house-robber"),
+      Q("Ninja's training", "Medium", "paint house"),
+      E("Unique paths II", "Medium", "unique-paths-ii"),
+      E("Best time to buy and sell stock with transaction fees", "Medium", "best-time-to-buy-and-sell-stock-with-transaction-fee"),
+      E("House Robber II", "Medium", "house-robber-ii"),
+      E("Unique Paths", "Medium", "unique-paths"),
+      E("Minimum Path Sum", "Medium", "minimum-path-sum"),
+      E("Decode Ways", "Medium", "decode-ways"),
+      E("Best Time to Buy and Sell Stock with Cooldown", "Medium", "best-time-to-buy-and-sell-stock-with-cooldown"),
+      E("Best time to buy and sell stock IV", "Hard", "best-time-to-buy-and-sell-stock-iv"),
+    ]},
+    { title: "Knapsack DP", items: [
+      S("0 and 1 Knapsack", "Medium", "partition-equal-subset-sum"),
+      S("Partition a set into two subsets with minimum absolute sum difference", "Medium", "last-stone-weight-ii"),
+      E("Target sum", "Medium", "target-sum"),
+      E("Coin change II", "Medium", "coin-change-ii"),
+      E("Coin Change", "Medium", "coin-change"),
+    ]},
+    { title: "Sequence DP", items: [
+      E("Longest common subsequence", "Medium", "longest-common-subsequence"),
+      S("Longest common substring", "Medium", "maximum-length-of-repeated-subarray"),
+      E("Longest palindromic subsequence", "Medium", "longest-palindromic-subsequence"),
+      E("Longest Increasing Subsequence", "Medium", "longest-increasing-subsequence"),
+      E("Number of Longest Increasing Subsequences", "Medium", "number-of-longest-increasing-subsequence"),
+      E("Edit distance", "Medium", "edit-distance"),
+      E("Word Break", "Medium", "word-break"),
+      E("Wildcard matching", "Hard", "wildcard-matching"),
+    ]},
+    { title: "Partition DP", items: [
+      S("Matrix chain multiplication", "Hard", "burst-balloons"),
+      E("Palindrome partitioning II", "Hard", "palindrome-partitioning-ii"),
+    ]},
+  ]},
+
+  { title: "Tries", subs: [
+    { title: "Trie", items: [
+      E("Trie Implementation and Advanced Operations", "Medium", "implement-trie-prefix-tree"),
+      E("Longest Word with All Prefixes", "Medium", "longest-word-in-dictionary"),
+      Q("Number of distinct substrings in a string", "Medium", "distinct substrings"),
+      E("Maximum XOR of two numbers in an array", "Medium", "maximum-xor-of-two-numbers-in-an-array"),
+      E("Maximum Xor with an element from an array", "Hard", "maximum-xor-with-an-element-from-array"),
+    ]},
+  ]},
+
+  { title: "Strings", subs: [
+    { title: "String Basics", items: [
+      E("Valid Palindrome", "Easy", "valid-palindrome"),
+      E("Valid Anagram", "Easy", "valid-anagram"),
+      E("Group Anagrams", "Medium", "group-anagrams"),
+      E("Longest Palindromic Substring", "Medium", "longest-palindromic-substring"),
+    ]},
+    { title: "String Matching", items: [
+      S("Rabin Karp Algorithm", "Medium", "find-the-index-of-the-first-occurrence-in-a-string"),
+      S("Z function", "Medium", "find-the-index-of-the-first-occurrence-in-a-string"),
+      S("KMP Algorithm or LPS array", "Hard", "find-the-index-of-the-first-occurrence-in-a-string"),
+      E("Shortest Palindrome", "Hard", "shortest-palindrome"),
+    ]},
+  ]},
+
+  { title: "Bit Manipulation", subs: [
+    { title: "Bit Manipulation", items: [
+      S("Find the repeating and missing number", "Easy", "set-mismatch"),
+      S("Power Set Bit Manipulation", "Medium", "subsets"),
+      E("Single Number - II", "Medium", "single-number-ii"),
+      E("Single Number - III", "Medium", "single-number-iii"),
+    ]},
+  ]},
+
+  { title: "Mathematics", subs: [
+    { title: "Number Theory", items: [
+      S("Print all primes till N", "Medium", "count-primes"),
+    ]},
+  ]},
+
+];
+
+// ---------- helpers ----------
+const KEY = "dsa-sheet-solved-v1";
+let solved = {};
+try { solved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(solved)); } catch (e) {} };
+
+function linkFor(p) {
+  const base = "https://leetcode.com/";
+  if (p.k === "q") return base + "problemset/?search=" + encodeURIComponent(p.v);
+  return base + "problems/" + p.v + "/";
+}
+function linkText(p) {
+  const t = p.k === "e" ? "LeetCode" : p.k === "s" ? "LeetCode (similar)" : "LeetCode (search)";
+  return t + (p.p ? " · premium" : "");
+}
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+
+// ---------- render ----------
+const app = document.getElementById("app");
+let html = "", all = 0;
+DATA.forEach((sec, si) => {
+  html += `<details class="sec" open><summary>${esc(sec.title)} <span class="count" data-count-sec="${si}"></span></summary>`;
+  sec.subs.forEach((sub, bi) => {
+    html += `<div class="subsec"><h3>${esc(sub.title)} <span class="count" data-count-sub="${si}-${bi}"></span></h3>`;
+    sub.items.forEach(p => {
+      all++;
+      html += `<div class="row" data-name="${esc(p.n)}" data-d="${p.d}" data-sec="${si}" data-sub="${si}-${bi}">
+        <label><input type="checkbox" data-name="${esc(p.n)}"><span class="name">${esc(p.n)}</span></label>
+        <span class="tag ${p.d}">${p.d}</span>
+        <a href="${linkFor(p)}" target="_blank" rel="noopener">${linkText(p)}</a>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `</details>`;
+});
+app.innerHTML = html;
+document.getElementById("title").textContent = "DSA Sheet — " + all + " Problems";
+document.title = "DSA Sheet (" + all + ")";
+
+function refresh() {
+  let total = 0, done = 0;
+  const sec = {}, sub = {}, dif = { Easy: [0, 0], Medium: [0, 0], Hard: [0, 0] };
+  document.querySelectorAll(".row").forEach(row => {
+    const isDone = !!solved[row.dataset.name];
+    row.classList.toggle("done", isDone);
+    row.querySelector("input").checked = isDone;
+    total++; if (isDone) done++;
+    const d = dif[row.dataset.d]; d[1]++; if (isDone) d[0]++;
+    for (const [m, k] of [[sec, row.dataset.sec], [sub, row.dataset.sub]]) {
+      m[k] = m[k] || [0, 0];
+      m[k][1]++; if (isDone) m[k][0]++;
+    }
+  });
+  document.querySelectorAll("[data-count-sec]").forEach(el => { const c = sec[el.dataset.countSec]; el.textContent = c[0] + "/" + c[1]; });
+  document.querySelectorAll("[data-count-sub]").forEach(el => { const c = sub[el.dataset.countSub]; el.textContent = c[0] + "/" + c[1]; });
+  document.getElementById("total").textContent = done + " / " + total + " solved (" + (total ? Math.round(done * 100 / total) : 0) + "%)";
+  document.getElementById("fill").style.width = (total ? done * 100 / total : 0) + "%";
+  document.getElementById("stats").textContent =
+    "Easy " + dif.Easy.join("/") + "  |  Medium " + dif.Medium.join("/") + "  |  Hard " + dif.Hard.join("/");
+}
+
+app.addEventListener("change", e => {
+  if (e.target.matches("input[type=checkbox]")) {
+    const name = e.target.dataset.name;
+    if (e.target.checked) solved[name] = 1; else delete solved[name];
+    save(); refresh();
+  }
+});
+document.getElementById("hideDone").addEventListener("change", e => {
+  document.body.classList.toggle("hide-done", e.target.checked);
+});
+document.querySelectorAll("button[data-f]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("button[data-f]").forEach(x => x.classList.toggle("on", x === b));
+  document.body.classList.remove("f-Easy", "f-Medium", "f-Hard");
+  if (b.dataset.f !== "All") document.body.classList.add("f-" + b.dataset.f);
+});
+document.getElementById("openAll").onclick = () => document.querySelectorAll("details").forEach(d => d.open = true);
+document.getElementById("closeAll").onclick = () => document.querySelectorAll("details").forEach(d => d.open = false);
+document.getElementById("reset").onclick = () => {
+  if (confirm("Clear all solved marks?")) { solved = {}; save(); refresh(); }
+};
+refresh();
+</script>
+</body>
+</html>
