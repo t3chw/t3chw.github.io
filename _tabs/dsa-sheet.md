@@ -3,5 +3,8 @@ title: DSA Sheet
 icon: fas fa-list-check
 order: 4
 permalink: /dsa/
-redirect_to: /dsa-sheet/
 ---
+
+<script>location.replace("/dsa-sheet/");</script>
+
+[Open the DSA sheet](/dsa-sheet/)
