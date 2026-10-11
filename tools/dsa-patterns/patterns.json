@@ -1,0 +1,250 @@
+[
+ {
+  "n": 1,
+  "name": "Arrays",
+  "intro": "The base of everything. 14 patterns, mostly about scanning smarter than a double loop.",
+  "patterns": [
+   "Traversal",
+   "Two Pointers",
+   "Sliding Window: Fixed",
+   "Sliding Window: Variable",
+   "Prefix Sum",
+   "Difference Array",
+   "Kadane's Algorithm",
+   "Hashing / Frequency Map",
+   "Sorting + Searching",
+   "Binary Search",
+   "Binary Search on Answer",
+   "Merge Intervals",
+   "Cyclic Sort",
+   "Matrix Traversal"
+  ]
+ },
+ {
+  "n": 2,
+  "name": "Strings",
+  "intro": "A string is an array of characters. Most array patterns carry over, plus a few string-only ones.",
+  "patterns": [
+   "Character Frequency",
+   "Two Pointers",
+   "Fixed Sliding Window",
+   "Variable Sliding Window",
+   "HashMap / HashSet",
+   "Anagram Pattern",
+   "Palindrome Pattern",
+   "Substring Pattern",
+   "String Matching",
+   "Stack-based String Problems"
+  ]
+ },
+ {
+  "n": 3,
+  "name": "Linked List",
+  "intro": "No random access, so every trick is about pointers: moving them at different speeds, reversing them, or anchoring them with a dummy node.",
+  "patterns": [
+   "Fast & Slow Pointers",
+   "Reverse Linked List",
+   "Dummy Node",
+   "Two Pointers",
+   "Merge Two Lists",
+   "Cycle Detection",
+   "Find Middle",
+   "Remove Nth Node",
+   "Intersection",
+   "Reverse in Groups"
+  ]
+ },
+ {
+  "n": 4,
+  "name": "Stack",
+  "intro": "Last in, first out. Use it when the most recent unfinished item must be handled first.",
+  "patterns": [
+   "Basic Stack",
+   "Parentheses Matching",
+   "Monotonic Stack",
+   "Next Greater Element",
+   "Next Smaller Element",
+   "Previous Greater/Smaller",
+   "Stock Span",
+   "Largest Rectangle in Histogram",
+   "Min Stack"
+  ]
+ },
+ {
+  "n": 5,
+  "name": "Queue / Deque",
+  "intro": "First in, first out (queue), or add/remove at both ends (deque).",
+  "patterns": [
+   "Basic Queue",
+   "Circular Queue",
+   "Sliding Window Maximum",
+   "Monotonic Deque",
+   "BFS using Queue"
+  ]
+ },
+ {
+  "n": 6,
+  "name": "HashMap / HashSet",
+  "intro": "Trade memory for speed: O(1) average lookup turns many O(n\u00b2) searches into O(n).",
+  "patterns": [
+   "Frequency Counting",
+   "Duplicate Detection",
+   "Two Sum",
+   "Prefix Sum + HashMap",
+   "Subarray Sum",
+   "Longest Consecutive Sequence",
+   "Group Anagrams",
+   "Frequency-based Problems"
+  ]
+ },
+ {
+  "n": 7,
+  "name": "Recursion",
+  "intro": "A function that solves a problem by calling itself on a smaller one. Backtracking is recursion that tries, then undoes.",
+  "patterns": [
+   "Basic Recursion",
+   "Pick / Not Pick",
+   "Subsets",
+   "Subsequences",
+   "Permutations",
+   "Combination",
+   "Backtracking",
+   "Recursion on Trees"
+  ]
+ },
+ {
+  "n": 8,
+  "name": "Binary Tree",
+  "intro": "Each node has at most two children. Nearly every problem is a traversal with a small twist.",
+  "patterns": [
+   "DFS",
+   "BFS / Level Order",
+   "Preorder",
+   "Inorder",
+   "Postorder",
+   "Height / Depth",
+   "Diameter",
+   "Balanced Tree",
+   "Path Sum",
+   "Lowest Common Ancestor",
+   "Boundary Traversal",
+   "Vertical Order"
+  ]
+ },
+ {
+  "n": 9,
+  "name": "Binary Search Tree",
+  "intro": "A binary tree where left < node < right holds for every node. That ordering gives O(h) search, and sorted inorder.",
+  "patterns": [
+   "Search",
+   "Insert",
+   "Delete",
+   "Validate BST",
+   "Kth Smallest/Largest",
+   "LCA in BST",
+   "Sorted Array \u2192 BST"
+  ]
+ },
+ {
+  "n": 10,
+  "name": "Heap / Priority Queue",
+  "intro": "Gives the smallest (or largest) item in O(1) and removes it in O(log n). Use it when you keep asking for \"the best so far\".",
+  "patterns": [
+   "Min Heap",
+   "Max Heap",
+   "Kth Largest/Smallest",
+   "Top K Elements",
+   "K-way Merge",
+   "Two Heaps",
+   "Median from Data Stream"
+  ]
+ },
+ {
+  "n": 11,
+  "name": "Graph",
+  "intro": "Nodes and edges. Most problems hide a graph: grids, dependencies, word ladders, networks.",
+  "patterns": [
+   "BFS",
+   "DFS",
+   "Connected Components",
+   "Cycle Detection",
+   "Bipartite Graph",
+   "Topological Sort",
+   "Shortest Path",
+   "Dijkstra",
+   "Bellman-Ford",
+   "Floyd-Warshall",
+   "Minimum Spanning Tree",
+   "Kruskal",
+   "Prim",
+   "DSU / Union-Find"
+  ]
+ },
+ {
+  "n": 12,
+  "name": "Greedy",
+  "intro": "Make the locally best choice at each step and never look back. It only works when a local best leads to a global best.",
+  "patterns": [
+   "Activity Selection",
+   "Fractional Knapsack",
+   "Interval Scheduling",
+   "Merge Intervals",
+   "Minimum Platforms",
+   "Jump Game",
+   "Gas Station",
+   "Job Sequencing"
+  ]
+ },
+ {
+  "n": 13,
+  "name": "Dynamic Programming",
+  "intro": "Recursion + remembering. If a problem has overlapping subproblems and optimal substructure, solve each subproblem once.",
+  "patterns": [
+   "1D DP",
+   "Climbing Stairs",
+   "House Robber",
+   "Fibonacci",
+   "0/1 Knapsack",
+   "Unbounded Knapsack",
+   "Subset Sum",
+   "Partition DP",
+   "Coin Change",
+   "Grid DP",
+   "LCS",
+   "LIS",
+   "Edit Distance",
+   "Palindromic DP",
+   "DP on Trees",
+   "DP on Strings"
+  ]
+ },
+ {
+  "n": 14,
+  "name": "Trie (prefix tree)",
+  "intro": "A tree where each edge is a character, so words sharing a prefix share a path. Prefix questions cost O(length of word), not O(number of words).",
+  "patterns": [
+   "Insert",
+   "Search",
+   "Prefix Search",
+   "Starts With",
+   "Word Dictionary",
+   "Word Search",
+   "Maximum XOR"
+  ]
+ },
+ {
+  "n": 15,
+  "name": "Bit Manipulation",
+  "intro": "Work directly on the binary digits. Fast, O(1) space, and the source of many neat tricks.",
+  "patterns": [
+   "AND / OR / XOR",
+   "Odd/Even",
+   "Set/Unset Bit",
+   "Count Set Bits",
+   "Power of 2",
+   "XOR Patterns",
+   "Bit Masking",
+   "Subsets using Bits"
+  ]
+ }
+]

@@ -1,0 +1,859 @@
+@@ PATTERN: Insert
+@@ SPOT: Use this when many words must be stored so that words with the same start share one path, and you want to keep extra facts (an end flag, a count) on the nodes while you add them.
+@@ PROBLEM: longest-common-prefix
+@@ APPROACH:
+Insert every string into one trie, so the start shared by all strings is one path from the root.
+Walk down while the node has exactly one child and no word ends at it. Each step adds one letter to the answer.
+The key line is `n = n.kids.setdefault(ch, Trie())` in insert: it reuses a path that exists or grows a new branch.
+The walk stops when the path forks (the strings differ) or a word ends (the shortest string is used up).
+@@ COMPLEXITY: O(total characters) time, O(total characters) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.end = {}, False
+
+    def insert(self, w):
+        n = self
+        for ch in w:
+            n = n.kids.setdefault(ch, Trie())   # reuse the shared path or grow a branch
+        n.end = True
+
+
+class Solution:
+    def longestCommonPrefix(self, strs: List[str]) -> str:
+        root = Trie()
+        for w in strs:
+            root.insert(w)
+        prefix, n = [], root
+        while len(n.kids) == 1 and not n.end:   # one way forward and no word stops here
+            ch, n = next(iter(n.kids.items()))
+            prefix.append(ch)
+        return "".join(prefix)
+@@ TEST:
+s = Solution()
+assert s.longestCommonPrefix(["flower", "flow", "flight"]) == "fl"
+assert s.longestCommonPrefix(["dog", "racecar", "car"]) == ""
+assert s.longestCommonPrefix(["a"]) == "a"
+assert s.longestCommonPrefix([""]) == ""
+assert s.longestCommonPrefix(["ab", "a"]) == "a"
+assert s.longestCommonPrefix(["same", "same"]) == "same"
+assert s.longestCommonPrefix(["abc", "abcd", "abcde"]) == "abc"
+@@ PROBLEM: implement-trie-prefix-tree
+@@ APPROACH:
+Each node holds a `kids` dict and an `end` flag. insert walks the word one letter at a time and creates any missing child with setdefault.
+The last node gets `end = True`, which marks "a word stops here".
+search and startsWith both use the `_walk` helper that follows the letters and returns the final node, or None if a letter is missing.
+search also needs `end` to be True, so "app" is not found after inserting only "apple". startsWith only needs the path to exist.
+@@ COMPLEXITY: O(L) time per operation, O(total characters) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.end = {}, False
+
+    def insert(self, word: str) -> None:
+        n = self
+        for ch in word:
+            n = n.kids.setdefault(ch, Trie())   # one node per letter
+        n.end = True                            # a word stops at this node
+
+    def _walk(self, s):
+        n = self
+        for ch in s:
+            if ch not in n.kids:
+                return None
+            n = n.kids[ch]
+        return n
+
+    def search(self, word: str) -> bool:
+        n = self._walk(word)
+        return bool(n and n.end)                # path must exist AND a word must end there
+
+    def startsWith(self, prefix: str) -> bool:
+        return self._walk(prefix) is not None   # path alone is enough
+@@ TEST:
+t = Trie()
+t.insert("apple")
+assert t.search("apple") is True
+assert t.search("app") is False
+assert t.startsWith("app") is True
+t.insert("app")
+assert t.search("app") is True
+assert t.search("apples") is False
+assert t.startsWith("b") is False
+assert t.startsWith("apple") is True
+assert t.search("a") is False
+@@ PROBLEM: sum-of-prefix-scores-of-strings
+@@ APPROACH:
+Give each node a `count` instead of an end flag, and add 1 to it every time an insert passes through the node.
+After all words are inserted, the count at a node is the number of words that start with the prefix spelled by that path.
+The score of one word is the sum of the counts along its own path, one count for each of its prefixes.
+The key line is `n.count += 1` inside the insert loop.
+@@ COMPLEXITY: O(total characters) time, O(total characters) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.count = {}, 0
+
+
+class Solution:
+    def sumPrefixScores(self, words: List[str]) -> List[int]:
+        root = Trie()
+        for w in words:
+            n = root
+            for ch in w:
+                n = n.kids.setdefault(ch, Trie())
+                n.count += 1                    # one more word passes through this prefix
+        scores = []
+        for w in words:
+            n, total = root, 0
+            for ch in w:
+                n = n.kids[ch]
+                total += n.count                # words that start with this prefix
+            scores.append(total)
+        return scores
+@@ TEST:
+s = Solution()
+assert s.sumPrefixScores(["abc", "ab", "bc", "b"]) == [5, 4, 3, 2]
+assert s.sumPrefixScores(["abcd"]) == [4]
+assert s.sumPrefixScores(["a", "a"]) == [2, 2]
+assert s.sumPrefixScores(["ab", "ac"]) == [3, 3]
+assert s.sumPrefixScores(["a"]) == [1]
+@@ PATTERN: Search
+@@ SPOT: Use this when you must know whether a whole word is stored, or which stored words end while you read a string, which means checking the end flag at each step.
+@@ PROBLEM: count-prefixes-of-a-given-string
+@@ APPROACH:
+Insert every word and keep a number at the node where it stops, so a word that appears twice counts twice.
+Then walk `s` once from the root. Each time the walk lands on a node whose `end` is above 0, those words are prefixes of `s`.
+Add `n.end` to the total at that point, and stop as soon as the next letter has no child.
+@@ COMPLEXITY: O(total characters of words + |s|) time, O(total characters of words) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.end = {}, 0             # end = how many words stop at this node
+
+
+class Solution:
+    def countPrefixes(self, words: List[str], s: str) -> int:
+        root = Trie()
+        for w in words:
+            n = root
+            for ch in w:
+                n = n.kids.setdefault(ch, Trie())
+            n.end += 1                          # duplicate words each count
+        n, total = root, 0
+        for ch in s:                            # one walk along s
+            if ch not in n.kids:
+                break
+            n = n.kids[ch]
+            total += n.end                      # words ending here are prefixes of s
+        return total
+@@ TEST:
+s = Solution()
+assert s.countPrefixes(["a", "b", "c", "ab", "bc", "abc"], "abc") == 3
+assert s.countPrefixes(["a", "a"], "aa") == 2
+assert s.countPrefixes(["abcd"], "abc") == 0
+assert s.countPrefixes(["b"], "a") == 0
+assert s.countPrefixes(["abc"], "abc") == 1
+@@ PROBLEM: replace-words
+@@ APPROACH:
+Insert every root into a trie and set `end` on the last node of each root.
+For each word of the sentence, walk down it and return the letters read so far the moment a node has `end` set. The first end flag on the way is the shortest root.
+If a letter has no child, no root starts this word, so the word is kept as it is.
+@@ COMPLEXITY: O(characters in dictionary + characters in sentence) time, O(characters in dictionary) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.end = {}, False
+
+
+class Solution:
+    def replaceWords(self, dictionary: List[str], sentence: str) -> str:
+        root = Trie()
+        for w in dictionary:
+            n = root
+            for ch in w:
+                n = n.kids.setdefault(ch, Trie())
+            n.end = True
+
+        def shortest_root(word):
+            n = root
+            for i, ch in enumerate(word):
+                if ch not in n.kids:
+                    return word                 # no root starts this word
+                n = n.kids[ch]
+                if n.end:
+                    return word[:i + 1]         # first end flag = shortest root
+            return word
+
+        return " ".join(shortest_root(w) for w in sentence.split())
+@@ TEST:
+s = Solution()
+assert s.replaceWords(["cat", "bat", "rat"], "the cattle was rattled by the battery") == "the cat was rat by the bat"
+assert s.replaceWords(["a", "b", "c"], "aadsfasf absbs bbab cadsfafs") == "a a b c"
+assert s.replaceWords(["abc"], "ab") == "ab"
+assert s.replaceWords(["a", "aa"], "aaa") == "a"
+assert s.replaceWords(["catt", "cat", "bat", "rat"], "the cattle was rattled by the battery") == "the cat was rat by the bat"
+@@ PROBLEM: stream-of-characters
+@@ APPROACH:
+A word matches when it is a suffix of the letters seen so far, so insert each word reversed.
+On every query, add the letter to the stream and walk the trie from the newest letter backwards.
+If the walk reaches a node with `end` set, some word is a suffix of the stream, so return True.
+The walk is never longer than the longest word, because it follows trie edges and the trie is that deep.
+@@ COMPLEXITY: O(L) time per query where L is the longest word, O(total characters) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.end = {}, False
+
+
+class StreamChecker:
+    def __init__(self, words: List[str]):
+        self.root = Trie()
+        for w in words:
+            n = self.root
+            for ch in reversed(w):              # insert each word backwards
+                n = n.kids.setdefault(ch, Trie())
+            n.end = True
+        self.stream = []
+
+    def query(self, letter: str) -> bool:
+        self.stream.append(letter)
+        n = self.root
+        for ch in reversed(self.stream):        # newest letter first
+            n = n.kids.get(ch)
+            if n is None:
+                return False
+            if n.end:                           # a stored word ends the stream
+                return True
+        return False
+@@ TEST:
+sc = StreamChecker(["cd", "f", "kl"])
+expected = {"a": False, "b": False, "c": False, "d": True, "e": False, "f": True,
+            "g": False, "h": False, "i": False, "j": False, "k": False, "l": True}
+for letter, want in expected.items():
+    assert sc.query(letter) is want
+sc2 = StreamChecker(["a"])
+assert sc2.query("a") is True
+assert sc2.query("b") is False
+assert sc2.query("a") is True
+sc3 = StreamChecker(["abc", "bc"])
+assert sc3.query("a") is False
+assert sc3.query("b") is False
+assert sc3.query("c") is True
+@@ PATTERN: Prefix Search
+@@ SPOT: Use this when you need the count, the sum or the list of stored words that begin with a prefix: walk to the prefix node, then read or explore what sits below it.
+@@ PROBLEM: counting-words-with-a-given-prefix
+@@ APPROACH:
+Add 1 to a `count` on every node an insert passes through, so each node knows how many words go through it.
+To answer a prefix question, walk to the prefix node and read its count. If a letter is missing on the way, the answer is 0.
+Every word below that node starts with the prefix, so one read replaces checking each word.
+@@ COMPLEXITY: O(total characters) time, O(total characters) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.count = {}, 0
+
+
+class Solution:
+    def prefixCount(self, words: List[str], pref: str) -> int:
+        root = Trie()
+        for w in words:
+            n = root
+            for ch in w:
+                n = n.kids.setdefault(ch, Trie())
+                n.count += 1                    # words passing through this node
+        n = root
+        for ch in pref:                         # walk to the prefix node
+            if ch not in n.kids:
+                return 0
+            n = n.kids[ch]
+        return n.count
+@@ TEST:
+s = Solution()
+assert s.prefixCount(["pay", "attention", "practice", "attend"], "at") == 2
+assert s.prefixCount(["leetcode", "win", "loops", "success"], "code") == 0
+assert s.prefixCount(["a", "a", "ab"], "a") == 3
+assert s.prefixCount(["abc"], "abcd") == 0
+assert s.prefixCount(["abc", "abd"], "ab") == 2
+@@ PROBLEM: map-sum-pairs
+@@ APPROACH:
+Keep a `total` on each node: the sum of the values of all keys whose path goes through that node.
+insert adds `delta` along the key's path, where delta is the new value minus the old value of that key. This way inserting an existing key replaces its value instead of adding to it.
+sum walks to the prefix node and returns its total, or 0 if the path breaks.
+@@ COMPLEXITY: O(L) time per operation, O(total characters) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.total = {}, 0           # total = sum of values of keys below this node
+
+
+class MapSum:
+    def __init__(self):
+        self.root = Trie()
+        self.values = {}
+
+    def insert(self, key: str, val: int) -> None:
+        delta = val - self.values.get(key, 0)  # re-inserting a key replaces its old value
+        self.values[key] = val
+        n = self.root
+        for ch in key:
+            n = n.kids.setdefault(ch, Trie())
+            n.total += delta
+
+    def sum(self, prefix: str) -> int:
+        n = self.root
+        for ch in prefix:                       # walk to the prefix node
+            if ch not in n.kids:
+                return 0
+            n = n.kids[ch]
+        return n.total
+@@ TEST:
+m = MapSum()
+m.insert("apple", 3)
+assert m.sum("ap") == 3
+m.insert("app", 2)
+assert m.sum("ap") == 5
+m.insert("apple", 2)
+assert m.sum("ap") == 4
+assert m.sum("apple") == 2
+assert m.sum("applee") == 0
+assert m.sum("b") == 0
+assert m.sum("app") == 4
+@@ PROBLEM: search-suggestions-system
+@@ APPROACH:
+Insert every product and store the product string on the node where it ends.
+For each typed letter, move one step down the trie to the prefix node. Once the path breaks, every longer prefix has no suggestions.
+Then run a DFS below the prefix node with children in alphabetical order and stop after 3 words. A node's own word comes before its children, which is dictionary order.
+The DFS uses a stack, because a product can be 3000 letters long and deep recursion would fail.
+@@ COMPLEXITY: O(total characters) to build, then each prefix visits only nodes until 3 words are found
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.word = {}, None         # word is stored where a product ends
+
+
+class Solution:
+    def suggestedProducts(self, products: List[str], searchWord: str) -> List[List[str]]:
+        root = Trie()
+        for p in products:
+            n = root
+            for ch in p:
+                n = n.kids.setdefault(ch, Trie())
+            n.word = p
+
+        def first_three(node):                  # DFS below the prefix node, alphabetical
+            found, stack = [], [node]
+            while stack and len(found) < 3:
+                cur = stack.pop()
+                if cur.word:
+                    found.append(cur.word)
+                for ch in sorted(cur.kids, reverse=True):   # push big letters first so small ones pop first
+                    stack.append(cur.kids[ch])
+            return found
+
+        answer, n = [], root
+        for ch in searchWord:
+            n = n.kids.get(ch) if n is not None else None   # once the path breaks it stays broken
+            answer.append(first_three(n) if n is not None else [])
+        return answer
+@@ TEST:
+s = Solution()
+mouse = ["mobile", "moneypot", "monitor"]
+assert s.suggestedProducts(["mobile", "mouse", "moneypot", "monitor", "mousepad"], "mouse") == [
+    mouse, mouse, ["mouse", "mousepad"], ["mouse", "mousepad"], ["mouse", "mousepad"]]
+assert s.suggestedProducts(["havana"], "havana") == [["havana"]] * 6
+assert s.suggestedProducts(["bags", "baggage", "banner", "box", "cloths"], "bags") == [
+    ["baggage", "bags", "banner"], ["baggage", "bags", "banner"], ["baggage", "bags"], ["bags"]]
+assert s.suggestedProducts(["havana"], "tatiana") == [[], [], [], [], [], [], []]
+assert s.suggestedProducts(["a"], "ab") == [["a"], []]
+assert s.suggestedProducts(["abc"], "x") == [[]]
+@@ PATTERN: Starts With
+@@ SPOT: Use this when you only need to know whether some stored word begins with a prefix, so you walk the path and ignore the end flag.
+@@ PROBLEM: check-if-a-word-occurs-as-a-prefix-of-any-word-in-a-sentence
+@@ APPROACH:
+Insert each word of the sentence and save, on every node, the position of the first word that reached it (`n.first`).
+To ask "does some word start with searchWord", only the path matters: walk searchWord and return -1 if a letter has no child.
+The position saved on the last node is the leftmost word that starts with searchWord.
+@@ COMPLEXITY: O(total characters) time, O(total characters) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.first = {}, 0           # first = position of the first word through this node
+
+
+class Solution:
+    def isPrefixOfWord(self, sentence: str, searchWord: str) -> int:
+        root = Trie()
+        for pos, w in enumerate(sentence.split(), start=1):
+            n = root
+            for ch in w:
+                n = n.kids.setdefault(ch, Trie())
+                if n.first == 0:
+                    n.first = pos               # remember the leftmost word to reach this prefix
+        n = root
+        for ch in searchWord:                   # starts-with: only the path matters
+            if ch not in n.kids:
+                return -1
+            n = n.kids[ch]
+        return n.first
+@@ TEST:
+s = Solution()
+assert s.isPrefixOfWord("i love eating burger", "burg") == 4
+assert s.isPrefixOfWord("this problem is an easy problem", "pro") == 2
+assert s.isPrefixOfWord("i am tired", "you") == -1
+assert s.isPrefixOfWord("hello", "hello") == 1
+assert s.isPrefixOfWord("a ab abc", "ab") == 2
+assert s.isPrefixOfWord("hellohello hellohellohello", "ell") == -1
+@@ PROBLEM: find-the-length-of-the-longest-common-prefix
+@@ APPROACH:
+Turn each number of arr1 into a string of digits and insert it, so every prefix of every number becomes a path in the trie.
+For each number of arr2, walk its digits and stop when the next digit has no child. That is a starts-with check that failed.
+The number of steps taken is the longest prefix it shares with some number of arr1. Keep the maximum over arr2.
+@@ COMPLEXITY: O((n + m) * D) time, O(n * D) space, where D is the number of digits
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids = {}
+
+
+class Solution:
+    def longestCommonPrefix(self, arr1: List[int], arr2: List[int]) -> int:
+        root = Trie()
+        for x in arr1:
+            n = root
+            for ch in str(x):
+                n = n.kids.setdefault(ch, Trie())   # every prefix of x becomes a path
+        best = 0
+        for y in arr2:
+            n, depth = root, 0
+            for ch in str(y):
+                if ch not in n.kids:            # starts-with fails here
+                    break
+                n = n.kids[ch]
+                depth += 1
+            best = max(best, depth)
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestCommonPrefix([1, 10, 100], [1000]) == 3
+assert s.longestCommonPrefix([1, 2, 3], [4, 4, 4]) == 0
+assert s.longestCommonPrefix([5], [5]) == 1
+assert s.longestCommonPrefix([12345], [123, 99]) == 3
+assert s.longestCommonPrefix([123], [1234]) == 3
+assert s.longestCommonPrefix([100], [1, 10, 100]) == 3
+@@ PROBLEM: prefix-and-suffix-search
+@@ APPROACH:
+A query asks for a prefix and a suffix at once. For every word and every suffix of it, insert the key `suffix + "{" + word`, so one path spells both parts.
+A query walks `suff + "{" + pref`, which is a starts-with check on that key.
+Each node saves the largest word index that passed through it. Words go in order, so a later index overwrites an earlier one.
+The query returns the index saved on the last node, or -1 if the walk breaks.
+@@ COMPLEXITY: O(n * L^2) to build, O(L) per query, O(n * L^2) space
+@@ CODE:
+class WordFilter:
+    def __init__(self, words: List[str]):
+        self.root = {}                          # a node is a dict; "idx" holds the largest index through it
+        for idx, w in enumerate(words):
+            for i in range(len(w) + 1):         # every suffix, including the empty one
+                key = w[i:] + "{" + w           # suffix, separator, whole word
+                n = self.root
+                for ch in key:
+                    n = n.setdefault(ch, {})
+                    n["idx"] = idx              # a later word overwrites an earlier one
+
+    def f(self, pref: str, suff: str) -> int:
+        n = self.root
+        for ch in suff + "{" + pref:            # starts-with on the combined key
+            if ch not in n:
+                return -1
+            n = n[ch]
+        return n["idx"]
+@@ TEST:
+wf = WordFilter(["apple"])
+assert wf.f("a", "e") == 0
+assert wf.f("b", "") == -1
+wf2 = WordFilter(["apple", "ape"])
+assert wf2.f("a", "e") == 1
+assert wf2.f("app", "e") == 0
+assert wf2.f("ap", "pe") == 1
+assert wf2.f("ap", "ple") == 0
+assert wf2.f("ape", "ape") == 1
+assert wf2.f("x", "e") == -1
+wf3 = WordFilter(["a", "a"])
+assert wf3.f("a", "a") == 1
+@@ PATTERN: Word Dictionary
+@@ SPOT: Use this when a query holds wildcards or allows a wrong letter, so at those positions you branch over every child with DFS.
+@@ PROBLEM: design-add-and-search-words-data-structure
+@@ APPROACH:
+addWord is a normal insert. search calls a recursive helper `_dfs(word, i)` on the node reached so far.
+A normal letter follows its single child, or fails if there is none. A "." tries every child and succeeds if any branch does, which is the DFS from the notes.
+When all letters are used, return the node's end flag, so "b" is not found when only "bad" was added.
+@@ COMPLEXITY: add O(L); search O(L) with no dots, O(26^d * L) with d dots
+@@ CODE:
+class WordDictionary:
+    def __init__(self):
+        self.kids, self.end = {}, False
+
+    def addWord(self, word: str) -> None:
+        n = self
+        for ch in word:
+            n = n.kids.setdefault(ch, WordDictionary())
+        n.end = True
+
+    def search(self, word: str) -> bool:
+        return self._dfs(word, 0)
+
+    def _dfs(self, w, i):
+        if i == len(w):
+            return self.end                     # all letters used: must be a word end
+        ch = w[i]
+        if ch == ".":                           # wildcard: try every child
+            return any(c._dfs(w, i + 1) for c in self.kids.values())
+        return ch in self.kids and self.kids[ch]._dfs(w, i + 1)
+@@ TEST:
+d = WordDictionary()
+d.addWord("bad")
+d.addWord("dad")
+d.addWord("mad")
+assert d.search("pad") is False
+assert d.search("bad") is True
+assert d.search(".ad") is True
+assert d.search("b..") is True
+assert d.search("b") is False
+assert d.search("ba") is False
+assert d.search("...") is True
+assert d.search("....") is False
+assert d.search("..d") is True
+assert d.search("m.x") is False
+@@ PROBLEM: implement-magic-dictionary
+@@ APPROACH:
+Treat the one allowed change as a wildcard that may be used once. buildDict is a normal insert.
+`_dfs(w, i, changed)` goes down the trie. A child whose letter equals `w[i]` continues with the same flag.
+A child with a different letter is taken only if no change was used yet, and then `changed` becomes True.
+At the end of the word the node must be a word end and `changed` must be True, so an exact match does not count.
+@@ COMPLEXITY: O(26 * L^2) time per search worst case, O(total characters) space
+@@ CODE:
+class MagicDictionary:
+    def __init__(self):
+        self.kids, self.end = {}, False
+
+    def buildDict(self, dictionary: List[str]) -> None:
+        for w in dictionary:
+            n = self
+            for ch in w:
+                n = n.kids.setdefault(ch, MagicDictionary())
+            n.end = True
+
+    def search(self, searchWord: str) -> bool:
+        return self._dfs(searchWord, 0, False)
+
+    def _dfs(self, w, i, changed):
+        if i == len(w):
+            return self.end and changed         # a word end, with exactly one change made
+        for ch, child in self.kids.items():
+            if ch == w[i]:
+                if child._dfs(w, i + 1, changed):       # keep the letter
+                    return True
+            elif not changed:
+                if child._dfs(w, i + 1, True):          # spend the one change here
+                    return True
+        return False
+@@ TEST:
+m = MagicDictionary()
+m.buildDict(["hello", "leetcode"])
+assert m.search("hello") is False
+assert m.search("hhllo") is True
+assert m.search("hell") is False
+assert m.search("leetcoded") is False
+assert m.search("leetcodd") is True
+m2 = MagicDictionary()
+m2.buildDict(["a"])
+assert m2.search("b") is True
+assert m2.search("a") is False
+m3 = MagicDictionary()
+m3.buildDict(["hello", "hallo"])
+assert m3.search("hello") is True
+assert m3.search("hxllx") is False
+@@ PROBLEM: concatenated-words
+@@ APPROACH:
+Put all words into a trie. For each word, `can_build(start)` walks the trie along `w[start:]`.
+Each time the walk passes a node with `end` set, it may cut the word there and try to build the rest. That is one branch per cut point, like the dot branching in a wildcard search.
+A memo on `start` stops the branches from repeating work.
+The check `whole` stops a word from counting as one piece of itself, so at least two words are needed.
+@@ COMPLEXITY: O(sum of L^2) time over all words, O(total characters) space
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.end = {}, False
+
+
+class Solution:
+    def findAllConcatenatedWordsInADict(self, words: List[str]) -> List[str]:
+        root = Trie()
+        for w in words:
+            n = root
+            for ch in w:
+                n = n.kids.setdefault(ch, Trie())
+            n.end = True
+
+        def can_build(w, start, memo):
+            if start == len(w):
+                return True
+            if start in memo:
+                return memo[start]
+            n, ok = root, False
+            for j in range(start, len(w)):
+                n = n.kids.get(w[j])            # walk the trie along the word
+                if n is None:
+                    break
+                whole = start == 0 and j == len(w) - 1     # the word itself is not a piece
+                if n.end and not whole and can_build(w, j + 1, memo):   # cut here, build the rest
+                    ok = True
+                    break
+            memo[start] = ok
+            return ok
+
+        return [w for w in words if can_build(w, 0, {})]
+@@ TEST:
+s = Solution()
+words = ["cat", "cats", "catsdogcats", "dog", "dogcatsdog", "hippopotamuses", "rat", "ratcatdogcat"]
+assert sorted(s.findAllConcatenatedWordsInADict(words)) == ["catsdogcats", "dogcatsdog", "ratcatdogcat"]
+assert s.findAllConcatenatedWordsInADict(["cat", "dog", "catdog"]) == ["catdog"]
+assert s.findAllConcatenatedWordsInADict(["a"]) == []
+assert sorted(s.findAllConcatenatedWordsInADict(["a", "aa", "aaa"])) == ["aa", "aaa"]
+assert s.findAllConcatenatedWordsInADict(["ab", "cd", "abx"]) == []
+@@ PATTERN: Word Search
+@@ SPOT: Use this when you must find words inside a grid, so you walk the grid and the trie together and stop at once when the trie has no such branch.
+@@ PROBLEM: word-search
+@@ APPROACH:
+Walk the grid and the word together. The index `i` says how many letters are matched, which plays the role of the depth in a trie.
+From a cell equal to `word[i]`, try the four neighbours with `i + 1`. Mark the cell as used first and restore it on the way back.
+One word is a trie with a single path, so no trie is needed here. The next question has many words and uses the same DFS with a real trie.
+@@ COMPLEXITY: O(R * C * 3^L) time, O(L) space for the recursion
+@@ CODE:
+class Solution:
+    def exist(self, board: List[List[str]], word: str) -> bool:
+        rows, cols = len(board), len(board[0])
+
+        def dfs(r, c, i):                       # i = letters of word matched so far
+            if i == len(word):
+                return True
+            if not (0 <= r < rows and 0 <= c < cols) or board[r][c] != word[i]:
+                return False                    # no branch for this letter
+            saved, board[r][c] = board[r][c], "#"      # mark the cell as used
+            found = (dfs(r + 1, c, i + 1) or dfs(r - 1, c, i + 1)
+                     or dfs(r, c + 1, i + 1) or dfs(r, c - 1, i + 1))
+            board[r][c] = saved                 # undo the mark
+            return found
+
+        return any(dfs(r, c, 0) for r in range(rows) for c in range(cols))
+@@ TEST:
+s = Solution()
+board = [["A", "B", "C", "E"], ["S", "F", "C", "S"], ["A", "D", "E", "E"]]
+assert s.exist(board, "ABCCED") is True
+assert s.exist(board, "SEE") is True
+assert s.exist(board, "ABCB") is False
+assert board == [["A", "B", "C", "E"], ["S", "F", "C", "S"], ["A", "D", "E", "E"]]
+assert s.exist([["a"]], "a") is True
+assert s.exist([["a"]], "b") is False
+assert s.exist([["a", "a"]], "aaa") is False
+assert s.exist([["a", "b"], ["c", "d"]], "acdb") is True
+@@ PROBLEM: word-search-ii
+@@ APPROACH:
+Build a trie of all the words and store each word on the node where it ends.
+Run one grid DFS and step to a neighbour only if its letter is a child of the current trie node. Dead prefixes are never explored.
+When a node holds a word, add it to the answer and clear it so it is reported once.
+After exploring a node, delete it from its parent if it has no children left, which prunes later searches.
+@@ COMPLEXITY: O(R * C * 3^L) worst case, far less in practice because of the pruning
+@@ CODE:
+class Trie:
+    def __init__(self):
+        self.kids, self.word = {}, None         # word is stored where a word ends
+
+
+class Solution:
+    def findWords(self, board: List[List[str]], words: List[str]) -> List[str]:
+        root = Trie()
+        for w in words:
+            n = root
+            for ch in w:
+                n = n.kids.setdefault(ch, Trie())
+            n.word = w
+        rows, cols, found = len(board), len(board[0]), []
+
+        def dfs(r, c, parent):
+            ch = board[r][c]
+            node = parent.kids[ch]
+            if node.word:
+                found.append(node.word)
+                node.word = None                # report each word once
+            board[r][c] = "#"                   # mark the cell as used
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and board[nr][nc] in node.kids:   # follow trie edges only
+                    dfs(nr, nc, node)
+            board[r][c] = ch                    # undo the mark
+            if not node.kids:
+                del parent.kids[ch]             # prune the dead branch
+
+        for r in range(rows):
+            for c in range(cols):
+                if board[r][c] in root.kids:
+                    dfs(r, c, root)
+        return found
+@@ TEST:
+s = Solution()
+board = [["o", "a", "a", "n"], ["e", "t", "a", "e"], ["i", "h", "k", "r"], ["i", "f", "l", "v"]]
+assert sorted(s.findWords(board, ["oath", "pea", "eat", "rain"])) == ["eat", "oath"]
+assert s.findWords([["a", "b"], ["c", "d"]], ["abcb"]) == []
+assert s.findWords([["a"]], ["a"]) == ["a"]
+assert s.findWords([["a", "a"]], ["aa"]) == ["aa"]
+assert sorted(s.findWords([["a", "b"]], ["a", "ab", "b", "ba"])) == ["a", "ab", "b", "ba"]
+assert s.findWords([["a", "b"], ["c", "d"]], ["abdc", "ad"]) == ["abdc"]
+@@ PATTERN: Maximum XOR
+@@ SPOT: Use this when you must find the pair (or the best partner for a number) with the largest XOR, which a binary trie answers by taking the opposite bit at each level.
+@@ PROBLEM: maximum-strong-pair-xor-i
+@@ APPROACH:
+Two numbers x <= y are a strong pair when y <= 2 * x. Sort the array and slide a window: add each y to a binary trie, then remove numbers from the left while `2 * x < y`.
+Each trie node keeps a count of the numbers passing through it, so `add(x, -1)` can remove a number again.
+To find the best partner of y, walk its bits from the top and take the opposite-bit child whenever it exists with count above 0. That sets this bit of the XOR to 1.
+The window always holds y itself, so the result is at least 0.
+@@ COMPLEXITY: O(n log n + n * B) time, O(n * B) space, where B is the bit length of the largest number
+@@ CODE:
+class Solution:
+    def maximumStrongPairXor(self, nums: List[int]) -> int:
+        nums.sort()
+        bits = max(nums).bit_length()
+        root = [None, None, 0]                  # node = [child for bit 0, child for bit 1, count]
+
+        def add(x, delta):                      # delta = +1 to insert, -1 to remove
+            n = root
+            for b in range(bits - 1, -1, -1):
+                bit = (x >> b) & 1
+                if n[bit] is None:
+                    n[bit] = [None, None, 0]
+                n = n[bit]
+                n[2] += delta
+
+        def best_partner(x):
+            n, cur = root, 0
+            for b in range(bits - 1, -1, -1):
+                bit = (x >> b) & 1
+                want = n[bit ^ 1]               # opposite bit, if a number still has it
+                if want is not None and want[2] > 0:
+                    cur |= 1 << b
+                    n = want
+                else:
+                    n = n[bit]
+            return cur
+
+        best, left = 0, 0
+        for y in nums:
+            add(y, 1)
+            while nums[left] * 2 < y:           # x is too small to pair with y
+                add(nums[left], -1)
+                left += 1
+            best = max(best, best_partner(y))
+        return best
+@@ TEST:
+s = Solution()
+assert s.maximumStrongPairXor([1, 2, 3, 4, 5]) == 7
+assert s.maximumStrongPairXor([10, 100]) == 0
+assert s.maximumStrongPairXor([5, 6, 25, 30]) == 7
+assert s.maximumStrongPairXor([7]) == 0
+assert s.maximumStrongPairXor([1, 3]) == 0
+assert s.maximumStrongPairXor([3, 4]) == 7
+assert s.maximumStrongPairXor([2, 2, 2]) == 0
+@@ PROBLEM: maximum-xor-of-two-numbers-in-an-array
+@@ APPROACH:
+Insert every number into a binary trie as a path of bits, from the top bit down to bit 0.
+For each number, walk the trie from the top. `want = bit ^ 1` is the opposite bit. If that child exists, take it and set that bit of the result, because a higher bit is worth more than all lower bits together.
+If it does not exist, follow the same bit and leave the result bit at 0. The best result over all numbers is the answer.
+The trie is stored in two flat int arrays, `child[0]` and `child[1]`, where a node is just an index. Nested dicts would work too, but they use hundreds of MB on the largest inputs.
+@@ COMPLEXITY: O(n * B) time, O(n * B) space in compact int arrays, where B is the bit length of the largest number (at most 31)
+@@ CODE:
+from array import array
+
+class Solution:
+    def findMaximumXOR(self, nums: List[int]) -> int:
+        bits = max(nums).bit_length()
+        child = (array('i', [0]), array('i', [0]))      # child[bit][node] = id of that child, 0 = none
+        for x in nums:                                  # insert as bit paths, top bit first
+            node = 0
+            for b in range(bits - 1, -1, -1):
+                bit = (x >> b) & 1
+                if not child[bit][node]:
+                    child[0].append(0)
+                    child[1].append(0)
+                    child[bit][node] = len(child[0]) - 1
+                node = child[bit][node]
+        best = 0
+        for x in nums:
+            node, cur = 0, 0
+            for b in range(bits - 1, -1, -1):
+                bit = (x >> b) & 1
+                want = bit ^ 1                          # opposite bit makes this XOR bit a 1
+                if child[want][node]:
+                    cur |= 1 << b
+                    node = child[want][node]
+                else:
+                    node = child[bit][node]
+            best = max(best, cur)
+        return best
+@@ TEST:
+s = Solution()
+assert s.findMaximumXOR([3, 10, 5, 25, 2, 8]) == 28
+assert s.findMaximumXOR([14, 70, 53, 83, 49, 91, 36, 80, 92, 51, 66, 70]) == 127
+assert s.findMaximumXOR([0]) == 0
+assert s.findMaximumXOR([2, 4]) == 6
+assert s.findMaximumXOR([8, 10, 2]) == 10
+assert s.findMaximumXOR([5, 5]) == 0
+assert s.findMaximumXOR([0, 0, 1]) == 1
+@@ PROBLEM: maximum-xor-with-an-element-from-array
+@@ APPROACH:
+Sort the queries by their limit, smallest first, and sort nums. Walk a pointer through nums and insert every number that is at most the current limit, so the trie holds only allowed numbers. This is the offline trick: no query ever sees a number it is not allowed to use.
+Then answer the query exactly like Maximum XOR of Two Numbers: from the top bit down, prefer the child with the opposite bit.
+If no number is allowed yet (the pointer is still at 0), the answer is -1.
+The trie lives in two flat int arrays instead of nested dicts, which keeps memory small on 100,000 numbers.
+@@ COMPLEXITY: O((n + q) * 30 + n log n + q log q) time, O(n * 30) space in compact int arrays
+@@ CODE:
+from array import array
+
+class Solution:
+    def maximizeXor(self, nums: List[int], queries: List[List[int]]) -> List[int]:
+        nums.sort()
+        order = sorted(range(len(queries)), key=lambda i: queries[i][1])   # smallest limit first
+        child = (array('i', [0]), array('i', [0]))      # child[bit][node] = id of that child, 0 = none
+        answer, p = [-1] * len(queries), 0
+        for qi in order:
+            x, limit = queries[qi]
+            while p < len(nums) and nums[p] <= limit:   # trie holds only numbers <= limit
+                node = 0
+                for b in range(29, -1, -1):
+                    bit = (nums[p] >> b) & 1
+                    if not child[bit][node]:
+                        child[0].append(0)
+                        child[1].append(0)
+                        child[bit][node] = len(child[0]) - 1
+                    node = child[bit][node]
+                p += 1
+            if p == 0:
+                continue                                # nothing allowed yet: answer stays -1
+            node, cur = 0, 0
+            for b in range(29, -1, -1):
+                bit = (x >> b) & 1
+                want = bit ^ 1                          # opposite bit makes this XOR bit a 1
+                if child[want][node]:
+                    cur |= 1 << b
+                    node = child[want][node]
+                else:
+                    node = child[bit][node]
+            answer[qi] = cur
+        return answer
+@@ TEST:
+s = Solution()
+assert s.maximizeXor([0, 1, 2, 3, 4], [[3, 1], [1, 3], [5, 6]]) == [3, 3, 7]
+assert s.maximizeXor([5, 2, 4, 6, 6, 3], [[12, 4], [8, 1], [6, 3]]) == [15, -1, 5]
+assert s.maximizeXor([7], [[7, 7]]) == [0]
+assert s.maximizeXor([0], [[1, 0]]) == [1]
+assert s.maximizeXor([5], [[1, 4]]) == [-1]
+assert s.maximizeXor([1, 2], [[3, 5], [3, 1], [0, 0]]) == [2, 2, -1]

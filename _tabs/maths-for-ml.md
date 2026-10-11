@@ -1,7 +1,7 @@
 ---
 title: Maths for ML
 icon: fas fa-square-root-variable
-order: 5
+order: 6
 permalink: /maths-for-ml/
 ---
 

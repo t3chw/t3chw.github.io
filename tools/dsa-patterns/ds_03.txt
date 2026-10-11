@@ -1,0 +1,873 @@
+@@ PATTERN: Fast & Slow Pointers
+@@ SPOT: Use this when one pointer must move twice as fast as another so the slow one lands in the middle, or the two meet inside a loop.
+@@ PROBLEM: happy-number
+@@ APPROACH:
+Repeatedly replacing a number by the sum of its squared digits makes a chain, and a chain behaves like a linked list. It either reaches 1 or falls into a loop. Slow takes one step per round and fast takes two. If fast reaches 1 the number is happy. If slow and fast meet before that, there is a loop that does not contain 1.
+@@ COMPLEXITY: O(log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def isHappy(self, n: int) -> bool:
+        def next_number(x: int) -> int:
+            total = 0
+            while x:
+                x, digit = divmod(x, 10)
+                total += digit * digit
+            return total
+
+        slow, fast = n, next_number(n)
+        while fast != 1 and slow != fast:          # meeting without hitting 1 means a loop
+            slow = next_number(slow)               # slow: 1 step
+            fast = next_number(next_number(fast))  # fast: 2 steps
+        return fast == 1
+@@ TEST:
+s = Solution()
+assert s.isHappy(19) is True
+assert s.isHappy(2) is False
+assert s.isHappy(1) is True
+assert s.isHappy(7) is True
+assert s.isHappy(4) is False
+assert s.isHappy(100) is True
+assert s.isHappy(116) is False
+@@ PROBLEM: palindrome-linked-list
+@@ APPROACH:
+A list cannot be read backwards, so fast and slow pointers first find the middle: when fast reaches the end, slow is at the middle. The second half is then reversed in place with the save, flip, advance steps. Now the first half and the reversed second half are walked together and compared value by value. For an odd length the middle node is compared with itself, which is harmless.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def isPalindrome(self, head: Optional[ListNode]) -> bool:
+        slow = fast = head
+        while fast and fast.next:                  # slow ends at the middle
+            slow, fast = slow.next, fast.next.next
+        prev = None
+        while slow:                                # reverse the second half
+            nxt = slow.next
+            slow.next = prev
+            prev, slow = slow, nxt
+        left, right = head, prev
+        while right:                               # compare outside-in
+            if left.val != right.val:
+                return False
+            left, right = left.next, right.next
+        return True
+@@ TEST:
+s = Solution()
+assert s.isPalindrome(ll([1, 2, 2, 1])) is True
+assert s.isPalindrome(ll([1, 2])) is False
+assert s.isPalindrome(ll([1])) is True
+assert s.isPalindrome(ll([1, 2, 3, 2, 1])) is True
+assert s.isPalindrome(ll([1, 2, 3, 1])) is False
+assert s.isPalindrome(ll([4, 4])) is True
+assert s.isPalindrome(ll([1, 0, 0])) is False
+@@ PROBLEM: reorder-list
+@@ APPROACH:
+The target order is first, last, second, second-last, and so on. Fast and slow pointers find the middle and the list is cut there. The second half is reversed so that its nodes come out last-first. Then the two halves are woven together one node at a time, saving both next pointers before relinking.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def reorderList(self, head: Optional[ListNode]) -> None:
+        if not head:
+            return
+        slow = fast = head
+        while fast and fast.next:                  # 1. find the middle
+            slow, fast = slow.next, fast.next.next
+        prev, cur = None, slow.next
+        slow.next = None                           # cut into two halves
+        while cur:                                 # 2. reverse the second half
+            cur.next, prev, cur = prev, cur, cur.next
+        first, second = head, prev
+        while second:                              # 3. weave the halves together
+            next_first, next_second = first.next, second.next
+            first.next = second
+            second.next = next_first
+            first, second = next_first, next_second
+@@ TEST:
+s = Solution()
+h = ll([1, 2, 3, 4])
+s.reorderList(h)
+assert to_list(h) == [1, 4, 2, 3]
+h = ll([1, 2, 3, 4, 5])
+s.reorderList(h)
+assert to_list(h) == [1, 5, 2, 4, 3]
+h = ll([1])
+s.reorderList(h)
+assert to_list(h) == [1]
+h = ll([1, 2])
+s.reorderList(h)
+assert to_list(h) == [1, 2]
+h = ll([1, 2, 3])
+s.reorderList(h)
+assert to_list(h) == [1, 3, 2]
+h = ll([1, 2, 3, 4, 5, 6])
+s.reorderList(h)
+assert to_list(h) == [1, 6, 2, 5, 3, 4]
+@@ PATTERN: Reverse Linked List
+@@ SPOT: Use this when the direction of next pointers must be flipped, in the whole list, in a window, or in one half.
+@@ PROBLEM: reverse-linked-list
+@@ APPROACH:
+Walk the list with prev and cur. For each node, save cur.next first, then point cur.next back at prev, then move both names forward. When cur falls off the end, prev is the new head. Saving nxt before the flip is what keeps the rest of the list from being lost.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        prev, cur = None, head
+        while cur:
+            nxt = cur.next             # 1. save
+            cur.next = prev            # 2. flip
+            prev, cur = cur, nxt       # 3. advance
+        return prev
+@@ TEST:
+s = Solution()
+assert to_list(s.reverseList(ll([1, 2, 3, 4, 5]))) == [5, 4, 3, 2, 1]
+assert to_list(s.reverseList(ll([1, 2]))) == [2, 1]
+assert to_list(s.reverseList(ll([]))) == []
+assert to_list(s.reverseList(ll([7]))) == [7]
+assert to_list(s.reverseList(ll([1, 1, 2]))) == [2, 1, 1]
+@@ PROBLEM: reverse-linked-list-ii
+@@ APPROACH:
+Walk to the node right before position left, called before, using a dummy so left = 1 works. Run the same save, flip, advance loop, but only for right - left + 1 nodes. After the loop, prev is the new start of the window and cur is the first node after it. Two assignments reconnect the window: the old first node points to cur, and before points to prev.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def reverseBetween(self, head: Optional[ListNode], left: int, right: int) -> Optional[ListNode]:
+        dummy = ListNode(0, head)
+        before = dummy
+        for _ in range(left - 1):                  # stop right before the window
+            before = before.next
+        prev, cur = None, before.next
+        for _ in range(right - left + 1):          # reverse only the window
+            nxt = cur.next
+            cur.next = prev
+            prev, cur = cur, nxt
+        before.next.next = cur                     # old window start -> node after window
+        before.next = prev                         # before -> new window start
+        return dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.reverseBetween(ll([1, 2, 3, 4, 5]), 2, 4)) == [1, 4, 3, 2, 5]
+assert to_list(s.reverseBetween(ll([5]), 1, 1)) == [5]
+assert to_list(s.reverseBetween(ll([1, 2, 3]), 1, 3)) == [3, 2, 1]
+assert to_list(s.reverseBetween(ll([3, 5]), 1, 2)) == [5, 3]
+assert to_list(s.reverseBetween(ll([1, 2, 3, 4, 5]), 3, 3)) == [1, 2, 3, 4, 5]
+assert to_list(s.reverseBetween(ll([1, 2, 3, 4, 5]), 4, 5)) == [1, 2, 3, 5, 4]
+@@ PROBLEM: add-two-numbers-ii
+@@ APPROACH:
+The most significant digit comes first, but addition must start from the least significant digit. Reversing both lists puts the digits in the order addition needs. The loop adds digit by digit with a carry. Each new digit is pushed on the front of the result, which reverses the answer back into the right order. This version reverses the input lists, which LeetCode allows.
+@@ COMPLEXITY: O(n + m) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def addTwoNumbers(self, l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+        def reverse(head):
+            prev, cur = None, head
+            while cur:
+                nxt = cur.next         # save
+                cur.next = prev        # flip
+                prev, cur = cur, nxt   # advance
+            return prev
+
+        a, b = reverse(l1), reverse(l2)            # least significant digit first
+        carry = 0
+        result = None
+        while a or b or carry:
+            total = carry + (a.val if a else 0) + (b.val if b else 0)
+            carry, digit = divmod(total, 10)
+            result = ListNode(digit, result)       # push on the front: reverses the answer back
+            a = a.next if a else None
+            b = b.next if b else None
+        return result
+@@ TEST:
+s = Solution()
+assert to_list(s.addTwoNumbers(ll([7, 2, 4, 3]), ll([5, 6, 4]))) == [7, 8, 0, 7]
+assert to_list(s.addTwoNumbers(ll([2, 4, 3]), ll([5, 6, 4]))) == [8, 0, 7]
+assert to_list(s.addTwoNumbers(ll([0]), ll([0]))) == [0]
+assert to_list(s.addTwoNumbers(ll([9, 9]), ll([1]))) == [1, 0, 0]
+assert to_list(s.addTwoNumbers(ll([5]), ll([5]))) == [1, 0]
+assert to_list(s.addTwoNumbers(ll([1, 0, 0, 0]), ll([9, 9, 9]))) == [1, 9, 9, 9]
+@@ PATTERN: Dummy Node
+@@ SPOT: Use this when the head may be removed, replaced or built from scratch, so the first node should be handled like every other node.
+@@ PROBLEM: remove-linked-list-elements
+@@ APPROACH:
+If the head itself has the target value, there is no previous node to rewire. A dummy node placed before the head gives every real node a previous node. The loop looks at cur.next: if it matches, it is unlinked and cur stays put, otherwise cur moves on. Return dummy.next, because the head may have changed.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def removeElements(self, head: Optional[ListNode], val: int) -> Optional[ListNode]:
+        dummy = ListNode(0, head)                  # the head can now be removed like any node
+        cur = dummy
+        while cur.next:
+            if cur.next.val == val:
+                cur.next = cur.next.next           # unlink, stay on cur
+            else:
+                cur = cur.next
+        return dummy.next                          # not dummy
+@@ TEST:
+s = Solution()
+assert to_list(s.removeElements(ll([1, 2, 6, 3, 4, 5, 6]), 6)) == [1, 2, 3, 4, 5]
+assert to_list(s.removeElements(ll([]), 1)) == []
+assert to_list(s.removeElements(ll([7, 7, 7, 7]), 7)) == []
+assert to_list(s.removeElements(ll([1, 2, 2, 1]), 2)) == [1, 1]
+assert to_list(s.removeElements(ll([3, 1, 2]), 3)) == [1, 2]
+assert to_list(s.removeElements(ll([1, 2, 3]), 9)) == [1, 2, 3]
+@@ PROBLEM: partition-list
+@@ APPROACH:
+Build two separate chains, one for nodes smaller than x and one for the rest, each with its own dummy node. Walk the original list once and append every node to the right chain, keeping the original order. Finally set big.next to None so the old tail does not leave a loop, and link the small chain to the start of the big chain. Return small_dummy.next.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def partition(self, head: Optional[ListNode], x: int) -> Optional[ListNode]:
+        small_dummy, big_dummy = ListNode(), ListNode()   # one dummy per chain
+        small, big = small_dummy, big_dummy
+        while head:
+            if head.val < x:
+                small.next = head
+                small = small.next
+            else:
+                big.next = head
+                big = big.next
+            head = head.next
+        big.next = None                            # cut the old tail so no loop appears
+        small.next = big_dummy.next                # small chain, then big chain
+        return small_dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.partition(ll([1, 4, 3, 2, 5, 2]), 3)) == [1, 2, 2, 4, 3, 5]
+assert to_list(s.partition(ll([2, 1]), 2)) == [1, 2]
+assert to_list(s.partition(ll([]), 0)) == []
+assert to_list(s.partition(ll([5, 4, 3]), 1)) == [5, 4, 3]
+assert to_list(s.partition(ll([1, 2, 3]), 4)) == [1, 2, 3]
+assert to_list(s.partition(ll([3, 3, 1, 1]), 3)) == [1, 1, 3, 3]
+@@ PROBLEM: remove-duplicates-from-sorted-list-ii
+@@ APPROACH:
+Every value that appears more than once is removed completely, so even the first node may disappear. A dummy node gives the head a previous node. prev is the last node known to stay. When cur starts a run of equal values, skip the whole run and set prev.next to the node after it. Otherwise cur is unique, so prev moves onto it.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def deleteDuplicates(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = ListNode(0, head)                  # the first node may be a duplicate too
+        prev = dummy                               # last node we are sure to keep
+        cur = head
+        while cur:
+            if cur.next and cur.next.val == cur.val:
+                dup = cur.val
+                while cur and cur.val == dup:      # skip the whole run
+                    cur = cur.next
+                prev.next = cur
+            else:
+                prev, cur = cur, cur.next
+        return dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.deleteDuplicates(ll([1, 2, 3, 3, 4, 4, 5]))) == [1, 2, 5]
+assert to_list(s.deleteDuplicates(ll([1, 1, 1, 2, 3]))) == [2, 3]
+assert to_list(s.deleteDuplicates(ll([]))) == []
+assert to_list(s.deleteDuplicates(ll([1, 1]))) == []
+assert to_list(s.deleteDuplicates(ll([1, 2, 2]))) == [1]
+assert to_list(s.deleteDuplicates(ll([1, 2, 3]))) == [1, 2, 3]
+assert to_list(s.deleteDuplicates(ll([1, 1, 2, 2, 3, 3]))) == []
+@@ PATTERN: Two Pointers
+@@ SPOT: Use this when two pointers must walk the same list at once, as neighbours, as odd and even positions, or as the two ends of a section to cut out.
+@@ PROBLEM: remove-duplicates-from-sorted-list
+@@ APPROACH:
+The list is sorted, so equal values sit next to each other. cur and cur.next are the two pointers, always neighbours. If they hold the same value, unlink cur.next and compare again. If they differ, move cur forward. The head is never removed, so no dummy node is needed.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def deleteDuplicates(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        cur = head
+        while cur and cur.next:                    # compare cur with its neighbour
+            if cur.next.val == cur.val:
+                cur.next = cur.next.next           # drop the duplicate
+            else:
+                cur = cur.next
+        return head
+@@ TEST:
+s = Solution()
+assert to_list(s.deleteDuplicates(ll([1, 1, 2]))) == [1, 2]
+assert to_list(s.deleteDuplicates(ll([1, 1, 2, 3, 3]))) == [1, 2, 3]
+assert to_list(s.deleteDuplicates(ll([]))) == []
+assert to_list(s.deleteDuplicates(ll([1]))) == [1]
+assert to_list(s.deleteDuplicates(ll([2, 2, 2]))) == [2]
+assert to_list(s.deleteDuplicates(ll([1, 2, 3]))) == [1, 2, 3]
+@@ PROBLEM: odd-even-linked-list
+@@ APPROACH:
+Two pointers, odd and even, each build their own chain from the same list. Each step, odd jumps over the even node and even jumps over the odd node. Because they skip each other, the nodes at odd positions and at even positions end up in two chains without any new nodes. The last line attaches the saved head of the even chain to the tail of the odd chain.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def oddEvenList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        if not head:
+            return head
+        odd, even = head, head.next
+        even_head = even                           # remember where the even chain starts
+        while even and even.next:
+            odd.next = even.next                   # odd jumps over even
+            odd = odd.next
+            even.next = odd.next                   # even jumps over odd
+            even = even.next
+        odd.next = even_head                       # odd chain, then even chain
+        return head
+@@ TEST:
+s = Solution()
+assert to_list(s.oddEvenList(ll([1, 2, 3, 4, 5]))) == [1, 3, 5, 2, 4]
+assert to_list(s.oddEvenList(ll([2, 1, 3, 5, 6, 4, 7]))) == [2, 3, 6, 7, 1, 5, 4]
+assert to_list(s.oddEvenList(ll([]))) == []
+assert to_list(s.oddEvenList(ll([1]))) == [1]
+assert to_list(s.oddEvenList(ll([1, 2]))) == [1, 2]
+assert to_list(s.oddEvenList(ll([1, 2, 3]))) == [1, 3, 2]
+assert to_list(s.oddEvenList(ll([1, 2, 3, 4]))) == [1, 3, 2, 4]
+@@ PROBLEM: merge-in-between-linked-lists
+@@ APPROACH:
+Two pointers mark the edges of the part to cut out: before is the node right ahead of index a, and after is the node right past index b. Both are found by walking from list1, so the cut part is skipped without touching it. A third pointer finds the tail of list2. Then before points to list2 and the tail of list2 points to after.
+@@ COMPLEXITY: O(n + m) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def mergeInBetween(self, list1: ListNode, a: int, b: int, list2: ListNode) -> ListNode:
+        before = list1
+        for _ in range(a - 1):                     # pointer 1: node right before index a
+            before = before.next
+        after = before
+        for _ in range(b - a + 2):                 # pointer 2: node right after index b
+            after = after.next
+        tail = list2
+        while tail.next:                           # last node of list2
+            tail = tail.next
+        before.next = list2                        # splice list2 in
+        tail.next = after
+        return list1
+@@ TEST:
+s = Solution()
+res = s.mergeInBetween(ll([10, 1, 13, 6, 9, 5]), 3, 4, ll([1000000, 1000001, 1000002]))
+assert to_list(res) == [10, 1, 13, 1000000, 1000001, 1000002, 5]
+res = s.mergeInBetween(ll([0, 1, 2, 3, 4, 5, 6]), 2, 5, ll([1000000, 1000001, 1000002, 1000003, 1000004]))
+assert to_list(res) == [0, 1, 1000000, 1000001, 1000002, 1000003, 1000004, 6]
+res = s.mergeInBetween(ll([1, 2, 3]), 1, 1, ll([9]))
+assert to_list(res) == [1, 9, 3]
+res = s.mergeInBetween(ll([1, 2, 3, 4]), 1, 2, ll([8, 9]))
+assert to_list(res) == [1, 8, 9, 4]
+@@ PATTERN: Merge Two Lists
+@@ SPOT: Use this when two sorted lists must become one sorted list, or a list can be split, sorted in halves and merged back.
+@@ PROBLEM: merge-two-sorted-lists
+@@ APPROACH:
+Put a dummy node before the result and keep a tail pointer at its end. Compare the two current heads, attach the smaller one to tail, and advance that list. When one list runs out, attach the rest of the other in one step. Return dummy.next.
+@@ COMPLEXITY: O(n + m) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def mergeTwoLists(self, list1: Optional[ListNode], list2: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = tail = ListNode()                  # dummy removes the "which head first" case
+        while list1 and list2:
+            if list1.val <= list2.val:
+                tail.next, list1 = list1, list1.next
+            else:
+                tail.next, list2 = list2, list2.next
+            tail = tail.next
+        tail.next = list1 or list2                 # attach the leftover list
+        return dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.mergeTwoLists(ll([1, 2, 4]), ll([1, 3, 4]))) == [1, 1, 2, 3, 4, 4]
+assert to_list(s.mergeTwoLists(ll([]), ll([]))) == []
+assert to_list(s.mergeTwoLists(ll([]), ll([0]))) == [0]
+assert to_list(s.mergeTwoLists(ll([5]), ll([1, 2]))) == [1, 2, 5]
+assert to_list(s.mergeTwoLists(ll([-3, -1]), ll([-2, 0]))) == [-3, -2, -1, 0]
+@@ PROBLEM: sort-list
+@@ APPROACH:
+This is merge sort, which suits linked lists because merging needs no extra array. Fast and slow pointers find the end of the first half, and the list is cut there. Each half is sorted by a recursive call. The two sorted halves are then combined with the same dummy-and-tail merge used for two sorted lists.
+@@ COMPLEXITY: O(n log n) time, O(log n) space for the recursion
+@@ CODE:
+class Solution:
+    def sortList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        if not head or not head.next:
+            return head
+        slow, fast = head, head.next              # slow stops at the end of the first half
+        while fast and fast.next:
+            slow, fast = slow.next, fast.next.next
+        second = slow.next
+        slow.next = None                          # cut into two lists
+        return self.merge(self.sortList(head), self.sortList(second))
+
+    def merge(self, a: Optional[ListNode], b: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = tail = ListNode()
+        while a and b:
+            if a.val <= b.val:
+                tail.next, a = a, a.next
+            else:
+                tail.next, b = b, b.next
+            tail = tail.next
+        tail.next = a or b
+        return dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.sortList(ll([4, 2, 1, 3]))) == [1, 2, 3, 4]
+assert to_list(s.sortList(ll([-1, 5, 3, 4, 0]))) == [-1, 0, 3, 4, 5]
+assert to_list(s.sortList(ll([]))) == []
+assert to_list(s.sortList(ll([1]))) == [1]
+assert to_list(s.sortList(ll([3, 3, 1, 1]))) == [1, 1, 3, 3]
+assert to_list(s.sortList(ll([2, 1]))) == [1, 2]
+assert to_list(s.sortList(ll(list(range(2000, 0, -1))))) == list(range(1, 2001))
+@@ PROBLEM: merge-k-sorted-lists
+@@ APPROACH:
+Merging k lists one after another would re-walk the early lists many times. Instead, merge them in pairs: lists 0 and 1, lists 2 and 3, and so on, using the two-list merge. Each round halves the number of lists, so there are about log k rounds and every node is touched once per round. A min-heap of the k heads is the other common way to do it.
+@@ COMPLEXITY: O(N log k) time for N nodes in total, O(1) extra space
+@@ CODE:
+class Solution:
+    def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
+        if not lists:
+            return None
+        while len(lists) > 1:                      # each round halves the number of lists
+            merged = []
+            for i in range(0, len(lists), 2):
+                a = lists[i]
+                b = lists[i + 1] if i + 1 < len(lists) else None
+                merged.append(self.merge(a, b))
+            lists = merged
+        return lists[0]
+
+    def merge(self, a: Optional[ListNode], b: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = tail = ListNode()
+        while a and b:
+            if a.val <= b.val:
+                tail.next, a = a, a.next
+            else:
+                tail.next, b = b, b.next
+            tail = tail.next
+        tail.next = a or b
+        return dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.mergeKLists([ll([1, 4, 5]), ll([1, 3, 4]), ll([2, 6])])) == [1, 1, 2, 3, 4, 4, 5, 6]
+assert to_list(s.mergeKLists([])) == []
+assert to_list(s.mergeKLists([ll([])])) == []
+assert to_list(s.mergeKLists([ll([]), ll([1])])) == [1]
+assert to_list(s.mergeKLists([ll([-2, 0]), ll([-3]), ll([]), ll([-1, 5]), ll([4])])) == [-3, -2, -1, 0, 4, 5]
+assert to_list(s.mergeKLists([ll([2, 2]), ll([2])])) == [2, 2, 2]
+@@ PATTERN: Cycle Detection
+@@ SPOT: Use this when you must know whether following next pointers, or any rule like i -> nums[i], ever loops back on itself.
+@@ PROBLEM: linked-list-cycle
+@@ APPROACH:
+Slow moves 1 step and fast moves 2. Without a cycle, fast reaches the end and the loop stops. With a cycle, both end up circling inside it and fast gains one step per round, so it must land on slow. The check slow is fast detects that meeting.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def hasCycle(self, head: Optional[ListNode]) -> bool:
+        slow = fast = head
+        while fast and fast.next:
+            slow, fast = slow.next, fast.next.next
+            if slow is fast:                       # fast lapped slow inside a cycle
+                return True
+        return False
+@@ TEST:
+def build(vals, pos):
+    head = ll(vals)
+    nodes = []
+    cur = head
+    while cur:
+        nodes.append(cur)
+        cur = cur.next
+    if pos >= 0:
+        nodes[-1].next = nodes[pos]
+    return head, nodes
+
+s = Solution()
+assert s.hasCycle(build([3, 2, 0, -4], 1)[0]) is True
+assert s.hasCycle(build([1, 2], 0)[0]) is True
+assert s.hasCycle(build([1], -1)[0]) is False
+assert s.hasCycle(build([1], 0)[0]) is True
+assert s.hasCycle(None) is False
+assert s.hasCycle(build([1, 2, 3, 4, 5], -1)[0]) is False
+assert s.hasCycle(build([1, 2, 3, 4, 5, 6], 5)[0]) is True
+@@ PROBLEM: find-the-duplicate-number
+@@ APPROACH:
+Read the array as a linked list where index i points to nums[i]. Two indices hold the duplicate value, so two nodes point to the same next node, and that makes a cycle whose entrance is the duplicate. Phase one: slow and fast pointers walk until they meet inside the cycle. Phase two: reset slow to the start and move both one step at a time. They meet at the cycle entrance, which is the duplicate. Starting from index 0 is safe because no value is 0, so nothing points back to it.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def findDuplicate(self, nums: List[int]) -> int:
+        slow = fast = 0
+        while True:                                # phase 1: meet inside the cycle
+            slow = nums[slow]
+            fast = nums[nums[fast]]
+            if slow == fast:
+                break
+        slow = 0                                   # phase 2: restart one pointer from the head
+        while slow != fast:
+            slow = nums[slow]
+            fast = nums[fast]
+        return slow                                # the cycle entrance is the duplicate
+@@ TEST:
+s = Solution()
+assert s.findDuplicate([1, 3, 4, 2, 2]) == 2
+assert s.findDuplicate([3, 1, 3, 4, 2]) == 3
+assert s.findDuplicate([3, 3, 3, 3, 3]) == 3
+assert s.findDuplicate([1, 1]) == 1
+assert s.findDuplicate([2, 2, 2, 2, 2]) == 2
+assert s.findDuplicate([1, 4, 4, 2, 4]) == 4
+assert s.findDuplicate([2, 5, 9, 6, 9, 3, 8, 9, 7, 1]) == 9
+@@ PROBLEM: circular-array-loop
+@@ APPROACH:
+Each index points to the index (i + nums[i]) mod n, so the array is a graph where every node has one next node. Run slow and fast pointers from each unvisited start. A step is only allowed when the next value has the same sign, and a step that returns to the same index is a loop of length 1, which does not count. If slow meets fast, a valid loop exists. Otherwise, zero out the dead path so no start is explored twice.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def circularArrayLoop(self, nums: List[int]) -> bool:
+        n = len(nums)
+
+        def step(i: int, forward: bool) -> int:
+            j = (i + nums[i]) % n
+            if j == i or nums[j] == 0 or (nums[j] > 0) != forward:
+                return -1                          # self-loop, dead cell or direction change
+            return j
+
+        for start in range(n):
+            if nums[start] == 0:
+                continue
+            forward = nums[start] > 0
+            slow = fast = start
+            while True:
+                slow = step(slow, forward)         # 1 step
+                fast = step(fast, forward)         # 2 steps
+                if fast != -1:
+                    fast = step(fast, forward)
+                if slow == -1 or fast == -1:
+                    break
+                if slow == fast:
+                    return True
+            i = start                              # mark this dead path so it is not retried
+            while nums[i] != 0 and (nums[i] > 0) == forward:
+                j = (i + nums[i]) % n
+                nums[i] = 0
+                i = j
+        return False
+@@ TEST:
+s = Solution()
+assert s.circularArrayLoop([2, -1, 1, 2, 2]) is True
+assert s.circularArrayLoop([-1, -2, -3, -4, -5, 6]) is False
+assert s.circularArrayLoop([1, -1, 5, 1, 4]) is True
+assert s.circularArrayLoop([-2, 1, -1, -2, -2]) is False
+assert s.circularArrayLoop([1, 2]) is False
+assert s.circularArrayLoop([1, 1, 2]) is True
+assert s.circularArrayLoop([3, 1, 2]) is True
+assert s.circularArrayLoop([2, 2, -1]) is False
+assert s.circularArrayLoop([-1, 2]) is False
+@@ PATTERN: Find Middle
+@@ SPOT: Use this when you need the middle node in one pass, without knowing the length of the list first.
+@@ PROBLEM: middle-of-the-linked-list
+@@ APPROACH:
+Slow moves 1 step while fast moves 2. When fast has nothing left to jump over, it has covered the whole list while slow has covered half of it. So slow is at the middle. With an even length the loop ends one step later, which gives the second middle as the question asks.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def middleNode(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        slow = fast = head
+        while fast and fast.next:
+            slow, fast = slow.next, fast.next.next   # slow: 1 step, fast: 2 steps
+        return slow                                  # 2nd middle for even length
+@@ TEST:
+s = Solution()
+assert to_list(s.middleNode(ll([1, 2, 3, 4, 5]))) == [3, 4, 5]
+assert to_list(s.middleNode(ll([1, 2, 3, 4, 5, 6]))) == [4, 5, 6]
+assert to_list(s.middleNode(ll([1]))) == [1]
+assert to_list(s.middleNode(ll([1, 2]))) == [2]
+assert to_list(s.middleNode(ll([1, 2, 3]))) == [2, 3]
+@@ PROBLEM: delete-the-middle-node-of-a-linked-list
+@@ APPROACH:
+To delete a node, the node before it must be known. Slow starts one node behind the head, on a dummy, while fast starts at the head. They move at the usual 1 and 2 steps, so when fast ends, slow sits exactly before the middle. Then slow.next = slow.next.next removes it. The dummy also covers a one-node list, whose only node is the middle.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def deleteMiddle(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = ListNode(0, head)                  # lets a one-node list lose its only node
+        slow, fast = dummy, head                   # slow trails one node behind the middle
+        while fast and fast.next:
+            slow, fast = slow.next, fast.next.next
+        slow.next = slow.next.next                 # unlink the middle
+        return dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.deleteMiddle(ll([1, 3, 4, 7, 1, 2, 6]))) == [1, 3, 4, 1, 2, 6]
+assert to_list(s.deleteMiddle(ll([1, 2, 3, 4]))) == [1, 2, 4]
+assert to_list(s.deleteMiddle(ll([2, 1]))) == [2]
+assert to_list(s.deleteMiddle(ll([1]))) == []
+assert to_list(s.deleteMiddle(ll([1, 2, 3]))) == [1, 3]
+assert to_list(s.deleteMiddle(ll([1, 2, 3, 4, 5, 6]))) == [1, 2, 3, 5, 6]
+@@ PROBLEM: maximum-twin-sum-of-a-linked-list
+@@ APPROACH:
+Node i and node n - 1 - i are twins, so the pairs run from the outside in. Fast and slow pointers find the middle, which is where the second half starts. Reversing the second half lets both halves be read from the front, so twins line up. Walk them together and keep the largest sum.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def pairSum(self, head: Optional[ListNode]) -> int:
+        slow = fast = head
+        while fast and fast.next:                  # slow lands on the start of the second half
+            slow, fast = slow.next, fast.next.next
+        prev = None
+        while slow:                                # reverse the second half
+            nxt = slow.next
+            slow.next = prev
+            prev, slow = slow, nxt
+        best = 0
+        first, second = head, prev
+        while second:                              # twins are now read in step
+            best = max(best, first.val + second.val)
+            first, second = first.next, second.next
+        return best
+@@ TEST:
+s = Solution()
+assert s.pairSum(ll([5, 4, 2, 1])) == 6
+assert s.pairSum(ll([4, 2, 2, 3])) == 7
+assert s.pairSum(ll([1, 100000])) == 100001
+assert s.pairSum(ll([1, 2, 3, 4, 5, 6])) == 7
+assert s.pairSum(ll([1, 1, 1, 1])) == 2
+assert s.pairSum(ll([9, 1, 1, 2])) == 11
+@@ PATTERN: Remove Nth Node
+@@ SPOT: Use this when you need the n-th node from the end in a single pass, by keeping two pointers a fixed gap apart.
+@@ PROBLEM: remove-nth-node-from-end-of-list
+@@ APPROACH:
+Start both pointers on a dummy node and move fast n steps ahead, which sets the gap. Then move both together until fast is on the last node. Now slow is the node right before the one to delete, so slow.next = slow.next.next removes it. The dummy makes removing the head work with no special case.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def removeNthFromEnd(self, head: Optional[ListNode], n: int) -> Optional[ListNode]:
+        dummy = ListNode(0, head)
+        slow = fast = dummy
+        for _ in range(n):                         # open a gap of n nodes
+            fast = fast.next
+        while fast.next:                           # slide the gap to the end
+            slow, fast = slow.next, fast.next
+        slow.next = slow.next.next                 # slow is right before the target
+        return dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.removeNthFromEnd(ll([1, 2, 3, 4, 5]), 2)) == [1, 2, 3, 5]
+assert to_list(s.removeNthFromEnd(ll([1]), 1)) == []
+assert to_list(s.removeNthFromEnd(ll([1, 2]), 1)) == [1]
+assert to_list(s.removeNthFromEnd(ll([1, 2]), 2)) == [2]
+assert to_list(s.removeNthFromEnd(ll([1, 2, 3]), 3)) == [2, 3]
+assert to_list(s.removeNthFromEnd(ll([1, 2, 3, 4, 5]), 5)) == [2, 3, 4, 5]
+@@ PROBLEM: swapping-nodes-in-a-linked-list
+@@ APPROACH:
+Two nodes are needed: the k-th from the start and the k-th from the end. The first is found by walking k - 1 steps. For the second, keep fast on that first node and start slow at the head, so the gap is fixed at k - 1. Move both until fast reaches the last node, and slow is then the k-th node from the end. Swapping the two values is enough.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def swapNodes(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+        first = head
+        for _ in range(k - 1):                     # k-th node from the start
+            first = first.next
+        slow, fast = head, first                   # fast is already k - 1 steps ahead
+        while fast.next:
+            slow, fast = slow.next, fast.next
+        first.val, slow.val = slow.val, first.val  # slow is the k-th node from the end
+        return head
+@@ TEST:
+s = Solution()
+assert to_list(s.swapNodes(ll([1, 2, 3, 4, 5]), 2)) == [1, 4, 3, 2, 5]
+assert to_list(s.swapNodes(ll([7, 9, 6, 6, 7, 8, 3, 0, 9, 5]), 5)) == [7, 9, 6, 6, 8, 7, 3, 0, 9, 5]
+assert to_list(s.swapNodes(ll([1]), 1)) == [1]
+assert to_list(s.swapNodes(ll([1, 2]), 1)) == [2, 1]
+assert to_list(s.swapNodes(ll([1, 2, 3]), 2)) == [1, 2, 3]
+assert to_list(s.swapNodes(ll([1, 2, 3, 4]), 4)) == [4, 2, 3, 1]
+@@ PROBLEM: rotate-list
+@@ APPROACH:
+Rotating right by k means the last k nodes move to the front. Count the length first and reduce k with k %= length, since a full turn changes nothing. Then use the gap idea: move fast k steps ahead, and slide both until fast is on the last node. slow is now the new tail, slow.next is the new head. Cut after slow and join the old tail to the old head.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def rotateRight(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+        if not head or not head.next:
+            return head
+        length, cur = 1, head
+        while cur.next:                            # count the nodes
+            cur = cur.next
+            length += 1
+        k %= length                                # a full turn changes nothing
+        if k == 0:
+            return head
+        slow = fast = head
+        for _ in range(k):                         # gap of k nodes
+            fast = fast.next
+        while fast.next:                           # slow stops on the new tail
+            slow, fast = slow.next, fast.next
+        new_head = slow.next
+        slow.next = None                           # cut after the new tail
+        fast.next = head                           # old tail -> old head
+        return new_head
+@@ TEST:
+s = Solution()
+assert to_list(s.rotateRight(ll([1, 2, 3, 4, 5]), 2)) == [4, 5, 1, 2, 3]
+assert to_list(s.rotateRight(ll([0, 1, 2]), 4)) == [2, 0, 1]
+assert to_list(s.rotateRight(ll([]), 0)) == []
+assert to_list(s.rotateRight(ll([1]), 99)) == [1]
+assert to_list(s.rotateRight(ll([1, 2]), 2)) == [1, 2]
+assert to_list(s.rotateRight(ll([1, 2]), 1)) == [2, 1]
+assert to_list(s.rotateRight(ll([1, 2, 3]), 0)) == [1, 2, 3]
+@@ PATTERN: Intersection
+@@ SPOT: Use this when two lists may join into one shared tail and you must find the first shared node without extra memory.
+@@ PROBLEM: intersection-of-two-linked-lists
+@@ APPROACH:
+Pointer p walks list A and then list B. Pointer q walks list B and then list A. Both walk the same total distance, lenA + lenB, so the different lengths cancel out. They arrive at the shared node on the same step, or they both reach None together if the lists never join. The test p is not q ends the loop in either case.
+@@ COMPLEXITY: O(n + m) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> Optional[ListNode]:
+        p, q = headA, headB
+        while p is not q:
+            p = p.next if p else headB             # after A, continue on B
+            q = q.next if q else headA             # after B, continue on A
+        return p                                   # shared node, or None
+@@ TEST:
+def join(prefix, shared):
+    head = ll(prefix)
+    cur = head
+    while cur.next:
+        cur = cur.next
+    cur.next = shared
+    return head
+
+s = Solution()
+common = ll([8, 4, 5])
+assert s.getIntersectionNode(join([4, 1], common), join([5, 6, 1], common)) is common
+shared = ll([2, 4])
+assert s.getIntersectionNode(join([1, 9, 1], shared), join([3], shared)) is shared
+assert s.getIntersectionNode(ll([2, 6, 4]), ll([1, 5])) is None
+single = ListNode(7)
+assert s.getIntersectionNode(join([1], single), join([2, 3], single)) is single
+whole = ll([1, 2, 3])
+assert s.getIntersectionNode(whole, whole) is whole
+assert s.getIntersectionNode(whole, join([9], whole)) is whole
+@@ PROBLEM: linked-list-cycle-ii
+@@ APPROACH:
+First find any node m inside the cycle with fast and slow pointers. Cut the list right after m. Now there are two lists that both end at m: one starting at head, one starting at the old m.next. They share a tail that begins exactly at the cycle entrance. Run the two-list intersection walk on them, then restore the link, and the shared node is the answer.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def detectCycle(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        slow = fast = head
+        while fast and fast.next:                  # step 1: meet inside the cycle
+            slow, fast = slow.next, fast.next.next
+            if slow is fast:
+                break
+        else:
+            return None                            # no cycle
+        loop_start = slow.next                     # second list starts after the meeting node
+        slow.next = None                           # cut: two lists, both ending at the meeting node
+        p, q = head, loop_start
+        while p is not q:                          # step 2: the intersection walk
+            p = p.next if p else loop_start
+            q = q.next if q else head
+        slow.next = loop_start                     # put the cycle back
+        return p                                   # first shared node = cycle entrance
+@@ TEST:
+def build(vals, pos):
+    head = ll(vals)
+    nodes = []
+    cur = head
+    while cur:
+        nodes.append(cur)
+        cur = cur.next
+    if pos >= 0:
+        nodes[-1].next = nodes[pos]
+    return head, nodes
+
+s = Solution()
+head, nodes = build([3, 2, 0, -4], 1)
+assert s.detectCycle(head) is nodes[1]
+assert nodes[-1].next is nodes[1]
+head, nodes = build([1, 2], 0)
+assert s.detectCycle(head) is nodes[0]
+head, nodes = build([1], -1)
+assert s.detectCycle(head) is None
+assert s.detectCycle(None) is None
+head, nodes = build([1], 0)
+assert s.detectCycle(head) is nodes[0]
+head, nodes = build([1, 2, 3, 4, 5, 6, 7], 5)
+assert s.detectCycle(head) is nodes[5]
+head, nodes = build([1, 2, 3, 4, 5, 6, 7], 6)
+assert s.detectCycle(head) is nodes[6]
+head, nodes = build([1, 2, 3, 4, 5, 6, 7], 0)
+assert s.detectCycle(head) is nodes[0]
+head, nodes = build([1, 2, 3, 4, 5, 6, 7], -1)
+assert s.detectCycle(head) is None
+@@ PATTERN: Reverse in Groups
+@@ SPOT: Use this when a list must be reversed block by block, with a fixed or growing block size, and a short last block needs its own rule.
+@@ PROBLEM: swap-nodes-in-pairs
+@@ APPROACH:
+A pair is a group of size 2. If fewer than two nodes remain, return head unchanged. Otherwise solve the rest of the list first with a recursive call and attach it to the first node of the pair. Then flip the pair so the second node points to the first, and return the second node as the new head of this piece.
+@@ COMPLEXITY: O(n) time, O(n) space for the recursion
+@@ CODE:
+class Solution:
+    def swapPairs(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        if not head or not head.next:              # fewer than 2 nodes: leave as is
+            return head
+        first, second = head, head.next
+        first.next = self.swapPairs(second.next)   # the rest is already solved
+        second.next = first                        # flip the pair
+        return second
+@@ TEST:
+s = Solution()
+assert to_list(s.swapPairs(ll([1, 2, 3, 4]))) == [2, 1, 4, 3]
+assert to_list(s.swapPairs(ll([]))) == []
+assert to_list(s.swapPairs(ll([1]))) == [1]
+assert to_list(s.swapPairs(ll([1, 2, 3]))) == [2, 1, 3]
+assert to_list(s.swapPairs(ll([1, 2, 3, 4, 5]))) == [2, 1, 4, 3, 5]
+assert to_list(s.swapPairs(ll([1, 2]))) == [2, 1]
+@@ PROBLEM: reverse-nodes-in-even-length-groups
+@@ APPROACH:
+The groups have sizes 1, 2, 3, and so on, and the last group can be shorter than its size. For each group, first count how many nodes it really has. Reverse it only if that count is even. The reversal is the same flip loop as for reverse-in-k, where prev starts as the node after the group so the reversed part is already linked to the rest. before always points to the last node of the finished part.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def reverseEvenLengthGroups(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        before, size = head, 2                     # first group (size 1) never changes
+        while before.next:
+            node, count = before, 0
+            while count < size and node.next:      # real length of this group
+                node, count = node.next, count + 1
+            if count % 2 == 0:
+                tail = before.next                 # first node becomes the group's tail
+                prev, cur = node.next, before.next # prev starts as the rest of the list
+                for _ in range(count):             # reverse `count` nodes
+                    cur.next, prev, cur = prev, cur, cur.next
+                before.next = prev
+                before = tail
+            else:
+                before = node
+            size += 1
+        return head
+@@ TEST:
+s = Solution()
+assert to_list(s.reverseEvenLengthGroups(ll([5, 2, 6, 3, 9, 1, 7, 3, 8, 4]))) == [5, 6, 2, 3, 9, 1, 4, 8, 3, 7]
+assert to_list(s.reverseEvenLengthGroups(ll([1, 1, 0, 6]))) == [1, 0, 1, 6]
+assert to_list(s.reverseEvenLengthGroups(ll([1, 1, 0, 6, 5]))) == [1, 0, 1, 5, 6]
+assert to_list(s.reverseEvenLengthGroups(ll([2, 1]))) == [2, 1]
+assert to_list(s.reverseEvenLengthGroups(ll([8]))) == [8]
+assert to_list(s.reverseEvenLengthGroups(ll([1, 2, 3]))) == [1, 3, 2]
+@@ PROBLEM: reverse-nodes-in-k-group
+@@ APPROACH:
+For each block, first check that k nodes really exist ahead of before, and return the list as it is if not, so a short last block stays unchanged. Then reverse exactly k nodes with the save, flip, advance loop, where prev starts as the node after the block so the reversed block is already linked to the rest. Link before to the new block head, and move before to the block's old first node, which is now its tail.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def reverseKGroup(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+        dummy = ListNode(0, head)
+        before = dummy                             # last node of the finished part
+        while True:
+            node = before
+            for _ in range(k):                     # is there a full group of k?
+                node = node.next
+                if not node:
+                    return dummy.next              # short tail stays as is
+            tail = before.next                     # first node becomes the group's tail
+            prev, cur = node.next, before.next     # prev starts as the rest of the list
+            for _ in range(k):                     # flip k nodes
+                cur.next, prev, cur = prev, cur, cur.next
+            before.next = prev
+            before = tail
+@@ TEST:
+s = Solution()
+assert to_list(s.reverseKGroup(ll([1, 2, 3, 4, 5]), 2)) == [2, 1, 4, 3, 5]
+assert to_list(s.reverseKGroup(ll([1, 2, 3, 4, 5]), 3)) == [3, 2, 1, 4, 5]
+assert to_list(s.reverseKGroup(ll([1]), 1)) == [1]
+assert to_list(s.reverseKGroup(ll([1, 2, 3]), 1)) == [1, 2, 3]
+assert to_list(s.reverseKGroup(ll([1, 2, 3, 4, 5, 6]), 3)) == [3, 2, 1, 6, 5, 4]
+assert to_list(s.reverseKGroup(ll([1, 2]), 3)) == [1, 2]
+assert to_list(s.reverseKGroup(ll([1, 2, 3, 4]), 4)) == [4, 3, 2, 1]
+assert to_list(s.reverseKGroup(ll(list(range(1, 5001))), 1)) == list(range(1, 5001))

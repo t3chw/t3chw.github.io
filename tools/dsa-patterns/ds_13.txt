@@ -1,0 +1,1212 @@
+@@ PATTERN: 1D DP
+@@ SPOT: Use this when the answer for position i depends only on a few earlier positions, so one row of results is enough.
+@@ PROBLEM: counting-bits
+@@ APPROACH:
+State: dp[i] is the number of 1 bits in the number i. Shifting i right by one drops its last bit, so i >> 1 is a smaller number whose answer is already filled in. The transition is dp[i] = dp[i >> 1] + (i & 1). The base case is dp[0] = 0.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+class Solution:
+    def countBits(self, n: int) -> List[int]:
+        dp = [0] * (n + 1)                 # dp[i] = number of 1 bits in i
+        for i in range(1, n + 1):
+            dp[i] = dp[i >> 1] + (i & 1)   # i without its last bit, plus that last bit
+        return dp
+@@ TEST:
+s = Solution()
+assert s.countBits(2) == [0, 1, 1]
+assert s.countBits(5) == [0, 1, 1, 2, 1, 2]
+assert s.countBits(0) == [0]
+assert s.countBits(1) == [0, 1]
+assert s.countBits(8) == [0, 1, 1, 2, 1, 2, 2, 3, 1]
+@@ PROBLEM: minimum-cost-for-tickets
+@@ APPROACH:
+State: dp[d] is the cheapest way to cover every travel day up to day d. On a day you do not travel, nothing is owed, so dp[d] = dp[d - 1]. On a travel day, take the best of three choices: a 1-day pass after dp[d - 1], a 7-day pass after dp[d - 7], or a 30-day pass after dp[d - 30]. The array is indexed by calendar day, so each cell only looks back at fixed offsets.
+@@ COMPLEXITY: O(last day) time, O(last day) space
+@@ CODE:
+class Solution:
+    def mincostTickets(self, days: List[int], costs: List[int]) -> int:
+        travel = set(days)
+        last = days[-1]
+        dp = [0] * (last + 1)              # dp[d] = min cost to cover all travel days up to day d
+        for d in range(1, last + 1):
+            if d not in travel:
+                dp[d] = dp[d - 1]          # no travel today, nothing to pay
+                continue
+            dp[d] = min(dp[d - 1] + costs[0],              # 1-day pass
+                        dp[max(0, d - 7)] + costs[1],      # 7-day pass
+                        dp[max(0, d - 30)] + costs[2])     # 30-day pass
+        return dp[last]
+@@ TEST:
+s = Solution()
+assert s.mincostTickets([1, 4, 6, 7, 8, 20], [2, 7, 15]) == 11
+assert s.mincostTickets([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 30, 31], [2, 7, 15]) == 17
+assert s.mincostTickets([1], [2, 7, 15]) == 2
+assert s.mincostTickets([365], [3, 5, 10]) == 3
+assert s.mincostTickets([1, 30], [5, 10, 12]) == 10
+@@ PROBLEM: longest-valid-parentheses
+@@ APPROACH:
+State: dp[i] is the length of the longest valid substring that ends exactly at index i. It is 0 unless s[i] is ')'. If s[i-1] is '(', we close a fresh pair: dp[i] = dp[i-2] + 2. If s[i-1] is ')', the block ending at i-1 has length dp[i-1], so the character right before that block is at j = i - dp[i-1] - 1. If s[j] is '(', it matches s[i], and dp[i] = dp[i-1] + 2 + dp[j-1] glues the blocks on both sides.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+class Solution:
+    def longestValidParentheses(self, s: str) -> int:
+        n = len(s)
+        dp = [0] * n                       # dp[i] = longest valid substring ending exactly at i
+        for i in range(1, n):
+            if s[i] != ')':
+                continue
+            if s[i - 1] == '(':            # the "()" case
+                dp[i] = (dp[i - 2] if i >= 2 else 0) + 2
+            else:                          # the "))" case: find the '(' that matches s[i]
+                j = i - dp[i - 1] - 1
+                if j >= 0 and s[j] == '(':
+                    dp[i] = dp[i - 1] + 2 + (dp[j - 1] if j >= 1 else 0)
+        return max(dp, default=0)
+@@ TEST:
+s = Solution()
+assert s.longestValidParentheses("(()") == 2
+assert s.longestValidParentheses(")()())") == 4
+assert s.longestValidParentheses("") == 0
+assert s.longestValidParentheses("()(())") == 6
+assert s.longestValidParentheses("()") == 2
+assert s.longestValidParentheses(")(") == 0
+assert s.longestValidParentheses("(()())") == 6
+assert s.longestValidParentheses("()(()") == 2
+@@ PATTERN: Climbing Stairs
+@@ SPOT: Use this when you count the ways, or the cheapest way, to reach step n and every move comes from one or two steps back.
+@@ PROBLEM: climbing-stairs
+@@ APPROACH:
+State: dp[i] is the number of ways to stand on step i. You arrive from step i-1 (one step) or step i-2 (two steps), so dp[i] = dp[i-1] + dp[i-2]. Only the last two values are needed, so two variables replace the array. The base cases are one way to be on step 0 and one way to be on step 1.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def climbStairs(self, n: int) -> int:
+        prev2, prev1 = 1, 1                # ways to reach step 0 and step 1
+        for _ in range(2, n + 1):
+            prev2, prev1 = prev1, prev1 + prev2    # dp[i] = dp[i-1] + dp[i-2]
+        return prev1
+@@ TEST:
+s = Solution()
+assert s.climbStairs(2) == 2
+assert s.climbStairs(3) == 3
+assert s.climbStairs(1) == 1
+assert s.climbStairs(5) == 8
+assert s.climbStairs(10) == 89
+assert s.climbStairs(45) == 1836311903
+@@ PROBLEM: min-cost-climbing-stairs
+@@ APPROACH:
+The same two-step shape, but now each cell stores a minimum instead of a count. dp[i] is the cheapest cost to stand on step i, where the top is index len(cost). You come from step i-1 and pay cost[i-1], or from step i-2 and pay cost[i-2]. Start values are 0 because you may begin on step 0 or step 1 for free.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def minCostClimbingStairs(self, cost: List[int]) -> int:
+        prev2 = prev1 = 0                  # cost to stand on step 0 and step 1 (free start)
+        for i in range(2, len(cost) + 1):
+            # arrive from one step back (pay cost[i-1]) or two steps back (pay cost[i-2])
+            prev2, prev1 = prev1, min(prev1 + cost[i - 1], prev2 + cost[i - 2])
+        return prev1
+@@ TEST:
+s = Solution()
+assert s.minCostClimbingStairs([10, 15, 20]) == 15
+assert s.minCostClimbingStairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1]) == 6
+assert s.minCostClimbingStairs([0, 0, 0, 1]) == 0
+assert s.minCostClimbingStairs([5, 3]) == 3
+@@ PROBLEM: decode-ways
+@@ APPROACH:
+Think of the string as stairs: dp[i] is the number of ways to decode the first i characters. The last character alone is one move (valid if it is not '0'), and the last two characters together are a two-step move (valid if they read 10 to 26). So dp[i] adds dp[i-1] and dp[i-2] under those two conditions. Two variables hold the last two values.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def numDecodings(self, s: str) -> int:
+        prev2 = 1                          # dp[0]: one way to decode the empty prefix
+        prev1 = 0 if s[0] == '0' else 1    # dp[1]
+        for i in range(2, len(s) + 1):
+            ways = 0
+            if s[i - 1] != '0':            # last character alone is a letter 1-9
+                ways += prev1
+            if 10 <= int(s[i - 2:i]) <= 26:    # last two characters together are a letter 10-26
+                ways += prev2
+            prev2, prev1 = prev1, ways
+        return prev1
+@@ TEST:
+s = Solution()
+assert s.numDecodings("12") == 2
+assert s.numDecodings("226") == 3
+assert s.numDecodings("06") == 0
+assert s.numDecodings("0") == 0
+assert s.numDecodings("10") == 1
+assert s.numDecodings("27") == 1
+assert s.numDecodings("2101") == 1
+assert s.numDecodings("11106") == 2
+@@ PATTERN: House Robber
+@@ SPOT: Use this when you pick values from a line to maximise a total and no two neighbours may both be picked.
+@@ PROBLEM: house-robber
+@@ APPROACH:
+State: dp[i] is the best total using the first i houses. For house i you either skip it (keep dp[i-1]) or rob it (add its value to dp[i-2]). So dp[i] = max(dp[i-1], dp[i-2] + a[i]), which is the key line. Only two previous values are needed.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def rob(self, nums: List[int]) -> int:
+        prev2 = prev1 = 0
+        for x in nums:
+            # skip this house (prev1) or rob it and add the best from two houses back
+            prev2, prev1 = prev1, max(prev1, prev2 + x)
+        return prev1
+@@ TEST:
+s = Solution()
+assert s.rob([1, 2, 3, 1]) == 4
+assert s.rob([2, 7, 9, 3, 1]) == 12
+assert s.rob([5]) == 5
+assert s.rob([2, 1]) == 2
+assert s.rob([1, 3, 1, 3, 100]) == 103
+@@ PROBLEM: house-robber-ii
+@@ APPROACH:
+The houses form a circle, so the first and last house are neighbours and cannot both be robbed. Split into two straight streets: one without the first house and one without the last. Run the plain house robber recurrence on each and take the larger answer. A single house is a special case.
+@@ COMPLEXITY: O(n) time, O(n) space for the two slices
+@@ CODE:
+class Solution:
+    def rob(self, nums: List[int]) -> int:
+        if len(nums) == 1:
+            return nums[0]
+
+        def rob_line(a):                   # plain house robber on a straight street
+            prev2 = prev1 = 0
+            for x in a:
+                prev2, prev1 = prev1, max(prev1, prev2 + x)
+            return prev1
+
+        # the circle breaks into two lines: skip the first house, or skip the last
+        return max(rob_line(nums[1:]), rob_line(nums[:-1]))
+@@ TEST:
+s = Solution()
+assert s.rob([2, 3, 2]) == 3
+assert s.rob([1, 2, 3, 1]) == 4
+assert s.rob([1, 2, 3]) == 3
+assert s.rob([1]) == 1
+assert s.rob([2, 1, 1, 2]) == 3
+@@ PROBLEM: delete-and-earn
+@@ APPROACH:
+Taking a value x earns x times its count and forbids x-1 and x+1. Put the total earnings of each value v into earn[v]. Now the values sit on a line, and picking v forbids its neighbours v-1 and v+1, which is exactly house robber. Run the same two-variable recurrence over earn.
+@@ COMPLEXITY: O(n + max(nums)) time, O(max(nums)) space
+@@ CODE:
+class Solution:
+    def deleteAndEarn(self, nums: List[int]) -> int:
+        earn = [0] * (max(nums) + 1)
+        for x in nums:
+            earn[x] += x                   # earn[v] = total points from taking every copy of v
+        prev2 = prev1 = 0
+        for e in earn:                     # house robber over values: v-1 and v cannot both be taken
+            prev2, prev1 = prev1, max(prev1, prev2 + e)
+        return prev1
+@@ TEST:
+s = Solution()
+assert s.deleteAndEarn([3, 4, 2]) == 6
+assert s.deleteAndEarn([2, 2, 3, 3, 3, 4]) == 9
+assert s.deleteAndEarn([1]) == 1
+assert s.deleteAndEarn([1, 1, 1, 1]) == 4
+assert s.deleteAndEarn([1, 2, 3, 4, 5]) == 9
+assert s.deleteAndEarn([8, 10, 4, 9, 1, 3, 5, 9, 4, 10]) == 37
+@@ PATTERN: Fibonacci
+@@ SPOT: Use this when each term is a fixed sum of the previous two or three terms, so only that many variables need to be kept.
+@@ PROBLEM: fibonacci-number
+@@ APPROACH:
+State: fib(k) is the k-th Fibonacci number. The transition is fib(k) = fib(k-1) + fib(k-2) with base cases 0 and 1. This version is top-down: the plain recursion repeats the same calls, and @lru_cache remembers each answer so every k is computed once.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+from functools import lru_cache
+
+
+class Solution:
+    def fib(self, n: int) -> int:
+        @lru_cache(None)                   # TOP-DOWN: remember each fib(k) after the first call
+        def go(k):
+            if k < 2:
+                return k                   # base cases: fib(0) = 0, fib(1) = 1
+            return go(k - 1) + go(k - 2)
+        return go(n)
+@@ TEST:
+s = Solution()
+assert s.fib(2) == 1
+assert s.fib(3) == 2
+assert s.fib(4) == 3
+assert s.fib(0) == 0
+assert s.fib(1) == 1
+assert s.fib(10) == 55
+assert s.fib(30) == 832040
+@@ PROBLEM: n-th-tribonacci-number
+@@ APPROACH:
+The same idea with three terms: T(i) = T(i-1) + T(i-2) + T(i-3). The base cases are T0 = 0, T1 = 1, T2 = 1. Keep the last three values in three variables and slide them forward, so no array is needed.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def tribonacci(self, n: int) -> int:
+        if n < 3:
+            return 1 if n else 0
+        a, b, c = 0, 1, 1                  # T(i-3), T(i-2), T(i-1)
+        for _ in range(3, n + 1):
+            a, b, c = b, c, a + b + c      # new term is the sum of the previous three
+        return c
+@@ TEST:
+s = Solution()
+assert s.tribonacci(4) == 4
+assert s.tribonacci(25) == 1389537
+assert s.tribonacci(0) == 0
+assert s.tribonacci(1) == 1
+assert s.tribonacci(2) == 1
+assert s.tribonacci(3) == 2
+assert s.tribonacci(5) == 7
+@@ PROBLEM: domino-and-tromino-tiling
+@@ APPROACH:
+State: dp[n] is the number of ways to tile a 2 x n board. Counting by how the right end is closed gives dp[n] = dp[n-1] + dp[n-2] + 2 * (dp[n-3] + ... + dp[0]). Subtracting the same formula for n-1 collapses it to dp[n] = 2 * dp[n-1] + dp[n-3], a Fibonacci-style recurrence. Take the result modulo 10^9 + 7.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+class Solution:
+    def numTilings(self, n: int) -> int:
+        MOD = 10 ** 9 + 7
+        dp = [1, 1, 2]                     # ways to tile widths 0, 1 and 2
+        for i in range(3, n + 1):
+            dp.append((2 * dp[i - 1] + dp[i - 3]) % MOD)   # only earlier cells matter
+        return dp[n]
+@@ TEST:
+s = Solution()
+assert s.numTilings(3) == 5
+assert s.numTilings(1) == 1
+assert s.numTilings(2) == 2
+assert s.numTilings(4) == 11
+assert s.numTilings(5) == 24
+assert s.numTilings(6) == 53
+@@ PATTERN: 0/1 Knapsack
+@@ SPOT: Use this when every item can be taken at most once and you must stay inside one or more capacities while maximising or minimising a total.
+@@ PROBLEM: ones-and-zeroes
+@@ APPROACH:
+Each string is an item that costs some zeros and some ones, and every item is worth 1. The capacity has two dimensions, so dp[a][b] is the most strings you can pick with at most a zeros and b ones. For each string, loop both capacities backwards so the same string is never counted twice. The key line is dp[a][b] = max(dp[a][b], dp[a - zeros][b - ones] + 1).
+@@ COMPLEXITY: O(len(strs) * m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def findMaxForm(self, strs: List[str], m: int, n: int) -> int:
+        dp = [[0] * (n + 1) for _ in range(m + 1)]    # dp[a][b] = most strings using <= a zeros and <= b ones
+        for s in strs:
+            zeros = s.count('0')
+            ones = len(s) - zeros
+            for a in range(m, zeros - 1, -1):         # BACKWARDS in both capacities: use each string once
+                for b in range(n, ones - 1, -1):
+                    dp[a][b] = max(dp[a][b], dp[a - zeros][b - ones] + 1)
+        return dp[m][n]
+@@ TEST:
+s = Solution()
+assert s.findMaxForm(["10", "0001", "111001", "1", "0"], 5, 3) == 4
+assert s.findMaxForm(["10", "0", "1"], 1, 1) == 2
+assert s.findMaxForm(["0", "0", "0"], 2, 1) == 2
+assert s.findMaxForm(["11111"], 5, 1) == 0
+assert s.findMaxForm(["1", "1", "1"], 1, 3) == 3
+@@ PROBLEM: painting-the-walls
+@@ APPROACH:
+Hiring the paid painter for wall i paints that wall and gives the free painter time[i] units, so it clears time[i] + 1 walls in total for cost[i]. So each wall is an item with weight time[i] + 1 and price cost[i], and you need total weight at least n for the least price. dp[j] is the cheapest cost to get j walls painted, and an index below 0 is treated as 0. Loop j backwards so each paid painter is hired once.
+@@ COMPLEXITY: O(n^2) time, O(n) space
+@@ CODE:
+class Solution:
+    def paintWalls(self, cost: List[int], time: List[int]) -> int:
+        n = len(cost)
+        INF = float('inf')
+        dp = [0] + [INF] * n               # dp[j] = min cost to get j walls painted
+        for c, t in zip(cost, time):       # item: weight t + 1, price c
+            for j in range(n, 0, -1):      # BACKWARDS: each paid painter used at most once
+                dp[j] = min(dp[j], dp[max(0, j - t - 1)] + c)
+        return dp[n]
+@@ TEST:
+s = Solution()
+assert s.paintWalls([1, 2, 3, 2], [1, 2, 3, 2]) == 3
+assert s.paintWalls([2, 3, 4, 2], [1, 1, 1, 1]) == 4
+assert s.paintWalls([5], [1]) == 5
+assert s.paintWalls([1, 2], [5, 1]) == 1
+@@ PROBLEM: profitable-schemes
+@@ APPROACH:
+Each crime is an item used at most once, with members as its weight. The twist is that profit is also tracked, and any profit above minProfit counts the same, so profit is capped at minProfit. dp[g][p] is the number of schemes using exactly g members with capped profit p. For each crime, loop g downwards so the crime is used once, and add dp[g - members][p] into dp[g][min(minProfit, p + gain)].
+@@ COMPLEXITY: O(len(group) * n * minProfit) time, O(n * minProfit) space
+@@ CODE:
+class Solution:
+    def profitableSchemes(self, n: int, minProfit: int, group: List[int], profit: List[int]) -> int:
+        MOD = 10 ** 9 + 7
+        # dp[g][p] = schemes using exactly g members with profit capped at minProfit
+        dp = [[0] * (minProfit + 1) for _ in range(n + 1)]
+        dp[0][0] = 1                       # the empty scheme
+        for members, gain in zip(group, profit):
+            for g in range(n, members - 1, -1):          # BACKWARDS: each crime used once
+                for p in range(minProfit + 1):
+                    q = min(minProfit, p + gain)         # profit above minProfit is all the same
+                    dp[g][q] = (dp[g][q] + dp[g - members][p]) % MOD
+        return sum(dp[g][minProfit] for g in range(n + 1)) % MOD
+@@ TEST:
+s = Solution()
+assert s.profitableSchemes(5, 3, [2, 2], [2, 3]) == 2
+assert s.profitableSchemes(10, 5, [2, 3, 5], [6, 7, 8]) == 7
+assert s.profitableSchemes(1, 0, [1], [0]) == 2
+assert s.profitableSchemes(3, 5, [2, 2], [2, 2]) == 0
+assert s.profitableSchemes(4, 1, [1, 1], [1, 1]) == 3
+@@ PATTERN: Unbounded Knapsack
+@@ SPOT: Use this when items can be reused any number of times and you want the fewest pieces, the best value, or the number of ways to fill an exact total.
+@@ PROBLEM: perfect-squares
+@@ APPROACH:
+The items are the perfect squares 1, 4, 9, ... and each can be used again and again. dp[a] is the fewest squares that sum to a. For each a, try every square that fits: dp[a] = min(dp[a], dp[a - square] + 1). Because dp[a - square] may already use the same square, reuse is allowed.
+@@ COMPLEXITY: O(n * sqrt(n)) time, O(n) space
+@@ CODE:
+import math
+
+
+class Solution:
+    def numSquares(self, n: int) -> int:
+        squares = [i * i for i in range(1, math.isqrt(n) + 1)]
+        INF = float('inf')
+        dp = [0] + [INF] * n               # dp[a] = fewest perfect squares that sum to a
+        for a in range(1, n + 1):
+            for sq in squares:             # unbounded: any square may be used again
+                if sq > a:
+                    break
+                dp[a] = min(dp[a], dp[a - sq] + 1)
+        return dp[n]
+@@ TEST:
+s = Solution()
+assert s.numSquares(12) == 3
+assert s.numSquares(13) == 2
+assert s.numSquares(1) == 1
+assert s.numSquares(4) == 1
+assert s.numSquares(7) == 4
+assert s.numSquares(43) == 3
+assert s.numSquares(10000) == 1
+@@ PROBLEM: integer-break
+@@ APPROACH:
+This is rod cutting. dp[i] is the best product when i is split into at least two positive parts. Cut off a first piece of size j, then either stop (product j * (i - j)) or keep splitting the rest (product j * dp[i - j]). Since dp[i - j] may start with the same size j again, pieces are reusable, which is the unbounded shape.
+@@ COMPLEXITY: O(n^2) time, O(n) space
+@@ CODE:
+class Solution:
+    def integerBreak(self, n: int) -> int:
+        dp = [0] * (n + 1)                 # dp[i] = best product when i is split into 2 or more parts
+        for i in range(2, n + 1):
+            for j in range(1, i):          # first piece has size j; it may repeat inside dp[i - j]
+                dp[i] = max(dp[i], j * (i - j), j * dp[i - j])
+        return dp[n]
+@@ TEST:
+s = Solution()
+assert s.integerBreak(2) == 1
+assert s.integerBreak(10) == 36
+assert s.integerBreak(3) == 2
+assert s.integerBreak(4) == 4
+assert s.integerBreak(8) == 18
+assert s.integerBreak(58) == 1549681956
+@@ PROBLEM: count-ways-to-build-good-strings
+@@ APPROACH:
+Each move appends a block of zero '0's or one '1's, and blocks can be used any number of times. dp[i] is the number of ways to build a string of length exactly i, so dp[i] = dp[i - zero] + dp[i - one] when those lengths are not negative. The base case is dp[0] = 1. The answer adds dp[i] for every length from low to high, modulo 10^9 + 7.
+@@ COMPLEXITY: O(high) time, O(high) space
+@@ CODE:
+class Solution:
+    def countGoodStrings(self, low: int, high: int, zero: int, one: int) -> int:
+        MOD = 10 ** 9 + 7
+        dp = [1] + [0] * high              # dp[i] = ways to build a string of length exactly i
+        for i in range(1, high + 1):
+            if i >= zero:
+                dp[i] += dp[i - zero]      # last block was zero '0's
+            if i >= one:
+                dp[i] += dp[i - one]       # last block was one '1's
+            dp[i] %= MOD
+        return sum(dp[low:high + 1]) % MOD
+@@ TEST:
+s = Solution()
+assert s.countGoodStrings(3, 3, 1, 1) == 8
+assert s.countGoodStrings(2, 3, 1, 2) == 5
+assert s.countGoodStrings(1, 1, 1, 1) == 2
+assert s.countGoodStrings(1, 5, 5, 5) == 2
+@@ PATTERN: Subset Sum
+@@ SPOT: Use this when the question is whether some chosen subset of the numbers adds up to an exact target.
+@@ PROBLEM: partition-equal-subset-sum
+@@ APPROACH:
+Two equal halves need an even total, and then one half must sum to total / 2. So the question becomes: is there a subset with sum target? dp[s] is true when some subset sums to s. For each number, loop s downwards so the number is used once: dp[s] = dp[s] or dp[s - x].
+@@ COMPLEXITY: O(n * total) time, O(total) space
+@@ CODE:
+class Solution:
+    def canPartition(self, nums: List[int]) -> bool:
+        total = sum(nums)
+        if total % 2:
+            return False                   # an odd total cannot split into two equal halves
+        target = total // 2
+        dp = [True] + [False] * target     # dp[s] = some subset sums to s
+        for x in nums:
+            for s in range(target, x - 1, -1):    # BACKWARDS: each number used once
+                dp[s] = dp[s] or dp[s - x]
+        return dp[target]
+@@ TEST:
+s = Solution()
+assert s.canPartition([1, 5, 11, 5]) == True
+assert s.canPartition([1, 2, 3, 5]) == False
+assert s.canPartition([1, 1]) == True
+assert s.canPartition([2]) == False
+assert s.canPartition([3, 3, 3, 4, 5]) == True
+assert s.canPartition([1, 2, 5]) == False
+@@ PROBLEM: length-of-the-longest-subsequence-that-sums-to-target
+@@ APPROACH:
+Subset sum, but instead of true or false each cell remembers a count. dp[s] is the most numbers that add up to exactly s, and minus infinity means s cannot be made. For each number loop s downwards so it is used once: dp[s] = max(dp[s], dp[s - x] + 1). If the target is unreachable, return -1.
+@@ COMPLEXITY: O(n * target) time, O(target) space
+@@ CODE:
+class Solution:
+    def lengthOfLongestSubsequence(self, nums: List[int], target: int) -> int:
+        NEG = float('-inf')
+        dp = [0] + [NEG] * target          # dp[s] = most numbers that add to s (NEG: impossible)
+        for x in nums:
+            for s in range(target, x - 1, -1):    # BACKWARDS: each number used once
+                dp[s] = max(dp[s], dp[s - x] + 1)
+        return dp[target] if dp[target] > 0 else -1
+@@ TEST:
+s = Solution()
+assert s.lengthOfLongestSubsequence([1, 2, 3, 4, 5], 9) == 3
+assert s.lengthOfLongestSubsequence([4, 1, 3, 2, 1, 5], 7) == 4
+assert s.lengthOfLongestSubsequence([1, 1, 5, 4, 5], 3) == -1
+assert s.lengthOfLongestSubsequence([5], 5) == 1
+assert s.lengthOfLongestSubsequence([1, 1, 1], 2) == 2
+assert s.lengthOfLongestSubsequence([10], 5) == -1
+@@ PROBLEM: split-array-with-same-average
+@@ APPROACH:
+If a group of k numbers has the same average as the whole array, its sum must be k * total / n. So ask, for each size k up to n / 2, whether some subset of exactly k numbers has that sum. dp[k] is a bitmask where bit s is set if k numbers can sum to s. For each number, go through k backwards and set dp[k] |= dp[k - 1] << x. The other group then automatically has the same average.
+@@ COMPLEXITY: O(n^2) big-integer shifts of up to sum(nums) bits, O(n * sum) bits of space
+@@ CODE:
+class Solution:
+    def splitArraySameAverage(self, nums: List[int]) -> bool:
+        n, total = len(nums), sum(nums)
+        half = n // 2
+        dp = [0] * (half + 1)              # dp[k]: bit s is set if some k numbers sum to s
+        dp[0] = 1
+        for x in nums:
+            for k in range(half, 0, -1):   # BACKWARDS over k: each number used once
+                dp[k] |= dp[k - 1] << x
+        for k in range(1, half + 1):
+            # k numbers must sum to k * average, which has to be a whole number
+            if total * k % n == 0 and (dp[k] >> (total * k // n)) & 1:
+                return True
+        return False
+@@ TEST:
+s = Solution()
+assert s.splitArraySameAverage([1, 2, 3, 4, 5, 6, 7, 8]) == True
+assert s.splitArraySameAverage([3, 1]) == False
+assert s.splitArraySameAverage([1]) == False
+assert s.splitArraySameAverage([2, 2]) == True
+assert s.splitArraySameAverage([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) == True
+assert s.splitArraySameAverage([18, 10, 5, 3]) == False
+@@ PATTERN: Partition DP
+@@ SPOT: Use this when you split the numbers into two groups and care about their difference or about +/- sign choices, which turns into a subset-sum target.
+@@ PROBLEM: last-stone-weight-ii
+@@ APPROACH:
+Smashing stones ends with one stone whose weight is the difference of two groups: some stones count as plus and the rest as minus. So split the stones into two groups with the smallest possible difference. Find the heaviest group that does not exceed total / 2 using 0/1 subset sum; the answer is total - 2 * that weight.
+@@ COMPLEXITY: O(n * total) time, O(total) space
+@@ CODE:
+class Solution:
+    def lastStoneWeightII(self, stones: List[int]) -> int:
+        total = sum(stones)
+        half = total // 2
+        dp = [True] + [False] * half       # dp[s] = some group of stones weighs exactly s
+        for x in stones:
+            for s in range(half, x - 1, -1):      # BACKWARDS: each stone goes in one group once
+                dp[s] = dp[s] or dp[s - x]
+        best = max(s for s in range(half + 1) if dp[s])    # heaviest group not above half
+        return total - 2 * best            # the other group minus this one
+@@ TEST:
+s = Solution()
+assert s.lastStoneWeightII([2, 7, 4, 1, 8, 1]) == 1
+assert s.lastStoneWeightII([31, 26, 33, 21, 40]) == 5
+assert s.lastStoneWeightII([1]) == 1
+assert s.lastStoneWeightII([1, 2]) == 1
+assert s.lastStoneWeightII([2, 2]) == 0
+assert s.lastStoneWeightII([1, 1, 4, 2, 2]) == 0
+@@ PROBLEM: target-sum
+@@ APPROACH:
+Giving each number a + or - splits the array into a plus group P and a minus group N. Then P - N = target and P + N = total, so P = (total + target) / 2. The problem becomes: count the subsets whose sum is P. dp[s] is the number of subsets with sum s, filled with s going downwards so each number is used once.
+@@ COMPLEXITY: O(n * total) time, O(total) space
+@@ CODE:
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        total = sum(nums)
+        if abs(target) > total or (total + target) % 2:
+            return 0
+        need = (total + target) // 2       # P - N = target and P + N = total, so P = (total + target) / 2
+        dp = [1] + [0] * need              # dp[s] = number of subsets with sum s
+        for x in nums:
+            for s in range(need, x - 1, -1):      # BACKWARDS: each number used once
+                dp[s] += dp[s - x]
+        return dp[need]
+@@ TEST:
+s = Solution()
+assert s.findTargetSumWays([1, 1, 1, 1, 1], 3) == 5
+assert s.findTargetSumWays([1], 1) == 1
+assert s.findTargetSumWays([1], 2) == 0
+assert s.findTargetSumWays([1, 0], 1) == 2
+assert s.findTargetSumWays([0, 0, 0, 0, 0, 0, 0, 0, 1], 1) == 256
+assert s.findTargetSumWays([1, 2], -1) == 1
+@@ PROBLEM: tallest-billboard
+@@ APPROACH:
+Two supports of equal height means splitting some rods into two groups with equal sum. Track states by the difference d between the two supports, and store the height of the shorter one. For each rod you may skip it, weld it to the taller support (d grows by r), or weld it to the shorter one (the new difference is |d - r|, and the shorter side gains min(d, r)). The answer is the stored height at difference 0.
+@@ COMPLEXITY: O(n * S) time, O(S) space, where S is the sum of the rods
+@@ CODE:
+class Solution:
+    def tallestBillboard(self, rods: List[int]) -> int:
+        best = {0: 0}                      # best[d] = tallest "shorter support" when the supports differ by d
+        for r in rods:
+            nxt = dict(best)               # option 1: skip this rod
+            for d, shorter in best.items():
+                nxt[d + r] = max(nxt.get(d + r, 0), shorter)            # weld to the taller support
+                nd = abs(d - r)
+                nxt[nd] = max(nxt.get(nd, 0), shorter + min(d, r))      # weld to the shorter support
+            best = nxt
+        return best[0]
+@@ TEST:
+s = Solution()
+assert s.tallestBillboard([1, 2, 3, 6]) == 6
+assert s.tallestBillboard([1, 2, 3, 4, 5, 6]) == 10
+assert s.tallestBillboard([1, 2]) == 0
+assert s.tallestBillboard([5, 5]) == 5
+assert s.tallestBillboard([3]) == 0
+@@ PATTERN: Coin Change
+@@ SPOT: Use this when you build an amount from reusable coins and need the fewest coins, the number of combinations, or the number of orderings.
+@@ PROBLEM: coin-change
+@@ APPROACH:
+State: dp[a] is the fewest coins that make amount a, with infinity meaning impossible. Try every coin as the last coin: dp[a] = min(dp[a], dp[a - c] + 1). The base case is dp[0] = 0. If dp[amount] is still infinity, return -1.
+@@ COMPLEXITY: O(amount * len(coins)) time, O(amount) space
+@@ CODE:
+class Solution:
+    def coinChange(self, coins: List[int], amount: int) -> int:
+        INF = float("inf")
+        dp = [0] + [INF] * amount          # dp[a] = fewest coins that make amount a
+        for a in range(1, amount + 1):
+            for c in coins:
+                if c <= a:
+                    dp[a] = min(dp[a], dp[a - c] + 1)    # use coin c as the last coin
+        return dp[amount] if dp[amount] != INF else -1
+@@ TEST:
+s = Solution()
+assert s.coinChange([1, 2, 5], 11) == 3
+assert s.coinChange([2], 3) == -1
+assert s.coinChange([1], 0) == 0
+assert s.coinChange([2, 5, 10, 1], 27) == 4
+assert s.coinChange([5, 3], 7) == -1
+assert s.coinChange([1, 2, 5], 100) == 20
+assert s.coinChange([1], 2) == 2
+@@ PROBLEM: coin-change-ii
+@@ APPROACH:
+Now count the combinations, where 1+2 and 2+1 are the same. dp[a] is the number of combinations that make amount a, with dp[0] = 1. Put the coins in the OUTER loop and the amount in the inner loop, going forwards so a coin can repeat. Each coin is added to the table once, in a fixed order, which stops different orderings from being counted.
+@@ COMPLEXITY: O(amount * len(coins)) time, O(amount) space
+@@ CODE:
+class Solution:
+    def change(self, amount: int, coins: List[int]) -> int:
+        dp = [1] + [0] * amount            # dp[a] = number of combinations that make amount a
+        for c in coins:                    # coins in the OUTER loop: 1+2 and 2+1 count once
+            for a in range(c, amount + 1): # forwards, so a coin may be reused
+                dp[a] += dp[a - c]
+        return dp[amount]
+@@ TEST:
+s = Solution()
+assert s.change(5, [1, 2, 5]) == 4
+assert s.change(3, [2]) == 0
+assert s.change(10, [10]) == 1
+assert s.change(0, [1]) == 1
+assert s.change(4, [1, 2, 3]) == 4
+@@ PROBLEM: combination-sum-iv
+@@ APPROACH:
+This counts orderings, so 1+2 and 2+1 are different. dp[t] is the number of ordered sequences that sum to t, with dp[0] = 1. Put the amount in the OUTER loop and the numbers in the inner loop. For every t, every number may be the last one, so each order is counted separately: dp[t] += dp[t - x].
+@@ COMPLEXITY: O(target * len(nums)) time, O(target) space
+@@ CODE:
+class Solution:
+    def combinationSum4(self, nums: List[int], target: int) -> int:
+        dp = [1] + [0] * target            # dp[t] = number of ordered sequences that sum to t
+        for t in range(1, target + 1):     # amount in the OUTER loop: 1+2 and 2+1 count separately
+            for x in nums:
+                if x <= t:
+                    dp[t] += dp[t - x]     # x is the last number of the sequence
+        return dp[target]
+@@ TEST:
+s = Solution()
+assert s.combinationSum4([1, 2, 3], 4) == 7
+assert s.combinationSum4([9], 3) == 0
+assert s.combinationSum4([1], 5) == 1
+assert s.combinationSum4([1, 2], 3) == 3
+assert s.combinationSum4([1, 2, 3], 5) == 13
+@@ PATTERN: Grid DP
+@@ SPOT: Use this when you move through a grid (usually right and down) and each cell's answer comes from its top and left neighbours.
+@@ PROBLEM: unique-paths
+@@ APPROACH:
+State: dp[r][c] is the number of ways to reach cell (r, c). You can only arrive from above or from the left, so dp[r][c] = dp[r-1][c] + dp[r][c-1]. The first row and first column have exactly one way each, so the table starts filled with 1s.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def uniquePaths(self, m: int, n: int) -> int:
+        dp = [[1] * n for _ in range(m)]   # first row and first column: exactly one way
+        for r in range(1, m):
+            for c in range(1, n):
+                dp[r][c] = dp[r - 1][c] + dp[r][c - 1]    # arrive from above or from the left
+        return dp[-1][-1]
+@@ TEST:
+s = Solution()
+assert s.uniquePaths(3, 7) == 28
+assert s.uniquePaths(3, 2) == 3
+assert s.uniquePaths(1, 1) == 1
+assert s.uniquePaths(1, 5) == 1
+assert s.uniquePaths(3, 3) == 6
+assert s.uniquePaths(10, 10) == 48620
+@@ PROBLEM: minimum-path-sum
+@@ APPROACH:
+Same two-neighbour idea, but each cell now stores a minimum cost. The cheapest path to a cell is its own value plus the smaller of the cheapest path to the cell above and to the cell on the left. The grid is overwritten in place, and cells outside the grid count as infinity so the first row and column work too.
+@@ COMPLEXITY: O(m * n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def minPathSum(self, grid: List[List[int]]) -> int:
+        R, C = len(grid), len(grid[0])
+        for r in range(R):
+            for c in range(C):
+                if r == c == 0:
+                    continue
+                up = grid[r - 1][c] if r else float("inf")
+                left = grid[r][c - 1] if c else float("inf")
+                grid[r][c] += min(up, left)    # best way in, plus this cell's cost
+        return grid[-1][-1]
+@@ TEST:
+s = Solution()
+assert s.minPathSum([[1, 3, 1], [1, 5, 1], [4, 2, 1]]) == 7
+assert s.minPathSum([[1, 2, 3], [4, 5, 6]]) == 12
+assert s.minPathSum([[5]]) == 5
+assert s.minPathSum([[1, 2, 3]]) == 6
+assert s.minPathSum([[1], [2], [3]]) == 6
+@@ PROBLEM: dungeon-game
+@@ APPROACH:
+Filling from the top-left fails, because the health needed now depends on what happens later. So fill backwards from the princess. dp[r][c] is the minimum health needed when entering cell (r, c). It equals the smaller of the two next cells' needs minus this cell's value, and never less than 1. The extra border row and column of infinity keep the edges simple.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def calculateMinimumHP(self, dungeon: List[List[int]]) -> int:
+        R, C = len(dungeon), len(dungeon[0])
+        INF = float("inf")
+        # dp[r][c] = minimum health needed on entering (r, c)
+        dp = [[INF] * (C + 1) for _ in range(R + 1)]
+        dp[R][C - 1] = dp[R - 1][C] = 1    # after the princess's room we need at least 1 hp
+        for r in range(R - 1, -1, -1):     # fill BACKWARDS from the princess
+            for c in range(C - 1, -1, -1):
+                need = min(dp[r + 1][c], dp[r][c + 1]) - dungeon[r][c]
+                dp[r][c] = max(1, need)    # health must never drop below 1
+        return dp[0][0]
+@@ TEST:
+s = Solution()
+assert s.calculateMinimumHP([[-2, -3, 3], [-5, -10, 1], [10, 30, -5]]) == 7
+assert s.calculateMinimumHP([[0]]) == 1
+assert s.calculateMinimumHP([[-5]]) == 6
+assert s.calculateMinimumHP([[100]]) == 1
+assert s.calculateMinimumHP([[1, -3, 3], [0, -2, 0], [-3, -3, -3]]) == 3
+@@ PATTERN: LCS
+@@ SPOT: Use this when two strings or arrays are compared and the answer is built from the best match between their prefixes.
+@@ PROBLEM: longest-common-subsequence
+@@ APPROACH:
+State: dp[i][j] is the LCS length of the first i characters of A and the first j characters of B. If the last characters match, extend the diagonal: dp[i-1][j-1] + 1. If they differ, drop one character from either string and take the better result: max(dp[i-1][j], dp[i][j-1]). The extra row and column of zeros are the base case.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def longestCommonSubsequence(self, text1: str, text2: str) -> int:
+        m, n = len(text1), len(text2)
+        dp = [[0] * (n + 1) for _ in range(m + 1)]   # dp[i][j] = LCS of text1[:i] and text2[:j]
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if text1[i - 1] == text2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1] + 1               # match: extend the diagonal
+                else:
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])    # mismatch: drop one character
+        return dp[m][n]
+@@ TEST:
+s = Solution()
+assert s.longestCommonSubsequence("abcde", "ace") == 3
+assert s.longestCommonSubsequence("abc", "abc") == 3
+assert s.longestCommonSubsequence("abc", "def") == 0
+assert s.longestCommonSubsequence("a", "a") == 1
+assert s.longestCommonSubsequence("bl", "yby") == 1
+assert s.longestCommonSubsequence("oxcpqrsvwf", "shmtulqrypy") == 2
+@@ PROBLEM: maximum-length-of-repeated-subarray
+@@ APPROACH:
+This is the substring version: the shared part must be contiguous. dp[i][j] is the length of the common run that ends at nums1[i-1] and nums2[j-1]. On a match extend the diagonal, dp[i-1][j-1] + 1. On a mismatch the run is broken, so the cell stays 0 instead of taking a max like LCS. Keep the largest cell seen.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def findLength(self, nums1: List[int], nums2: List[int]) -> int:
+        m, n = len(nums1), len(nums2)
+        dp = [[0] * (n + 1) for _ in range(m + 1)]   # dp[i][j] = common run ending at nums1[i-1], nums2[j-1]
+        best = 0
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if nums1[i - 1] == nums2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1] + 1  # match: extend the diagonal
+                    best = max(best, dp[i][j])
+                # mismatch: the run is broken, the cell stays 0 (unlike LCS)
+        return best
+@@ TEST:
+s = Solution()
+assert s.findLength([1, 2, 3, 2, 1], [3, 2, 1, 4, 7]) == 3
+assert s.findLength([0, 0, 0, 0, 0], [0, 0, 0, 0, 0]) == 5
+assert s.findLength([1], [2]) == 0
+assert s.findLength([1, 2, 3], [4, 5, 6]) == 0
+assert s.findLength([0, 1, 1, 1, 1], [1, 0, 1, 0, 1]) == 2
+@@ PROBLEM: shortest-common-supersequence
+@@ APPROACH:
+The shortest string that contains both inputs as subsequences writes each shared character once, so its length is len(A) + len(B) - LCS. Build the LCS table first. Then walk back from dp[m][n]: on a match write that character once and move diagonally; otherwise write the character from the side with the larger table value and move that way. Leftover characters are copied at the end.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def shortestCommonSupersequence(self, str1: str, str2: str) -> str:
+        m, n = len(str1), len(str2)
+        dp = [[0] * (n + 1) for _ in range(m + 1)]   # the LCS table of the two strings
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if str1[i - 1] == str2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1] + 1
+                else:
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+        i, j, out = m, n, []
+        while i > 0 and j > 0:             # walk back through the table, building the answer reversed
+            if str1[i - 1] == str2[j - 1]:
+                out.append(str1[i - 1])    # shared character is written once
+                i -= 1
+                j -= 1
+            elif dp[i - 1][j] >= dp[i][j - 1]:
+                out.append(str1[i - 1])
+                i -= 1
+            else:
+                out.append(str2[j - 1])
+                j -= 1
+        out.extend(reversed(str1[:i]))     # one of these two leftovers is empty
+        out.extend(reversed(str2[:j]))
+        return ''.join(reversed(out))
+@@ TEST:
+def is_subseq(small, big):
+    it = iter(big)
+    return all(ch in it for ch in small)
+
+s = Solution()
+r = s.shortestCommonSupersequence("abac", "cab")
+assert len(r) == 5 and is_subseq("abac", r) and is_subseq("cab", r)
+r = s.shortestCommonSupersequence("aaaaaaaa", "aaaaaaaa")
+assert r == "aaaaaaaa"
+r = s.shortestCommonSupersequence("a", "b")
+assert len(r) == 2 and is_subseq("a", r) and is_subseq("b", r)
+r = s.shortestCommonSupersequence("abc", "abc")
+assert r == "abc"
+r = s.shortestCommonSupersequence("ab", "ba")
+assert len(r) == 3 and is_subseq("ab", r) and is_subseq("ba", r)
+@@ PATTERN: LIS
+@@ SPOT: Use this when you need the longest strictly increasing subsequence, or a problem that reduces to sorting by one key and then increasing on another.
+@@ PROBLEM: longest-increasing-subsequence
+@@ APPROACH:
+Keep an array tails where tails[k] is the smallest possible last value of an increasing subsequence of length k+1. For each number x, binary search for the first tail that is not smaller than x. If there is none, x extends the longest subsequence, so append it. Otherwise x replaces that tail, which keeps the tails as small as possible. The length of tails is the answer, but tails itself is not the real subsequence.
+@@ COMPLEXITY: O(n log n) time, O(n) space
+@@ CODE:
+from bisect import bisect_left
+
+
+class Solution:
+    def lengthOfLIS(self, nums: List[int]) -> int:
+        tails = []                         # tails[k] = smallest tail of an increasing subsequence of length k+1
+        for x in nums:
+            i = bisect_left(tails, x)      # first tail >= x (bisect_right would allow equal values)
+            if i == len(tails):
+                tails.append(x)            # x extends the longest subsequence
+            else:
+                tails[i] = x               # x gives a smaller tail for length i+1
+        return len(tails)
+@@ TEST:
+s = Solution()
+assert s.lengthOfLIS([10, 9, 2, 5, 3, 7, 101, 18]) == 4
+assert s.lengthOfLIS([0, 1, 0, 3, 2, 3]) == 4
+assert s.lengthOfLIS([7, 7, 7, 7, 7, 7, 7]) == 1
+assert s.lengthOfLIS([1]) == 1
+assert s.lengthOfLIS([5, 4, 3, 2, 1]) == 1
+assert s.lengthOfLIS([1, 3, 6, 7, 9, 4, 10, 5, 6]) == 6
+@@ PROBLEM: number-of-longest-increasing-subsequence
+@@ APPROACH:
+Counting needs more than the tails array, so use the O(n^2) form. length[i] is the LIS length ending at i, and count[i] is how many such subsequences end at i. For each earlier j with a smaller value: a longer chain replaces length[i] and copies count[j]; an equal-length chain adds count[j]. At the end, add the counts of every index whose length equals the maximum.
+@@ COMPLEXITY: O(n^2) time, O(n) space
+@@ CODE:
+class Solution:
+    def findNumberOfLIS(self, nums: List[int]) -> int:
+        n = len(nums)
+        length = [1] * n                   # length[i] = LIS length ending at i
+        count = [1] * n                    # count[i] = number of LIS of that length ending at i
+        for i in range(n):
+            for j in range(i):
+                if nums[j] < nums[i]:
+                    if length[j] + 1 > length[i]:
+                        length[i] = length[j] + 1
+                        count[i] = count[j]          # a longer chain: restart the count
+                    elif length[j] + 1 == length[i]:
+                        count[i] += count[j]         # another way to reach the same length
+        best = max(length)
+        return sum(c for l, c in zip(length, count) if l == best)
+@@ TEST:
+s = Solution()
+assert s.findNumberOfLIS([1, 3, 5, 4, 7]) == 2
+assert s.findNumberOfLIS([2, 2, 2, 2, 2]) == 5
+assert s.findNumberOfLIS([1]) == 1
+assert s.findNumberOfLIS([1, 2, 4, 3, 5, 4, 7, 2]) == 3
+assert s.findNumberOfLIS([3, 1, 2]) == 1
+assert s.findNumberOfLIS([2, 1]) == 2
+@@ PROBLEM: russian-doll-envelopes
+@@ APPROACH:
+An envelope fits inside another only if both width and height are strictly smaller. Sort by width ascending, so only heights still need checking, and now the task is the LIS of the heights. For equal widths sort heights descending, so two envelopes of the same width can never both be chosen. Then run the tails and binary search routine on the heights.
+@@ COMPLEXITY: O(n log n) time, O(n) space
+@@ CODE:
+from bisect import bisect_left
+
+
+class Solution:
+    def maxEnvelopes(self, envelopes: List[List[int]]) -> int:
+        envelopes.sort(key=lambda e: (e[0], -e[1]))    # same width: taller first, so they cannot chain
+        tails = []                         # LIS tails over the heights
+        for _, h in envelopes:
+            i = bisect_left(tails, h)
+            if i == len(tails):
+                tails.append(h)
+            else:
+                tails[i] = h
+        return len(tails)
+@@ TEST:
+s = Solution()
+assert s.maxEnvelopes([[5, 4], [6, 4], [6, 7], [2, 3]]) == 3
+assert s.maxEnvelopes([[1, 1], [1, 1], [1, 1]]) == 1
+assert s.maxEnvelopes([[1, 1]]) == 1
+assert s.maxEnvelopes([[4, 5], [4, 6], [6, 7], [2, 3], [1, 1]]) == 4
+assert s.maxEnvelopes([[1, 3], [3, 5], [6, 7], [6, 8], [8, 4], [9, 5]]) == 3
+@@ PATTERN: Edit Distance
+@@ SPOT: Use this when you turn one string into another with deletes, inserts or replaces and want the lowest cost.
+@@ PROBLEM: delete-operation-for-two-strings
+@@ APPROACH:
+This is edit distance with only deletions allowed. dp[i][j] is the fewest deletions to make the first i characters of word1 equal the first j characters of word2. If the last characters match, the cost is dp[i-1][j-1]. Otherwise delete the last character of one word: 1 + min(dp[i-1][j], dp[i][j-1]). The first row and column are the cost of deleting everything.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def minDistance(self, word1: str, word2: str) -> int:
+        m, n = len(word1), len(word2)
+        dp = [[0] * (n + 1) for _ in range(m + 1)]   # dp[i][j] = deletions to make word1[:i] equal word2[:j]
+        for i in range(m + 1):
+            dp[i][0] = i                   # delete all i characters
+        for j in range(n + 1):
+            dp[0][j] = j
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if word1[i - 1] == word2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1]                          # match: free
+                else:
+                    dp[i][j] = 1 + min(dp[i - 1][j], dp[i][j - 1])       # delete from word1 or from word2
+        return dp[m][n]
+@@ TEST:
+s = Solution()
+assert s.minDistance("sea", "eat") == 2
+assert s.minDistance("leetcode", "etco") == 4
+assert s.minDistance("a", "a") == 0
+assert s.minDistance("a", "b") == 2
+assert s.minDistance("park", "spake") == 3
+@@ PROBLEM: edit-distance
+@@ APPROACH:
+dp[i][j] is the fewest operations to turn the first i characters of word1 into the first j characters of word2. A match costs nothing, so dp[i][j] = dp[i-1][j-1]. On a mismatch take the best of three moves plus 1: delete (dp[i-1][j]), insert (dp[i][j-1]) or replace (dp[i-1][j-1]). Row 0 and column 0 are the cost of inserting or deleting everything.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def minDistance(self, word1: str, word2: str) -> int:
+        m, n = len(word1), len(word2)
+        dp = [[0] * (n + 1) for _ in range(m + 1)]
+        for i in range(m + 1):
+            dp[i][0] = i                   # delete all i characters
+        for j in range(n + 1):
+            dp[0][j] = j                   # insert all j characters
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if word1[i - 1] == word2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1]
+                else:
+                    dp[i][j] = 1 + min(dp[i - 1][j],        # delete
+                                       dp[i][j - 1],        # insert
+                                       dp[i - 1][j - 1])    # replace
+        return dp[m][n]
+@@ TEST:
+s = Solution()
+assert s.minDistance("horse", "ros") == 3
+assert s.minDistance("intention", "execution") == 5
+assert s.minDistance("", "") == 0
+assert s.minDistance("", "a") == 1
+assert s.minDistance("a", "") == 1
+assert s.minDistance("abc", "abc") == 0
+assert s.minDistance("kitten", "sitting") == 3
+assert s.minDistance("sunday", "saturday") == 3
+@@ PROBLEM: minimum-ascii-delete-sum-for-two-strings
+@@ APPROACH:
+Same deletion table, but each deletion costs the ASCII value of the character, not 1. dp[i][j] is the cheapest deletion cost to make s1[:i] equal s2[:j]. A match costs dp[i-1][j-1]. Otherwise pay for deleting s1[i-1] or s2[j-1], whichever leaves the cheaper rest. The first row and column are the sums of the ASCII values of the prefixes.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def minimumDeleteSum(self, s1: str, s2: str) -> int:
+        m, n = len(s1), len(s2)
+        dp = [[0] * (n + 1) for _ in range(m + 1)]   # dp[i][j] = cheapest deletions to make s1[:i] equal s2[:j]
+        for i in range(1, m + 1):
+            dp[i][0] = dp[i - 1][0] + ord(s1[i - 1])     # delete all of s1[:i]
+        for j in range(1, n + 1):
+            dp[0][j] = dp[0][j - 1] + ord(s2[j - 1])     # delete all of s2[:j]
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if s1[i - 1] == s2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1]
+                else:
+                    dp[i][j] = min(dp[i - 1][j] + ord(s1[i - 1]),     # delete from s1
+                                   dp[i][j - 1] + ord(s2[j - 1]))     # delete from s2
+        return dp[m][n]
+@@ TEST:
+s = Solution()
+assert s.minimumDeleteSum("sea", "eat") == 231
+assert s.minimumDeleteSum("delete", "leet") == 403
+assert s.minimumDeleteSum("a", "a") == 0
+assert s.minimumDeleteSum("a", "b") == 195
+assert s.minimumDeleteSum("ab", "ba") == 194
+@@ PATTERN: Palindromic DP
+@@ SPOT: Use this when you work with palindromes inside a string and the answer for s[i..j] depends on the shorter interval s[i+1..j-1].
+@@ PROBLEM: longest-palindromic-substring
+@@ APPROACH:
+State: dp[i][j] is true when s[i..j] is a palindrome. It holds if s[i] == s[j] and the inside s[i+1..j-1] is a palindrome (or is shorter than 2 characters). Fill the table by increasing interval length, so the shorter inside is always ready. Remember the start and length of the longest true interval.
+@@ COMPLEXITY: O(n^2) time, O(n^2) space
+@@ CODE:
+class Solution:
+    def longestPalindrome(self, s: str) -> str:
+        n = len(s)
+        dp = [[False] * n for _ in range(n)]     # dp[i][j] = s[i..j] is a palindrome
+        start, best = 0, 1
+        for length in range(1, n + 1):           # interval DP: shorter intervals first
+            for i in range(n - length + 1):
+                j = i + length - 1
+                if s[i] == s[j] and (length <= 2 or dp[i + 1][j - 1]):
+                    dp[i][j] = True              # equal ends around a palindrome
+                    if length > best:
+                        start, best = i, length
+        return s[start:start + best]
+@@ TEST:
+s = Solution()
+assert s.longestPalindrome("babad") in ("bab", "aba")
+assert s.longestPalindrome("cbbd") == "bb"
+assert s.longestPalindrome("a") == "a"
+assert s.longestPalindrome("ac") in ("a", "c")
+assert s.longestPalindrome("racecar") == "racecar"
+assert s.longestPalindrome("forgeeksskeegfor") == "geeksskeeg"
+assert s.longestPalindrome("aaaa") == "aaaa"
+@@ PROBLEM: longest-palindromic-subsequence
+@@ APPROACH:
+Characters may now be skipped. dp[i][j] is the longest palindromic subsequence inside s[i..j]. If the two ends match, wrap them around the inside answer: dp[i+1][j-1] + 2. If not, drop one end and take the better: max(dp[i+1][j], dp[i][j-1]). Fill by increasing interval length, starting from the single characters (answer 1).
+@@ COMPLEXITY: O(n^2) time, O(n^2) space
+@@ CODE:
+class Solution:
+    def longestPalindromeSubseq(self, s: str) -> int:
+        n = len(s)
+        dp = [[0] * n for _ in range(n)]   # dp[i][j] = longest palindromic subsequence in s[i..j]
+        for i in range(n):
+            dp[i][i] = 1                   # one character is a palindrome
+        for length in range(2, n + 1):     # interval DP: shorter pieces are ready first
+            for i in range(n - length + 1):
+                j = i + length - 1
+                if s[i] == s[j]:
+                    dp[i][j] = dp[i + 1][j - 1] + 2                  # ends match: wrap the inside
+                else:
+                    dp[i][j] = max(dp[i + 1][j], dp[i][j - 1])       # drop one end
+        return dp[0][n - 1]
+@@ TEST:
+s = Solution()
+assert s.longestPalindromeSubseq("bbbab") == 4
+assert s.longestPalindromeSubseq("cbbd") == 2
+assert s.longestPalindromeSubseq("a") == 1
+assert s.longestPalindromeSubseq("abcd") == 1
+assert s.longestPalindromeSubseq("abcba") == 5
+assert s.longestPalindromeSubseq("agbdba") == 5
+@@ PROBLEM: palindrome-partitioning-ii
+@@ APPROACH:
+Two tables work together. First fill pal[i][j] by interval length, as before. Then cuts[j] is the fewest cuts for the prefix s[0..j]: if the whole prefix is a palindrome it is 0, otherwise try every last piece s[i..j] that is a palindrome and take cuts[i-1] + 1. The palindrome table makes each piece check a single lookup.
+@@ COMPLEXITY: O(n^2) time, O(n^2) space
+@@ CODE:
+class Solution:
+    def minCut(self, s: str) -> int:
+        n = len(s)
+        pal = [[False] * n for _ in range(n)]    # pal[i][j] = s[i..j] is a palindrome (interval DP)
+        for length in range(1, n + 1):
+            for i in range(n - length + 1):
+                j = i + length - 1
+                pal[i][j] = s[i] == s[j] and (length <= 2 or pal[i + 1][j - 1])
+        cuts = [0] * n                       # cuts[j] = fewest cuts for the prefix s[0..j]
+        for j in range(n):
+            if pal[0][j]:
+                continue                     # the whole prefix is a palindrome: no cut
+            cuts[j] = min(cuts[i - 1] + 1 for i in range(1, j + 1) if pal[i][j])   # last piece is s[i..j]
+        return cuts[-1]
+@@ TEST:
+s = Solution()
+assert s.minCut("aab") == 1
+assert s.minCut("a") == 0
+assert s.minCut("ab") == 1
+assert s.minCut("aaaa") == 0
+assert s.minCut("abcde") == 4
+assert s.minCut("ababbbabbaba") == 3
+@@ PATTERN: DP on Trees
+@@ SPOT: Use this when a tree answer depends on a choice at each node, so every node returns a small tuple of states to its parent.
+@@ PROBLEM: diameter-of-binary-tree
+@@ APPROACH:
+A postorder DFS returns the height of each subtree, so the parent can build on its children's answers. At every node, the longest path that bends there is left height + right height, so update the best answer with that. Then return 1 + max(left, right) to the parent. Each node is visited once.
+@@ COMPLEXITY: O(n) time, O(h) space for the recursion
+@@ CODE:
+class Solution:
+    def diameterOfBinaryTree(self, root: Optional[TreeNode]) -> int:
+        best = 0
+
+        def depth(node):                   # postorder: returns the height of this subtree
+            nonlocal best
+            if not node:
+                return 0
+            left, right = depth(node.left), depth(node.right)
+            best = max(best, left + right)     # longest path that bends at this node
+            return 1 + max(left, right)
+
+        depth(root)
+        return best
+@@ TEST:
+s = Solution()
+assert s.diameterOfBinaryTree(tree([1, 2, 3, 4, 5])) == 3
+assert s.diameterOfBinaryTree(tree([1, 2])) == 1
+assert s.diameterOfBinaryTree(tree([1])) == 0
+assert s.diameterOfBinaryTree(tree([1, None, 2, None, 3])) == 2
+@@ PROBLEM: house-robber-iii
+@@ APPROACH:
+Each node returns two numbers: the best total if its house is robbed (take) and the best total if it is skipped (skip). If this node is robbed, both children must be skipped, so take = val + left skip + right skip. If it is skipped, each child is free to choose its better option, so skip = max(left) + max(right). The answer is the larger of the two values at the root.
+@@ COMPLEXITY: O(n) time, O(h) space
+@@ CODE:
+class Solution:
+    def rob(self, root: Optional[TreeNode]) -> int:
+        def go(node):                      # postorder: returns (take, skip)
+            if not node:
+                return (0, 0)
+            lt, ls = go(node.left)
+            rt, rs = go(node.right)
+            take = node.val + ls + rs      # rob this house: the children must be skipped
+            skip = max(lt, ls) + max(rt, rs)    # skip it: each child chooses freely
+            return (take, skip)
+
+        return max(go(root))
+@@ TEST:
+s = Solution()
+assert s.rob(tree([3, 2, 3, None, 3, None, 1])) == 7
+assert s.rob(tree([3, 4, 5, 1, 3, None, 1])) == 9
+assert s.rob(tree([1])) == 1
+assert s.rob(tree([2, 1, 3, None, 4])) == 7
+@@ PROBLEM: binary-tree-cameras
+@@ APPROACH:
+Each node returns three costs for its subtree, where the whole subtree below the node is always covered. a is the cost if this node has a camera, b is the cost if it has no camera but a child covers it, and c is the cost if it has no camera and is not covered yet, so the parent must cover it. A missing child is (infinity, 0, 0). The combinations are: a = 1 + best of each child, b = at least one child has a camera, c = both children are in state b. The answer is min(a, b) at the root.
+@@ COMPLEXITY: O(n) time, O(h) space
+@@ CODE:
+class Solution:
+    def minCameraCover(self, root: Optional[TreeNode]) -> int:
+        INF = float('inf')
+
+        def go(node):                      # postorder: returns (camera here, covered by a child, not covered)
+            if not node:
+                return (INF, 0, 0)
+            la, lb, lc = go(node.left)
+            ra, rb, rc = go(node.right)
+            a = 1 + min(la, lb, lc) + min(ra, rb, rc)    # camera here: children can be in any state
+            b = min(la + ra, la + rb, lb + ra)           # no camera here: a child must have one
+            c = lb + rb                                  # not covered: children covered without a camera
+            return (a, b, c)
+
+        a, b, _ = go(root)
+        return min(a, b)
+@@ TEST:
+s = Solution()
+assert s.minCameraCover(tree([0, 0, None, 0, 0])) == 1
+assert s.minCameraCover(tree([0, 0, None, 0, None, 0, None, None, 0])) == 2
+assert s.minCameraCover(tree([0])) == 1
+assert s.minCameraCover(tree([0, 0, 0])) == 1
+assert s.minCameraCover(tree([0, 0])) == 1
+@@ PATTERN: DP on Strings
+@@ SPOT: Use this when you match or split a string against a dictionary or a pattern and dp[i] describes its first i characters.
+@@ PROBLEM: word-break
+@@ APPROACH:
+State: dp[i] is true when the first i characters can be split into dictionary words. The last word is s[j:i] for some j, so dp[i] is true if dp[j] is true and s[j:i] is in the set. Only lengths up to the longest word need checking. The base case is dp[0] = True for the empty prefix.
+@@ COMPLEXITY: O(n * L) substring checks, where L is the longest word length; O(n) space
+@@ CODE:
+class Solution:
+    def wordBreak(self, s: str, wordDict: List[str]) -> bool:
+        words = set(wordDict)
+        max_len = max(map(len, wordDict))
+        dp = [True] + [False] * len(s)     # dp[i] = the first i characters can be split into words
+        for i in range(1, len(s) + 1):
+            for j in range(max(0, i - max_len), i):    # the last word is s[j:i]
+                if dp[j] and s[j:i] in words:
+                    dp[i] = True
+                    break
+        return dp[len(s)]
+@@ TEST:
+s = Solution()
+assert s.wordBreak("leetcode", ["leet", "code"]) == True
+assert s.wordBreak("applepenapple", ["apple", "pen"]) == True
+assert s.wordBreak("catsandog", ["cats", "dog", "sand", "and", "cat"]) == False
+assert s.wordBreak("a", ["b"]) == False
+assert s.wordBreak("aaaaaaa", ["aaaa", "aaa"]) == True
+assert s.wordBreak("aaaaaaaaaaaaaaaaaaaaaaaaaaaab", ["a", "aa", "aaa", "aaaa"]) == False
+@@ PROBLEM: interleaving-string
+@@ APPROACH:
+State: dp[i][j] is true when s3[:i+j] is an interleaving of s1[:i] and s2[:j]. The last character of s3[:i+j] must come from s1 or from s2. It comes from s1 if dp[i-1][j] is true and s1[i-1] equals that character; similarly for s2 with dp[i][j-1]. If the lengths do not add up, the answer is false at once.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def isInterleave(self, s1: str, s2: str, s3: str) -> bool:
+        m, n = len(s1), len(s2)
+        if m + n != len(s3):
+            return False
+        dp = [[False] * (n + 1) for _ in range(m + 1)]   # dp[i][j] = s3[:i+j] interleaves s1[:i] and s2[:j]
+        dp[0][0] = True
+        for i in range(m + 1):
+            for j in range(n + 1):
+                if i > 0 and dp[i - 1][j] and s1[i - 1] == s3[i + j - 1]:
+                    dp[i][j] = True        # the last character of s3 came from s1
+                if j > 0 and dp[i][j - 1] and s2[j - 1] == s3[i + j - 1]:
+                    dp[i][j] = True        # the last character of s3 came from s2
+        return dp[m][n]
+@@ TEST:
+s = Solution()
+assert s.isInterleave("aabcc", "dbbca", "aadbbcbcac") == True
+assert s.isInterleave("aabcc", "dbbca", "aadbbbaccc") == False
+assert s.isInterleave("", "", "") == True
+assert s.isInterleave("a", "", "a") == True
+assert s.isInterleave("a", "b", "ab") == True
+assert s.isInterleave("ab", "", "ba") == False
+assert s.isInterleave("", "", "a") == False
+@@ PROBLEM: regular-expression-matching
+@@ APPROACH:
+State: dp[i][j] is true when s[:i] matches p[:j]. A normal character or '.' matches one character, so dp[i][j] = dp[i-1][j-1] if they agree. For 'x*', either use zero copies, dp[i][j-2], or one more copy when x matches s[i-1], dp[i-1][j]. Row 0 handles patterns like a*b* that match the empty string.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space
+@@ CODE:
+class Solution:
+    def isMatch(self, s: str, p: str) -> bool:
+        m, n = len(s), len(p)
+        dp = [[False] * (n + 1) for _ in range(m + 1)]   # dp[i][j] = s[:i] matches p[:j]
+        dp[0][0] = True
+        for j in range(2, n + 1):          # patterns like a*b*c* can match the empty string
+            if p[j - 1] == '*':
+                dp[0][j] = dp[0][j - 2]
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if p[j - 1] == '*':
+                    dp[i][j] = dp[i][j - 2]                          # '*' means zero copies of the previous char
+                    if p[j - 2] == '.' or p[j - 2] == s[i - 1]:
+                        dp[i][j] = dp[i][j] or dp[i - 1][j]          # or one more copy of it
+                elif p[j - 1] == '.' or p[j - 1] == s[i - 1]:
+                    dp[i][j] = dp[i - 1][j - 1]                      # single character matches
+        return dp[m][n]
+@@ TEST:
+s = Solution()
+assert s.isMatch("aa", "a") == False
+assert s.isMatch("aa", "a*") == True
+assert s.isMatch("ab", ".*") == True
+assert s.isMatch("aab", "c*a*b") == True
+assert s.isMatch("mississippi", "mis*is*p*.") == False
+assert s.isMatch("", "a*") == True
+assert s.isMatch("", "") == True
+assert s.isMatch("a", "ab*") == True
+assert s.isMatch("ab", ".*c") == False
+assert s.isMatch("aaa", "ab*a*c*a") == True

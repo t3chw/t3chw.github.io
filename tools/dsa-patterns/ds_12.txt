@@ -1,0 +1,659 @@
+@@ PATTERN: Activity Selection
+@@ SPOT: Use this when you must pick as many non-conflicting intervals (activities with a start and an end) as possible.
+@@ PROBLEM: maximum-length-of-pair-chain
+@@ APPROACH:
+Each pair is an activity that runs from left to right. Sort by the right end so the pair that finishes earliest comes first. Take a pair only when its left end is strictly greater than the right end of the last pair taken (strict, because the chain rule is b < c). The key line is `if start > last_end`. Finishing early leaves the most room for the pairs that come later.
+@@ COMPLEXITY: O(n log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def findLongestChain(self, pairs: List[List[int]]) -> int:
+        pairs.sort(key=lambda p: p[1])          # earliest FINISH first
+        count, last_end = 0, float("-inf")
+        for start, end in pairs:
+            if start > last_end:                # fits after the last pick
+                count += 1
+                last_end = end
+        return count
+@@ TEST:
+s = Solution()
+assert s.findLongestChain([[1, 2], [2, 3], [3, 4]]) == 2
+assert s.findLongestChain([[1, 2], [7, 8], [4, 5]]) == 3
+assert s.findLongestChain([[1, 2]]) == 1
+assert s.findLongestChain([[1, 2], [1, 2], [1, 2]]) == 1
+assert s.findLongestChain([[-10, -8], [8, 9], [-5, 0], [6, 10], [-6, -4], [1, 7], [9, 10], [-4, 7]]) == 4
+@@ PROBLEM: minimum-number-of-arrows-to-burst-balloons
+@@ APPROACH:
+A balloon is an interval and an arrow is a single point. Sort by the right end and shoot the first arrow at the right end of the first balloon, because that point hits the most balloons that overlap it. A balloon whose start is at or before the last shot is already burst. Only a balloon with `start > last_shot` needs a new arrow, so the arrows used equal the activities picked by earliest finish.
+@@ COMPLEXITY: O(n log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def findMinArrowShots(self, points: List[List[int]]) -> int:
+        points.sort(key=lambda p: p[1])         # earliest end first
+        arrows, last_shot = 0, float("-inf")
+        for start, end in points:
+            if start > last_shot:               # not burst by the last arrow
+                arrows += 1
+                last_shot = end                 # shoot at this balloon's end
+        return arrows
+@@ TEST:
+s = Solution()
+assert s.findMinArrowShots([[10, 16], [2, 8], [1, 6], [7, 12]]) == 2
+assert s.findMinArrowShots([[1, 2], [3, 4], [5, 6], [7, 8]]) == 4
+assert s.findMinArrowShots([[1, 2], [2, 3], [3, 4], [4, 5]]) == 2
+assert s.findMinArrowShots([[1, 2]]) == 1
+assert s.findMinArrowShots([[1, 2], [1, 2]]) == 1
+assert s.findMinArrowShots([[-2147483646, -2147483645], [2147483646, 2147483647]]) == 2
+@@ PROBLEM: maximum-number-of-non-overlapping-substrings
+@@ APPROACH:
+First turn each letter into one interval. It starts at the first copy of the letter and must grow to cover the last copy of every letter inside it. If the scan meets a letter that first appears before `start`, this start is not self-contained and is dropped. After that it is plain activity selection: sort by end (shorter first when ends tie) and take each interval that starts after the last taken end. Earliest finish gives the most substrings, and the nested shorter ones give the smallest total length.
+@@ COMPLEXITY: O(26 * n) time, O(n) extra space for the answer
+@@ CODE:
+class Solution:
+    def maxNumOfSubstrings(self, s: str) -> List[str]:
+        first, last = {}, {}
+        for i, ch in enumerate(s):
+            first.setdefault(ch, i)
+            last[ch] = i
+        candidates = []                         # (end, -start) of every valid interval
+        for ch in first:
+            start, end = first[ch], last[ch]
+            i, valid = start, True
+            while i <= end:                     # grow end to hold every copy of letters inside
+                if first[s[i]] < start:         # needs a letter from before start
+                    valid = False
+                    break
+                end = max(end, last[s[i]])
+                i += 1
+            if valid:
+                candidates.append((end, -start))
+        candidates.sort()                       # earliest end first, shorter first on ties
+        result, last_end = [], -1
+        for end, neg_start in candidates:
+            if -neg_start > last_end:           # activity selection: starts after the last pick
+                result.append(s[-neg_start:end + 1])
+                last_end = end
+        return result
+@@ TEST:
+s = Solution()
+assert sorted(s.maxNumOfSubstrings("adefaddaccc")) == ["ccc", "e", "f"]
+assert sorted(s.maxNumOfSubstrings("abbaccd")) == ["bb", "cc", "d"]
+assert s.maxNumOfSubstrings("a") == ["a"]
+assert s.maxNumOfSubstrings("aaa") == ["aaa"]
+assert s.maxNumOfSubstrings("abab") == ["abab"]
+assert s.maxNumOfSubstrings("abcba") == ["c"]
+assert sorted(s.maxNumOfSubstrings("abc")) == ["a", "b", "c"]
+@@ PATTERN: Fractional Knapsack
+@@ SPOT: Use this when you fill a limited capacity with items that have a value per unit of cost, so taking the best ratio first is safe.
+@@ PROBLEM: maximum-units-on-a-truck
+@@ APPROACH:
+Every box weighs 1, so the value-to-weight ratio of a box type is its units per box. Sort the box types by that ratio, best first. For each type take `min(boxes, truckSize)`, which is the "whole items, then a fraction of the last one" step. Stop when the truck is full.
+@@ COMPLEXITY: O(n log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def maximumUnits(self, boxTypes: List[List[int]], truckSize: int) -> int:
+        boxTypes.sort(key=lambda b: b[1], reverse=True)   # best units per box first
+        total = 0
+        for boxes, units in boxTypes:
+            take = min(boxes, truckSize)        # all of this type, or what still fits
+            total += take * units
+            truckSize -= take
+            if truckSize == 0:
+                break
+        return total
+@@ TEST:
+s = Solution()
+assert s.maximumUnits([[1, 3], [2, 2], [3, 1]], 4) == 8
+assert s.maximumUnits([[5, 10], [2, 5], [4, 7], [3, 9]], 10) == 91
+assert s.maximumUnits([[1, 1]], 5) == 1
+assert s.maximumUnits([[3, 2]], 2) == 4
+assert s.maximumUnits([[2, 5], [2, 4]], 3) == 14
+@@ PROBLEM: maximum-ice-cream-bars
+@@ APPROACH:
+Every bar is worth 1, so its value per coin is 1 / cost and the best ratio is the cheapest bar. Sort the costs ascending and buy while the coins last. The bars cannot be split, but this is safe because all values are equal: a cheaper bar never blocks a better choice. The `break` fires at the first bar that does not fit, since every later bar costs at least as much.
+@@ COMPLEXITY: O(n log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def maxIceCream(self, costs: List[int], coins: int) -> int:
+        costs.sort()                            # best ratio (cheapest) first
+        bars = 0
+        for cost in costs:
+            if cost > coins:                    # this and every later bar is too expensive
+                break
+            coins -= cost
+            bars += 1
+        return bars
+@@ TEST:
+s = Solution()
+assert s.maxIceCream([1, 3, 2, 4, 1], 7) == 4
+assert s.maxIceCream([10, 6, 8, 7, 7, 8], 5) == 0
+assert s.maxIceCream([1, 6, 3, 1, 2, 5], 20) == 6
+assert s.maxIceCream([5], 5) == 1
+assert s.maxIceCream([2, 2, 2], 3) == 1
+@@ PROBLEM: minimum-cost-to-hire-k-workers
+@@ APPROACH:
+Everyone in the group is paid at the same wage-per-quality rate, and that rate must be the highest ratio in the group. So sort workers by ratio, cheapest first, and treat the current worker's ratio as the group rate. A max-heap keeps the k smallest qualities seen so far; when it grows past k, pop the largest quality. The cost for the group is `ratio * quality_sum`, and the smallest of these over all workers is the answer.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+from heapq import heappush, heappop
+
+class Solution:
+    def mincostToHireWorkers(self, quality: List[int], wage: List[int], k: int) -> float:
+        workers = sorted(zip(quality, wage), key=lambda w: w[1] / w[0])   # lowest ratio first
+        heap = []                               # max-heap of qualities (stored negated)
+        quality_sum = 0
+        best = float("inf")
+        for q, w in workers:
+            ratio = w / q                       # highest ratio in the group so far
+            heappush(heap, -q)
+            quality_sum += q
+            if len(heap) > k:
+                quality_sum += heappop(heap)    # drop the largest quality (popped value is negative)
+            if len(heap) == k:
+                best = min(best, ratio * quality_sum)
+        return best
+@@ TEST:
+s = Solution()
+assert abs(s.mincostToHireWorkers([10, 20, 5], [70, 50, 30], 2) - 105.0) < 1e-5
+assert abs(s.mincostToHireWorkers([3, 1, 10, 10, 1], [4, 8, 2, 2, 7], 3) - 92 / 3) < 1e-5
+assert abs(s.mincostToHireWorkers([1, 2], [5, 3], 1) - 3.0) < 1e-5
+assert abs(s.mincostToHireWorkers([4, 5], [8, 10], 2) - 18.0) < 1e-5
+@@ PATTERN: Interval Scheduling
+@@ SPOT: Use this when you must keep the most tasks that fit on one timeline, or count how many to remove so the rest do not clash.
+@@ PROBLEM: non-overlapping-intervals
+@@ APPROACH:
+Keeping the most intervals is activity selection: sort by end time and keep every interval whose start is at or after the last kept end (touching is allowed). Whatever you skip has to be removed. The answer is the dual, `len(intervals) - kept`. Sorting by end is the safe key because it leaves the most room for later intervals.
+@@ COMPLEXITY: O(n log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def eraseOverlapIntervals(self, intervals: List[List[int]]) -> int:
+        intervals.sort(key=lambda x: x[1])      # sort by end time
+        kept, last_end = 0, float("-inf")
+        for start, end in intervals:
+            if start >= last_end:               # starts after the last kept one ends
+                kept += 1
+                last_end = end
+        return len(intervals) - kept            # everything else must go
+@@ TEST:
+s = Solution()
+assert s.eraseOverlapIntervals([[1, 2], [2, 3], [3, 4], [1, 3]]) == 1
+assert s.eraseOverlapIntervals([[1, 2], [1, 2], [1, 2]]) == 2
+assert s.eraseOverlapIntervals([[1, 2], [2, 3]]) == 0
+assert s.eraseOverlapIntervals([[1, 2]]) == 0
+assert s.eraseOverlapIntervals([[0, 2], [1, 3], [2, 4], [3, 5], [4, 6]]) == 2
+@@ PROBLEM: maximum-number-of-events-that-can-be-attended
+@@ APPROACH:
+You can attend one event per day, on any day inside its range. Walk the days in order, and push the end day of every event that has started onto a min heap. Drop the ends that are already in the past, then attend the event that ends soonest with `heappop`. Earliest deadline first is the interval scheduling rule applied day by day. When nothing is open, jump straight to the next start day.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+from heapq import heappush, heappop
+
+class Solution:
+    def maxEvents(self, events: List[List[int]]) -> int:
+        events.sort()                           # by start day
+        open_ends = []                          # min-heap of end days of started events
+        i, day, attended = 0, 0, 0
+        while i < len(events) or open_ends:
+            if not open_ends:
+                day = events[i][0]              # idle: jump to the next start
+            while i < len(events) and events[i][0] <= day:
+                heappush(open_ends, events[i][1])
+                i += 1
+            while open_ends and open_ends[0] < day:
+                heappop(open_ends)              # expired, can no longer be attended
+            if open_ends:
+                heappop(open_ends)              # attend the one that ends soonest
+                attended += 1
+            day += 1
+        return attended
+@@ TEST:
+s = Solution()
+assert s.maxEvents([[1, 2], [2, 3], [3, 4]]) == 3
+assert s.maxEvents([[1, 2], [2, 3], [3, 4], [1, 2]]) == 4
+assert s.maxEvents([[1, 1]]) == 1
+assert s.maxEvents([[1, 1], [1, 1], [1, 1]]) == 1
+assert s.maxEvents([[1, 5], [1, 5], [1, 5], [2, 3], [2, 3]]) == 5
+assert s.maxEvents([[1, 10], [2, 2], [2, 2], [2, 2], [3, 3], [3, 3]]) == 3
+@@ PROBLEM: course-schedule-iii
+@@ APPROACH:
+Each course is a task with a length and a deadline. Sort by deadline and add the courses one at a time, tracking the total time used. If the total passes the current deadline, remove the longest course taken so far with a max-heap. Removing the longest frees the most time and keeps the count as high as before. The number of courses left in the heap is the answer.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+from heapq import heappush, heappop
+
+class Solution:
+    def scheduleCourse(self, courses: List[List[int]]) -> int:
+        courses.sort(key=lambda c: c[1])        # earliest deadline first
+        taken = []                              # max-heap of durations (stored negated)
+        time = 0
+        for duration, last_day in courses:
+            heappush(taken, -duration)
+            time += duration
+            if time > last_day:                 # too late: drop the longest course taken
+                time += heappop(taken)          # popped value is negative
+        return len(taken)
+@@ TEST:
+s = Solution()
+assert s.scheduleCourse([[100, 200], [200, 1300], [1000, 1250], [2000, 3200]]) == 3
+assert s.scheduleCourse([[1, 2]]) == 1
+assert s.scheduleCourse([[3, 2], [4, 3]]) == 0
+assert s.scheduleCourse([[5, 5], [4, 6], [2, 6]]) == 2
+@@ PATTERN: Merge Intervals
+@@ SPOT: Use this when intervals may overlap and you need to combine them, measure the covered length, or drop the ones hidden inside another.
+@@ PROBLEM: teemo-attacking
+@@ APPROACH:
+Each attack poisons the half-open interval [t, t + duration). The attack times are already sorted by start, so no sort step is needed. Compare each new interval with the end of the last one, `last_end`. Only the part after `last_end` is new poison time, so add `end - max(start, last_end)`. That is the overlap check of Merge Intervals, used to measure the union instead of building it.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def findPoisonedDuration(self, timeSeries: List[int], duration: int) -> int:
+        total = 0
+        last_end = 0                              # end of the last interval seen
+        for t in timeSeries:                      # already sorted by start
+            start, end = t, t + duration
+            total += end - max(start, last_end)   # count only the part not already covered
+            last_end = end
+        return total
+@@ TEST:
+s = Solution()
+assert s.findPoisonedDuration([1, 4], 2) == 4
+assert s.findPoisonedDuration([1, 2], 2) == 3
+assert s.findPoisonedDuration([1], 5) == 5
+assert s.findPoisonedDuration([1, 1, 1], 3) == 3
+assert s.findPoisonedDuration([1, 2, 3, 4, 5], 5) == 9
+assert s.findPoisonedDuration([1, 5], 0) == 0
+assert s.findPoisonedDuration([0, 10], 3) == 6
+@@ PROBLEM: remove-covered-intervals
+@@ APPROACH:
+Sort by start, and on equal starts put the longer interval first. Now an interval can only be covered by one that came earlier. Keep `max_end`, the end of the last interval kept. If the current end is not past `max_end`, the interval is inside an earlier one and is skipped. Otherwise it is kept and becomes the new last interval.
+@@ COMPLEXITY: O(n log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def removeCoveredIntervals(self, intervals: List[List[int]]) -> int:
+        intervals.sort(key=lambda x: (x[0], -x[1]))   # start ascending, longer first on ties
+        kept = 0
+        max_end = 0                                   # end of the last interval kept
+        for start, end in intervals:
+            if end > max_end:                         # sticks out past every earlier interval
+                kept += 1
+                max_end = end
+        return kept
+@@ TEST:
+s = Solution()
+assert s.removeCoveredIntervals([[1, 4], [3, 6], [2, 8]]) == 2
+assert s.removeCoveredIntervals([[1, 4], [2, 3]]) == 1
+assert s.removeCoveredIntervals([[1, 2], [1, 4], [3, 4]]) == 1
+assert s.removeCoveredIntervals([[1, 2], [2, 3]]) == 2
+assert s.removeCoveredIntervals([[1, 2]]) == 1
+assert s.removeCoveredIntervals([[0, 10], [5, 12], [6, 7], [5, 10]]) == 2
+assert s.removeCoveredIntervals([[3, 4], [1, 2], [5, 6]]) == 3
+@@ PROBLEM: range-module
+@@ APPROACH:
+Keep the tracked ranges as sorted, disjoint, half-open intervals in two parallel lists, `starts` and `ends`. `addRange` uses `bisect` to find every interval that overlaps or touches the new one, then merges them all into a single interval. That is the merge step of Merge Intervals. `removeRange` finds the overlapped intervals and keeps only their left and right leftovers. `queryRange` checks the one interval that starts at or before `left`.
+@@ COMPLEXITY: O(log n) search plus O(n) list splice per call
+@@ CODE:
+from bisect import bisect_left, bisect_right
+
+class RangeModule:
+    def __init__(self):
+        self.starts = []                     # sorted, disjoint half-open intervals [start, end)
+        self.ends = []
+
+    def addRange(self, left: int, right: int) -> None:
+        i = bisect_left(self.ends, left)     # first interval ending at or after left
+        j = bisect_right(self.starts, right) # intervals i..j-1 overlap or touch [left, right)
+        if i < j:                            # merge them with the new range
+            left = min(left, self.starts[i])
+            right = max(right, self.ends[j - 1])
+        self.starts[i:j] = [left]
+        self.ends[i:j] = [right]
+
+    def queryRange(self, left: int, right: int) -> bool:
+        i = bisect_right(self.starts, left) - 1   # last interval starting at or before left
+        return i >= 0 and self.ends[i] >= right
+
+    def removeRange(self, left: int, right: int) -> None:
+        i = bisect_right(self.ends, left)    # first interval ending after left
+        j = bisect_left(self.starts, right)  # intervals i..j-1 overlap [left, right)
+        new_starts, new_ends = [], []
+        if i < j:
+            if self.starts[i] < left:        # keep the piece left of the removed range
+                new_starts.append(self.starts[i])
+                new_ends.append(left)
+            if self.ends[j - 1] > right:     # keep the piece right of the removed range
+                new_starts.append(right)
+                new_ends.append(self.ends[j - 1])
+        self.starts[i:j] = new_starts
+        self.ends[i:j] = new_ends
+@@ TEST:
+r = RangeModule()
+r.addRange(10, 20)
+r.removeRange(14, 16)
+assert r.queryRange(10, 14) == True
+assert r.queryRange(13, 15) == False
+assert r.queryRange(16, 17) == True
+m = RangeModule()
+assert m.queryRange(1, 2) == False
+m.removeRange(1, 5)
+assert m.queryRange(1, 2) == False
+m.addRange(1, 5)
+m.addRange(10, 15)
+assert m.queryRange(1, 15) == False
+m.addRange(5, 10)
+assert m.queryRange(1, 15) == True
+m.addRange(2, 3)
+assert m.queryRange(1, 15) == True
+m.removeRange(3, 12)
+assert m.queryRange(1, 3) == True
+assert m.queryRange(2, 4) == False
+assert m.queryRange(12, 15) == True
+assert m.queryRange(3, 12) == False
+m.removeRange(1, 15)
+assert m.queryRange(1, 2) == False
+assert m.queryRange(14, 15) == False
+@@ PATTERN: Minimum Platforms
+@@ SPOT: Use this when you need the most things happening at once, such as rooms, platforms, or seats required.
+@@ PROBLEM: divide-intervals-into-minimum-number-of-groups
+@@ APPROACH:
+The minimum number of groups equals the maximum number of intervals that overlap at one moment. Sort the starts and the ends separately and sweep the starts. Before counting a new start, free every interval whose end is strictly before it (`ends[j] < t`, because touching ends still count as overlapping here). The largest running count is the answer.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def minGroups(self, intervals: List[List[int]]) -> int:
+        starts = sorted(iv[0] for iv in intervals)      # arrivals
+        ends = sorted(iv[1] for iv in intervals)        # departures
+        need = best = 0
+        j = 0
+        for t in starts:
+            while ends[j] < t:                  # that interval is over: its group is free
+                need -= 1
+                j += 1
+            need += 1                           # this interval needs a group
+            best = max(best, need)
+        return best
+@@ TEST:
+s = Solution()
+assert s.minGroups([[5, 10], [6, 8], [1, 5], [2, 3], [1, 10]]) == 3
+assert s.minGroups([[1, 3], [5, 6], [8, 10], [11, 13]]) == 1
+assert s.minGroups([[1, 1]]) == 1
+assert s.minGroups([[1, 5], [5, 8]]) == 2
+assert s.minGroups([[1, 2], [3, 4]]) == 1
+assert s.minGroups([[1, 10], [2, 9], [3, 8], [4, 7]]) == 4
+@@ PROBLEM: car-pooling
+@@ APPROACH:
+Turn each trip into two events: people get on at the start and get off at the end. Sort all events by position. At the same stop, the negative change (getting off) sorts before the positive one, which handles a stop where one trip ends and another begins. Add each change to a running count and fail as soon as it goes over the capacity.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def carPooling(self, trips: List[List[int]], capacity: int) -> bool:
+        events = []
+        for people, start, end in trips:
+            events.append((start, people))      # people get on
+            events.append((end, -people))       # people get off
+        events.sort()                           # same stop: get-off (negative) comes first
+        onboard = 0
+        for _, change in events:
+            onboard += change                   # sweep: how many are on the car now
+            if onboard > capacity:
+                return False
+        return True
+@@ TEST:
+s = Solution()
+assert s.carPooling([[2, 1, 5], [3, 3, 7]], 4) == False
+assert s.carPooling([[2, 1, 5], [3, 3, 7]], 5) == True
+assert s.carPooling([[2, 1, 5], [3, 5, 7]], 3) == True
+assert s.carPooling([[3, 2, 7], [3, 7, 9], [8, 3, 9]], 11) == True
+assert s.carPooling([[9, 3, 4], [9, 1, 7], [4, 2, 4], [7, 4, 5]], 23) == True
+assert s.carPooling([[9, 3, 4], [9, 1, 7], [4, 2, 4], [7, 4, 5]], 21) == False
+assert s.carPooling([[1, 0, 1]], 1) == True
+@@ PROBLEM: my-calendar-iii
+@@ APPROACH:
+The answer after each booking is the maximum number of bookings that overlap at one time, which is the minimum-platforms quantity. Store +1 at each start and -1 at each end in a dictionary. Sweep the keys in sorted order with a running sum and keep the maximum. Bookings are half-open, so an end and a start at the same time cancel out in one key.
+@@ COMPLEXITY: O(n^2 log n) time over n calls, O(n) extra space
+@@ CODE:
+from collections import defaultdict
+
+class MyCalendarThree:
+    def __init__(self):
+        self.delta = defaultdict(int)           # +1 where a booking starts, -1 where it ends
+
+    def book(self, startTime: int, endTime: int) -> int:
+        self.delta[startTime] += 1
+        self.delta[endTime] -= 1
+        overlap = best = 0
+        for t in sorted(self.delta):            # sweep the time points in order
+            overlap += self.delta[t]
+            best = max(best, overlap)
+        return best
+@@ TEST:
+c = MyCalendarThree()
+assert c.book(10, 20) == 1
+assert c.book(50, 60) == 1
+assert c.book(10, 40) == 2
+assert c.book(5, 15) == 3
+assert c.book(5, 10) == 3
+assert c.book(25, 55) == 3
+d = MyCalendarThree()
+assert d.book(1, 2) == 1
+assert d.book(2, 3) == 1
+assert d.book(1, 3) == 2
+@@ PATTERN: Jump Game
+@@ SPOT: Use this when each position tells you how far you can reach and you need to know if, or in how few steps, you can get to the end.
+@@ PROBLEM: jump-game
+@@ APPROACH:
+Keep one number, `far`, the furthest index reachable so far. Walk left to right. If the current index is beyond `far`, nothing could land here, so the end is unreachable. Otherwise update `far = max(far, i + x)`. You never need to remember which jump got you here.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def canJump(self, nums: List[int]) -> bool:
+        far = 0                                 # furthest index reachable so far
+        for i, x in enumerate(nums):
+            if i > far:                         # cannot even reach index i
+                return False
+            far = max(far, i + x)
+        return True
+@@ TEST:
+s = Solution()
+assert s.canJump([2, 3, 1, 1, 4]) == True
+assert s.canJump([3, 2, 1, 0, 4]) == False
+assert s.canJump([0]) == True
+assert s.canJump([0, 1]) == False
+assert s.canJump([2, 0, 0]) == True
+assert s.canJump([1, 0, 1, 0]) == False
+@@ PROBLEM: jump-game-ii
+@@ APPROACH:
+Think of the jumps as levels. `cur_end` is the edge of what the current number of jumps can reach, and `far` is the best reach with one more jump. Reaching `cur_end` forces a jump, so count it and move the edge to `far`. Choosing the landing spot that reaches furthest is the greedy step, and the input is guaranteed reachable.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def jump(self, nums: List[int]) -> int:
+        jumps = 0
+        cur_end = 0                             # edge reachable with `jumps` jumps
+        far = 0                                 # furthest reach with one more jump
+        for i in range(len(nums) - 1):
+            far = max(far, i + nums[i])
+            if i == cur_end:                    # forced to jump: take the best landing spot
+                jumps += 1
+                cur_end = far
+        return jumps
+@@ TEST:
+s = Solution()
+assert s.jump([2, 3, 1, 1, 4]) == 2
+assert s.jump([2, 3, 0, 1, 4]) == 2
+assert s.jump([0]) == 0
+assert s.jump([1, 2]) == 1
+assert s.jump([1, 1, 1, 1]) == 3
+assert s.jump([10, 1, 1, 1]) == 1
+@@ PROBLEM: minimum-number-of-taps-to-open-to-water-a-garden
+@@ APPROACH:
+Turn each tap into a jump. For every left end, store the furthest right end any tap covering that left end can reach. The garden is the line 0..n, and covering it with the fewest taps is Jump Game II with `far` and `cur_end`. If `far` cannot move past the current position, there is a gap and the answer is -1.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def minTaps(self, n: int, ranges: List[int]) -> int:
+        farthest = [0] * (n + 1)                # farthest[l] = furthest right end of a tap starting at l
+        for i, r in enumerate(ranges):
+            left, right = max(0, i - r), min(n, i + r)
+            farthest[left] = max(farthest[left], right)
+        taps = cur_end = far = 0
+        for i in range(n):
+            far = max(far, farthest[i])         # best reach using taps that start at or before i
+            if i == cur_end:                    # the current taps end here: open one more
+                if far <= i:                    # nothing extends the covered area: gap
+                    return -1
+                taps += 1
+                cur_end = far
+        return taps
+@@ TEST:
+s = Solution()
+assert s.minTaps(5, [3, 4, 1, 1, 0, 0]) == 1
+assert s.minTaps(3, [0, 0, 0, 0]) == -1
+assert s.minTaps(7, [1, 2, 1, 0, 2, 1, 0, 1]) == 3
+assert s.minTaps(8, [4, 0, 0, 0, 0, 0, 0, 0, 4]) == 2
+assert s.minTaps(8, [4, 0, 0, 0, 4, 0, 0, 0, 4]) == 1
+assert s.minTaps(1, [1, 0]) == 1
+assert s.minTaps(1, [0, 0]) == -1
+@@ PATTERN: Gas Station
+@@ SPOT: Use this when a running total (tank, balance, energy) must never drop below the limit, and a failure tells you where to restart.
+@@ PROBLEM: minimum-value-to-get-positive-step-by-step-sum
+@@ APPROACH:
+Track the running total and the lowest value it ever reaches, like watching the lowest point of a fuel tank. The starting value only has to lift that lowest point up to 1. So the answer is `1 - lowest`, and `lowest` starts at 0 so the answer is never below 1. It is one pass with no search.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def minStartValue(self, nums: List[int]) -> int:
+        total = lowest = 0                      # running total and its lowest point
+        for x in nums:
+            total += x
+            lowest = min(lowest, total)
+        return 1 - lowest                       # start high enough that every total stays >= 1
+@@ TEST:
+s = Solution()
+assert s.minStartValue([-3, 2, -3, 4, 2]) == 5
+assert s.minStartValue([1, 2]) == 1
+assert s.minStartValue([1, -2, -3]) == 5
+assert s.minStartValue([-1]) == 2
+assert s.minStartValue([0]) == 1
+@@ PROBLEM: gas-station
+@@ APPROACH:
+First check `sum(gas) >= sum(cost)`; if it fails no start works. Then drive once around with a running `tank`. When the tank goes negative at station i, no station between the old start and i can be the start either, so move `start` to i + 1 and reset the tank. The first check guarantees that the last candidate left standing is valid.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def canCompleteCircuit(self, gas: List[int], cost: List[int]) -> int:
+        if sum(gas) < sum(cost):                # not enough fuel in total
+            return -1
+        start = tank = 0
+        for i in range(len(gas)):
+            tank += gas[i] - cost[i]
+            if tank < 0:                        # failed: no start in [start, i] works
+                start = i + 1
+                tank = 0
+        return start
+@@ TEST:
+s = Solution()
+assert s.canCompleteCircuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2]) == 3
+assert s.canCompleteCircuit([2, 3, 4], [3, 4, 3]) == -1
+assert s.canCompleteCircuit([5], [4]) == 0
+assert s.canCompleteCircuit([2], [2]) == 0
+assert s.canCompleteCircuit([5, 1, 2, 3, 4], [4, 4, 1, 5, 1]) == 4
+assert s.canCompleteCircuit([3, 1, 1], [1, 2, 2]) == 0
+@@ PROBLEM: minimum-number-of-refueling-stops
+@@ APPROACH:
+Keep `tank` as the furthest position you can reach with the fuel gathered so far. Walk the stations in order, with the target added as a last stop. If the next stop is out of reach, you should have refueled earlier at the passed station with the most fuel, so pop it from a max-heap and count a stop. If the heap runs empty before you can reach the stop, the trip is impossible.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+from heapq import heappush, heappop
+
+class Solution:
+    def minRefuelStops(self, target: int, startFuel: int, stations: List[List[int]]) -> int:
+        heap = []                               # max-heap of fuel at stations already passed
+        tank = startFuel                        # furthest position reachable so far
+        stops = 0
+        for position, fuel in stations + [[target, 0]]:
+            while tank < position:              # out of reach: refuel at the best passed station
+                if not heap:
+                    return -1
+                tank -= heappop(heap)           # popped value is negative
+                stops += 1
+            heappush(heap, -fuel)
+        return stops
+@@ TEST:
+s = Solution()
+assert s.minRefuelStops(1, 1, []) == 0
+assert s.minRefuelStops(100, 1, [[10, 100]]) == -1
+assert s.minRefuelStops(100, 10, [[10, 60], [20, 30], [30, 30], [60, 40]]) == 2
+assert s.minRefuelStops(100, 50, [[25, 25], [50, 50]]) == 1
+assert s.minRefuelStops(100, 25, [[25, 25], [50, 25]]) == -1
+assert s.minRefuelStops(100, 25, [[25, 50], [50, 25]]) == 2
+@@ PATTERN: Job Sequencing
+@@ SPOT: Use this when jobs have a limit (deadline, difficulty, cooldown, or capital) and a profit, and you take the best-paying job that is allowed.
+@@ PROBLEM: most-profit-assigning-work
+@@ APPROACH:
+A worker may do any job up to their ability, so the limit is the difficulty and the goal is the highest profit inside it. Sort the jobs by difficulty and the workers by ability. For each worker, unlock every job they can do and keep the best profit seen so far in `best`. That best profit is added to the total, and the job pointer only moves forward.
+@@ COMPLEXITY: O(n log n + m log m) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def maxProfitAssignment(self, difficulty: List[int], profit: List[int], worker: List[int]) -> int:
+        jobs = sorted(zip(difficulty, profit))  # easiest job first
+        best = i = total = 0
+        for ability in sorted(worker):
+            while i < len(jobs) and jobs[i][0] <= ability:
+                best = max(best, jobs[i][1])    # best profit among jobs allowed so far
+                i += 1
+            total += best
+        return total
+@@ TEST:
+s = Solution()
+assert s.maxProfitAssignment([2, 4, 6, 8, 10], [10, 20, 30, 40, 50], [4, 5, 6, 7]) == 100
+assert s.maxProfitAssignment([85, 47, 57], [24, 66, 99], [40, 25, 25]) == 0
+assert s.maxProfitAssignment([5], [7], [5, 5, 5]) == 21
+assert s.maxProfitAssignment([68, 35, 52, 47, 86], [67, 17, 1, 81, 3], [92, 10, 85, 84, 82]) == 324
+@@ PROBLEM: task-scheduler
+@@ APPROACH:
+Jobs of one type must be at least n slots apart, so the busiest type decides the layout. Place it in `max_freq` rounds. The first `max_freq - 1` rounds each have n + 1 slots, and the last round only needs one slot for each type tied for busiest. Other tasks fill the idle slots, and if there are more tasks than slots the answer is the number of tasks.
+@@ COMPLEXITY: O(n) time, O(1) extra space (26 letters)
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def leastInterval(self, tasks: List[str], n: int) -> int:
+        counts = Counter(tasks)
+        max_freq = max(counts.values())
+        num_busiest = sum(1 for c in counts.values() if c == max_freq)
+        slots = (max_freq - 1) * (n + 1) + num_busiest   # rounds of n+1 slots, busiest tasks first
+        return max(slots, len(tasks))           # no idle time needed if tasks fill every slot
+@@ TEST:
+s = Solution()
+assert s.leastInterval(["A", "A", "A", "B", "B", "B"], 2) == 8
+assert s.leastInterval(["A", "A", "A", "B", "B", "B"], 0) == 6
+assert s.leastInterval(["A", "A", "A", "A", "A", "A", "B", "C", "D", "E", "F", "G"], 2) == 16
+assert s.leastInterval(["A"], 5) == 1
+assert s.leastInterval(["A", "B", "C"], 5) == 3
+assert s.leastInterval(["A", "A", "B", "B"], 1) == 4
+@@ PROBLEM: ipo
+@@ APPROACH:
+Choose up to k projects to maximise capital, where a project needs enough capital to start. Sort projects by the capital they need. Each round, push the profit of every project you can now afford onto a max-heap, then take the biggest profit with `heappop`. This is "highest profit first among the jobs that are allowed", and taking a profit can unlock new projects.
+@@ COMPLEXITY: O(n log n + k log n) time, O(n) extra space
+@@ CODE:
+from heapq import heappush, heappop
+
+class Solution:
+    def findMaximizedCapital(self, k: int, w: int, profits: List[int], capital: List[int]) -> int:
+        projects = sorted(zip(capital, profits))    # cheapest requirement first
+        affordable = []                             # max-heap of profits (stored negated)
+        i = 0
+        for _ in range(k):
+            while i < len(projects) and projects[i][0] <= w:
+                heappush(affordable, -projects[i][1])   # unlock everything we can pay for
+                i += 1
+            if not affordable:
+                break                               # nothing can be started
+            w -= heappop(affordable)                # take the highest profit
+        return w
+@@ TEST:
+s = Solution()
+assert s.findMaximizedCapital(2, 0, [1, 2, 3], [0, 1, 1]) == 4
+assert s.findMaximizedCapital(3, 0, [1, 2, 3], [0, 1, 2]) == 6
+assert s.findMaximizedCapital(1, 0, [1, 2, 3], [1, 1, 2]) == 0
+assert s.findMaximizedCapital(10, 0, [1, 2, 3], [0, 1, 2]) == 6
+assert s.findMaximizedCapital(2, 1, [5, 4, 3], [3, 1, 1]) == 10

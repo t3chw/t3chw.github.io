@@ -1,0 +1,640 @@
+@@ PATTERN: Search
+@@ SPOT: Use this when you look for a value, or a range of values, in a BST and can throw away one whole subtree at every comparison.
+@@ PROBLEM: search-in-a-binary-search-tree
+@@ APPROACH:
+This is the textbook BST search. Compare val with the current node: smaller goes left, larger goes right.
+The loop `while node and node.val != val` stops on a match or when it falls off the tree.
+Only one side is ever visited, so the cost is the height of the tree.
+@@ COMPLEXITY: O(h) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def searchBST(self, root: Optional[TreeNode], val: int) -> Optional[TreeNode]:
+        node = root
+        while node and node.val != val:                          # stop on a match or on a missing child
+            node = node.left if val < node.val else node.right   # discard the side that cannot hold val
+        return node
+@@ TEST:
+s = Solution()
+root = tree([4, 2, 7, 1, 3])
+assert tree_to_list(s.searchBST(root, 2)) == [2, 1, 3]
+assert s.searchBST(root, 5) is None
+assert tree_to_list(s.searchBST(root, 4)) == [4, 2, 7, 1, 3]
+assert tree_to_list(s.searchBST(root, 7)) == [7]
+assert s.searchBST(None, 1) is None
+assert tree_to_list(s.searchBST(tree([1]), 1)) == [1]
+assert s.searchBST(tree([1]), 0) is None
+@@ PROBLEM: range-sum-of-bst
+@@ APPROACH:
+Searching for a whole range is the same search, but sometimes both sides stay open. The BST order tells us which sides to skip.
+If node.val is not above low, everything on its left is too small, so the left side is skipped.
+If node.val is not below high, everything on its right is too big, so the right side is skipped.
+@@ COMPLEXITY: O(n) time in the worst case (O(h + k) for k nodes in range), O(h) extra space
+@@ CODE:
+class Solution:
+    def rangeSumBST(self, root: Optional[TreeNode], low: int, high: int) -> int:
+        total = 0
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            if not node:
+                continue
+            if low <= node.val <= high:
+                total += node.val
+            if node.val > low:       # the left side can still hold values >= low
+                stack.append(node.left)
+            if node.val < high:      # the right side can still hold values <= high
+                stack.append(node.right)
+        return total
+@@ TEST:
+s = Solution()
+assert s.rangeSumBST(tree([10, 5, 15, 3, 7, None, 18]), 7, 15) == 32
+assert s.rangeSumBST(tree([10, 5, 15, 3, 7, 13, 18, 1, None, 6]), 6, 10) == 23
+assert s.rangeSumBST(tree([5]), 5, 5) == 5
+assert s.rangeSumBST(tree([5]), 6, 10) == 0
+assert s.rangeSumBST(tree([10, 5, 15, 3, 7, None, 18]), 1, 100) == 58
+assert s.rangeSumBST(tree([10, 5, 15, 3, 7, None, 18]), 11, 14) == 0
+@@ PROBLEM: closest-nodes-queries-in-a-binary-search-tree
+@@ APPROACH:
+For each query we need the largest value that is at most q and the smallest value that is at least q. That is a BST search that remembers the last left turn and the last right turn.
+Walking down costs O(h) per query, and h can be n on a skewed tree. So the inorder walk flattens the tree once into sorted values.
+Then `bisect_left` makes the same smaller-or-larger decision in O(log n) per query.
+@@ COMPLEXITY: O(n + q log n) time, O(n) extra space
+@@ CODE:
+from bisect import bisect_left
+
+class Solution:
+    def closestNodes(self, root: Optional[TreeNode], queries: List[int]) -> List[List[int]]:
+        values = []
+        stack, node = [], root
+        while stack or node:                  # iterative inorder: values come out sorted
+            while node:
+                stack.append(node)
+                node = node.left
+            node = stack.pop()
+            values.append(node.val)
+            node = node.right
+        answer = []
+        for q in queries:
+            i = bisect_left(values, q)        # first index with values[i] >= q
+            if i < len(values) and values[i] == q:
+                answer.append([q, q])
+                continue
+            floor = values[i - 1] if i > 0 else -1
+            ceil = values[i] if i < len(values) else -1
+            answer.append([floor, ceil])
+        return answer
+@@ TEST:
+s = Solution()
+root = tree([6, 2, 13, 1, 4, 9, 15, None, None, None, None, None, None, 14])
+assert s.closestNodes(root, [2, 5, 16]) == [[2, 2], [4, 6], [15, -1]]
+assert s.closestNodes(tree([4, None, 9]), [3]) == [[-1, 4]]
+assert s.closestNodes(root, [1, 6, 10, 0]) == [[1, 1], [6, 6], [9, 13], [-1, 1]]
+assert s.closestNodes(root, [100, 15]) == [[15, -1], [15, 15]]
+assert s.closestNodes(tree([4, None, 9]), [9, 10]) == [[9, 9], [9, -1]]
+@@ PATTERN: Insert
+@@ SPOT: Use this when you must add values to a BST, or rebuild a BST from an insertion order: follow the search path until a child is missing and put the new node there.
+@@ PROBLEM: insert-into-a-binary-search-tree
+@@ APPROACH:
+Insert is a search that ends at an empty spot. The recursive call `insert(root.left, val)` returns the (possibly new) root of that side.
+When `root` is None, the search has ended and `TreeNode(val)` is created there. Assigning the result back to root.left or root.right links it in.
+@@ COMPLEXITY: O(h) time, O(h) recursion stack
+@@ CODE:
+class Solution:
+    def insertIntoBST(self, root: Optional[TreeNode], val: int) -> Optional[TreeNode]:
+        if not root:                                      # the search ended: the new node goes here
+            return TreeNode(val)
+        if val < root.val:
+            root.left = self.insertIntoBST(root.left, val)    # smaller goes left
+        else:
+            root.right = self.insertIntoBST(root.right, val)  # larger goes right
+        return root
+@@ TEST:
+s = Solution()
+assert tree_to_list(s.insertIntoBST(tree([4, 2, 7, 1, 3]), 5)) == [4, 2, 7, 1, 3, 5]
+assert tree_to_list(s.insertIntoBST(tree([40, 20, 60, 10, 30, 50, 70]), 25)) == [40, 20, 60, 10, 30, 50, 70, None, None, 25]
+assert tree_to_list(s.insertIntoBST(tree([4, 2, 7, 1, 3, None, None, None, None, None, None]), 5)) == [4, 2, 7, 1, 3, 5]
+assert tree_to_list(s.insertIntoBST(None, 5)) == [5]
+assert tree_to_list(s.insertIntoBST(tree([5]), 3)) == [5, 3]
+assert tree_to_list(s.insertIntoBST(tree([5]), 8)) == [5, None, 8]
+@@ PROBLEM: construct-binary-search-tree-from-preorder-traversal
+@@ APPROACH:
+A preorder list shows every parent before its children. So inserting the values one by one, in the given order, rebuilds the exact tree.
+The helper `insert` is the same search-then-place routine as the previous question. With n at most 100, the O(n * h) cost is fine.
+@@ COMPLEXITY: O(n * h) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def bstFromPreorder(self, preorder: List[int]) -> Optional[TreeNode]:
+        root = None
+        for value in preorder:             # parents come first, so plain insertion rebuilds the tree
+            root = self.insert(root, value)
+        return root
+
+    def insert(self, node: Optional[TreeNode], value: int) -> TreeNode:
+        if not node:                       # the search ended: place the new node
+            return TreeNode(value)
+        if value < node.val:
+            node.left = self.insert(node.left, value)
+        else:
+            node.right = self.insert(node.right, value)
+        return node
+@@ TEST:
+s = Solution()
+assert tree_to_list(s.bstFromPreorder([8, 5, 1, 7, 10, 12])) == [8, 5, 10, 1, 7, None, 12]
+assert tree_to_list(s.bstFromPreorder([1, 3])) == [1, None, 3]
+assert tree_to_list(s.bstFromPreorder([1])) == [1]
+assert tree_to_list(s.bstFromPreorder([3, 2, 1])) == [3, 2, None, 1]
+assert tree_to_list(s.bstFromPreorder([4, 2, 1, 3, 6, 5, 7])) == [4, 2, 6, 1, 3, 5, 7]
+@@ PROBLEM: number-of-ways-to-reorder-array-to-get-same-bst
+@@ APPROACH:
+Inserting nums in order builds one BST. The first value is the root, smaller values go left, larger go right.
+Any other order gives the same tree if the root stays first and each side keeps its own internal order. The two sides can mix freely.
+Choosing which positions the left values take gives comb(len - 1, len(left)) ways. Multiply that over every subtree, then subtract 1 for the original order.
+@@ COMPLEXITY: O(n^2) time, O(n) extra space
+@@ CODE:
+from math import comb
+
+class Solution:
+    def numOfWays(self, nums: List[int]) -> int:
+        MOD = 10 ** 9 + 7
+        ways = 1
+        stack = [nums]                       # explicit stack: a skewed tree would be too deep to recurse
+        while stack:
+            seq = stack.pop()
+            if len(seq) <= 2:                # 0, 1 or 2 values: only one valid order
+                continue
+            root = seq[0]                    # the first value is the root, as in repeated insert
+            smaller = [x for x in seq[1:] if x < root]
+            larger = [x for x in seq[1:] if x > root]
+            ways = ways * comb(len(seq) - 1, len(smaller)) % MOD   # mix the two sides
+            stack.append(smaller)
+            stack.append(larger)
+        return (ways - 1) % MOD              # remove the original order itself
+@@ TEST:
+s = Solution()
+assert s.numOfWays([2, 1, 3]) == 1
+assert s.numOfWays([3, 4, 5, 1, 2]) == 5
+assert s.numOfWays([1, 2, 3]) == 0
+assert s.numOfWays([1]) == 0
+assert s.numOfWays([3, 1, 2, 4]) == 2
+assert s.numOfWays([4, 2, 6, 1, 3, 5, 7]) == 79
+assert s.numOfWays(list(range(1, 1001))) == 0
+assert s.numOfWays(list(range(1000, 0, -1))) == 0
+@@ PATTERN: Delete
+@@ SPOT: Use this when you must remove a node from a BST and keep it valid: each recursive call returns the new root of its subtree, and the parent links to it.
+@@ PROBLEM: delete-node-in-a-bst
+@@ APPROACH:
+Search for the key with the usual left or right choice. On a match there are three cases.
+With no left child or no right child, return the other child and it takes the node's place. With two children, copy the inorder successor (smallest value of the right subtree) into the node.
+Then delete that successor from the right subtree with the same function.
+@@ COMPLEXITY: O(h) time, O(h) recursion stack
+@@ CODE:
+class Solution:
+    def deleteNode(self, root: Optional[TreeNode], key: int) -> Optional[TreeNode]:
+        if not root:
+            return None
+        if key < root.val:
+            root.left = self.deleteNode(root.left, key)
+        elif key > root.val:
+            root.right = self.deleteNode(root.right, key)
+        else:
+            if not root.left:                # 0 or 1 child: the other child takes its place
+                return root.right
+            if not root.right:
+                return root.left
+            successor = root.right
+            while successor.left:            # inorder successor: smallest in the right subtree
+                successor = successor.left
+            root.val = successor.val
+            root.right = self.deleteNode(root.right, successor.val)
+        return root
+@@ TEST:
+s = Solution()
+assert tree_to_list(s.deleteNode(tree([5, 3, 6, 2, 4, None, 7]), 3)) == [5, 4, 6, 2, None, None, 7]
+assert tree_to_list(s.deleteNode(tree([5, 3, 6, 2, 4, None, 7]), 0)) == [5, 3, 6, 2, 4, None, 7]
+assert s.deleteNode(None, 0) is None
+assert tree_to_list(s.deleteNode(tree([5, 3, 6, 2, 4, None, 7]), 7)) == [5, 3, 6, 2, 4]
+assert tree_to_list(s.deleteNode(tree([5, 3, 6, 2, 4, None, 7]), 6)) == [5, 3, 7, 2, 4]
+assert tree_to_list(s.deleteNode(tree([5, 3, 6, 2, 4, None, 7]), 5)) == [6, 3, 7, 2, 4]
+assert tree_to_list(s.deleteNode(tree([8, 4, 12, None, None, 10, 14, 9]), 8)) == [9, 4, 12, None, None, 10, 14]
+assert s.deleteNode(tree([1]), 1) is None
+@@ PROBLEM: trim-a-binary-search-tree
+@@ APPROACH:
+Trimming is delete in bulk, and the BST order decides what to drop. If root.val is below low, the root and its whole left side are out, so return the trimmed right side.
+If root.val is above high, return the trimmed left side. Otherwise keep the root and trim both sides, assigning the results back.
+@@ COMPLEXITY: O(n) time, O(h) recursion stack
+@@ CODE:
+class Solution:
+    def trimBST(self, root: Optional[TreeNode], low: int, high: int) -> Optional[TreeNode]:
+        if not root:
+            return None
+        if root.val < low:                   # root and everything on its left are too small
+            return self.trimBST(root.right, low, high)
+        if root.val > high:                  # root and everything on its right are too big
+            return self.trimBST(root.left, low, high)
+        root.left = self.trimBST(root.left, low, high)     # root stays: trim both sides
+        root.right = self.trimBST(root.right, low, high)
+        return root
+@@ TEST:
+s = Solution()
+assert tree_to_list(s.trimBST(tree([1, 0, 2]), 1, 2)) == [1, None, 2]
+assert tree_to_list(s.trimBST(tree([3, 0, 4, None, 2, None, None, 1]), 1, 3)) == [3, 2, None, 1]
+assert tree_to_list(s.trimBST(tree([1]), 2, 3)) == []
+assert tree_to_list(s.trimBST(tree([2, 1, 3]), 3, 3)) == [3]
+assert tree_to_list(s.trimBST(tree([2, 1, 3]), 1, 3)) == [2, 1, 3]
+assert s.trimBST(None, 1, 2) is None
+@@ PATTERN: Validate BST
+@@ SPOT: Use this when you must check or repair BST order: every node has to fit a (low, high) range inherited from all its ancestors, not only from its parent.
+@@ PROBLEM: validate-binary-search-tree
+@@ APPROACH:
+Comparing a node only with its children misses a deep node that breaks an ancestor's bound. So pass a (low, high) range down.
+Going left, the node's value becomes the new high. Going right, it becomes the new low. A node outside its range fails the whole tree.
+@@ COMPLEXITY: O(n) time, O(h) recursion stack
+@@ CODE:
+class Solution:
+    def isValidBST(self, root: Optional[TreeNode]) -> bool:
+        def valid(node, low, high):
+            if not node:
+                return True
+            if not (low < node.val < high):          # must sit inside the inherited range
+                return False
+            return (valid(node.left, low, node.val)      # left side: values below node
+                    and valid(node.right, node.val, high))  # right side: values above node
+        return valid(root, float("-inf"), float("inf"))
+@@ TEST:
+s = Solution()
+assert s.isValidBST(tree([2, 1, 3])) is True
+assert s.isValidBST(tree([5, 1, 4, None, None, 3, 6])) is False
+assert s.isValidBST(tree([5, 4, 6, None, None, 3, 7])) is False
+assert s.isValidBST(tree([1])) is True
+assert s.isValidBST(tree([2, 2, 2])) is False
+assert s.isValidBST(tree([-2147483648])) is True
+assert s.isValidBST(tree([2147483647])) is True
+assert s.isValidBST(tree([10, 5, 15, None, None, 6, 20])) is False
+assert s.isValidBST(tree([8, 4, 12, 2, 6, 10, 14])) is True
+@@ PROBLEM: recover-binary-search-tree
+@@ APPROACH:
+Inorder of a BST must be increasing, so two swapped values show up as one or two dips in the inorder sequence.
+Walk inorder with a `prev` node. The first dip gives `first = prev`, and the last dip gives `second = node`. Swapping their values repairs the tree.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def recoverTree(self, root: Optional[TreeNode]) -> None:
+        first = second = prev = None
+        stack, node = [], root
+        while stack or node:                 # inorder walk: values should only go up
+            while node:
+                stack.append(node)
+                node = node.left
+            node = stack.pop()
+            if prev and prev.val > node.val:     # a dip: these two are out of order
+                if not first:
+                    first = prev
+                second = node
+            prev = node
+            node = node.right
+        first.val, second.val = second.val, first.val   # swap the two wrong values
+@@ TEST:
+s = Solution()
+root = tree([1, 3, None, None, 2])
+s.recoverTree(root)
+assert tree_to_list(root) == [3, 1, None, None, 2]
+root = tree([3, 1, 4, None, None, 2])
+s.recoverTree(root)
+assert tree_to_list(root) == [2, 1, 4, None, None, 3]
+root = tree([2, 3, 1])
+s.recoverTree(root)
+assert tree_to_list(root) == [2, 1, 3]
+root = tree([1, 2])
+s.recoverTree(root)
+assert tree_to_list(root) == [2, 1]
+root = tree([4, 2, 6, 1, 5, 3, 7])
+s.recoverTree(root)
+assert tree_to_list(root) == [4, 2, 6, 1, 3, 5, 7]
+@@ PROBLEM: maximum-sum-bst-in-binary-tree
+@@ APPROACH:
+Here the tree is not a BST, so we test every subtree. A bottom-up check keeps the (low, high) range as the min and max of each subtree, instead of passing it down.
+Each call returns (is_bst, min, max, sum). A node is a BST root when both sides are BSTs and left_max < node.val < right_min.
+The best sum seen at any valid root is the answer, and 0 stands for the empty tree.
+@@ COMPLEXITY: O(n) time, O(h) recursion stack
+@@ CODE:
+from math import inf
+
+class Solution:
+    def maxSumBST(self, root: Optional[TreeNode]) -> int:
+        best = 0
+        def dfs(node):
+            nonlocal best
+            if not node:
+                return True, inf, -inf, 0            # empty tree: fits any range
+            left_ok, left_min, left_max, left_sum = dfs(node.left)
+            right_ok, right_min, right_max, right_sum = dfs(node.right)
+            if left_ok and right_ok and left_max < node.val < right_min:   # the range check
+                total = left_sum + right_sum + node.val
+                best = max(best, total)
+                return True, min(left_min, node.val), max(right_max, node.val), total
+            return False, -inf, inf, 0
+        dfs(root)
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxSumBST(tree([1, 4, 3, 2, 4, 2, 5, None, None, None, None, None, None, 4, 6])) == 20
+assert s.maxSumBST(tree([4, 3, None, 1, 2])) == 2
+assert s.maxSumBST(tree([-4, -2, -5])) == 0
+assert s.maxSumBST(tree([2, 1, 3])) == 6
+assert s.maxSumBST(tree([5, 4, 8, 3, None, 6, 3])) == 7
+assert s.maxSumBST(tree([1, None, 10, -5, 20])) == 25
+assert s.maxSumBST(tree([7])) == 7
+@@ PATTERN: Kth Smallest/Largest
+@@ SPOT: Use this when a BST question asks for the kth smallest or largest value, or anything about values in sorted order: inorder visits values in increasing order, and reverse inorder in decreasing order.
+@@ PROBLEM: minimum-absolute-difference-in-bst
+@@ APPROACH:
+Inorder visits a BST in increasing order, so the closest two values are always neighbours in that order.
+Walk inorder and keep the previous value in `prev`. Each step compares the current value with prev, so no sorting or extra list is needed.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def getMinimumDifference(self, root: Optional[TreeNode]) -> int:
+        best = float("inf")
+        prev = None
+        stack, node = [], root
+        while stack or node:                 # inorder walk: values arrive sorted
+            while node:
+                stack.append(node)
+                node = node.left
+            node = stack.pop()
+            if prev is not None:
+                best = min(best, node.val - prev)   # only neighbours can be closest
+            prev = node.val
+            node = node.right
+        return best
+@@ TEST:
+s = Solution()
+assert s.getMinimumDifference(tree([4, 2, 6, 1, 3])) == 1
+assert s.getMinimumDifference(tree([1, 0, 48, None, None, 12, 49])) == 1
+assert s.getMinimumDifference(tree([1, None, 5])) == 4
+assert s.getMinimumDifference(tree([1, None, 3, 2])) == 1
+assert s.getMinimumDifference(tree([236, 104, 701, None, 227, None, 911])) == 9
+@@ PROBLEM: kth-smallest-element-in-a-bst
+@@ APPROACH:
+Inorder visits values from smallest to largest, so the kth node visited is the kth smallest.
+The stack walk goes as far left as possible, then pops a node and counts it. Counting down `k` to 0 lets us stop early without visiting the rest of the tree.
+@@ COMPLEXITY: O(h + k) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def kthSmallest(self, root: Optional[TreeNode], k: int) -> int:
+        stack, node = [], root
+        while stack or node:
+            while node:                      # go as far left as possible: smallest first
+                stack.append(node)
+                node = node.left
+            node = stack.pop()
+            k -= 1
+            if k == 0:                       # this is the kth node in sorted order
+                return node.val
+            node = node.right
+@@ TEST:
+s = Solution()
+assert s.kthSmallest(tree([3, 1, 4, None, 2]), 1) == 1
+assert s.kthSmallest(tree([5, 3, 6, 2, 4, None, None, 1]), 3) == 3
+assert s.kthSmallest(tree([5, 3, 6, 2, 4, None, None, 1]), 6) == 6
+assert s.kthSmallest(tree([5, 3, 6, 2, 4, None, None, 1]), 1) == 1
+assert s.kthSmallest(tree([1]), 1) == 1
+assert s.kthSmallest(tree([3, 1, 4, None, 2]), 4) == 4
+@@ PROBLEM: convert-bst-to-greater-tree
+@@ APPROACH:
+Each node must become its value plus every larger value. That is a running sum taken from the largest value downward.
+Reverse inorder (right, node, left) visits values from largest to smallest, the kth largest direction. Keep `running`, add each node's value to it, and write it back.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def convertBST(self, root: Optional[TreeNode]) -> Optional[TreeNode]:
+        running = 0
+        stack, node = [], root
+        while stack or node:                 # reverse inorder: right, node, left
+            while node:
+                stack.append(node)
+                node = node.right            # largest values first
+            node = stack.pop()
+            running += node.val              # sum of this value and all larger ones
+            node.val = running
+            node = node.left
+        return root
+@@ TEST:
+s = Solution()
+root = tree([4, 1, 6, 0, 2, 5, 7, None, None, None, 3, None, None, None, 8])
+assert tree_to_list(s.convertBST(root)) == [30, 36, 21, 36, 35, 26, 15, None, None, None, 33, None, None, None, 8]
+assert tree_to_list(s.convertBST(tree([0, None, 1]))) == [1, None, 1]
+assert tree_to_list(s.convertBST(tree([5]))) == [5]
+assert tree_to_list(s.convertBST(tree([2, 1, 3]))) == [5, 6, 3]
+assert tree_to_list(s.convertBST(None)) == []
+@@ PATTERN: LCA in BST
+@@ SPOT: Use this when you need the lowest common ancestor in a BST: it is the first node where p and q stop going the same way.
+@@ PROBLEM: lowest-common-ancestor-of-a-binary-search-tree
+@@ APPROACH:
+Walk down from the root. If both p and q are smaller than the node, they are both in the left subtree, so go left. If both are larger, go right.
+The first node where they split, or where the node equals one of them, is the LCA. No recursion and no extra memory are needed.
+@@ COMPLEXITY: O(h) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':
+        node = root
+        while node:
+            if p.val < node.val and q.val < node.val:       # both on the left
+                node = node.left
+            elif p.val > node.val and q.val > node.val:     # both on the right
+                node = node.right
+            else:                                           # they split here
+                return node
+@@ TEST:
+def find(root, v):
+    queue = deque([root])
+    while queue:
+        n = queue.popleft()
+        if n.val == v: return n
+        if n.left: queue.append(n.left)
+        if n.right: queue.append(n.right)
+
+s = Solution()
+root = tree([6, 2, 8, 0, 4, 7, 9, None, None, 3, 5])
+assert s.lowestCommonAncestor(root, find(root, 2), find(root, 8)).val == 6
+assert s.lowestCommonAncestor(root, find(root, 2), find(root, 4)).val == 2
+assert s.lowestCommonAncestor(root, find(root, 3), find(root, 5)).val == 4
+assert s.lowestCommonAncestor(root, find(root, 7), find(root, 9)).val == 8
+assert s.lowestCommonAncestor(root, find(root, 0), find(root, 9)).val == 6
+root = tree([2, 1])
+assert s.lowestCommonAncestor(root, find(root, 2), find(root, 1)).val == 2
+@@ PROBLEM: lowest-common-ancestor-of-a-binary-tree
+@@ APPROACH:
+Without BST order we cannot choose a side by value, so we search both sides. The idea is still to find where p and q split.
+A call returns p or q when it finds one in its subtree, and None otherwise. If left and right both return something, p and q are on different sides, so this node is the LCA.
+@@ COMPLEXITY: O(n) time, O(h) recursion stack
+@@ CODE:
+class Solution:
+    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':
+        if not root or root is p or root is q:    # found a target, or ran out of tree
+            return root
+        left = self.lowestCommonAncestor(root.left, p, q)
+        right = self.lowestCommonAncestor(root.right, p, q)
+        if left and right:                        # one on each side: the split point
+            return root
+        return left or right
+@@ TEST:
+def find(root, v):
+    queue = deque([root])
+    while queue:
+        n = queue.popleft()
+        if n.val == v: return n
+        if n.left: queue.append(n.left)
+        if n.right: queue.append(n.right)
+
+s = Solution()
+root = tree([3, 5, 1, 6, 2, 0, 8, None, None, 7, 4])
+assert s.lowestCommonAncestor(root, find(root, 5), find(root, 1)).val == 3
+assert s.lowestCommonAncestor(root, find(root, 5), find(root, 4)).val == 5
+assert s.lowestCommonAncestor(root, find(root, 7), find(root, 4)).val == 2
+assert s.lowestCommonAncestor(root, find(root, 6), find(root, 8)).val == 3
+root = tree([1, 2])
+assert s.lowestCommonAncestor(root, find(root, 1), find(root, 2)).val == 1
+@@ PROBLEM: lowest-common-ancestor-of-deepest-leaves
+@@ APPROACH:
+There are no p and q here, but the idea of the split point is the same. Each call returns (depth, lca) for its subtree.
+If one side is deeper, the deepest leaves are all on that side, so pass its answer up. If both sides are equally deep, the deepest leaves are on both sides, so the current node is the LCA.
+@@ COMPLEXITY: O(n) time, O(h) recursion stack
+@@ CODE:
+class Solution:
+    def lcaDeepestLeaves(self, root: Optional[TreeNode]) -> Optional[TreeNode]:
+        def dfs(node):                           # returns (depth, lca of the deepest leaves)
+            if not node:
+                return 0, None
+            left_depth, left_lca = dfs(node.left)
+            right_depth, right_lca = dfs(node.right)
+            if left_depth > right_depth:         # deepest leaves are all on the left
+                return left_depth + 1, left_lca
+            if right_depth > left_depth:         # deepest leaves are all on the right
+                return right_depth + 1, right_lca
+            return left_depth + 1, node          # equal depth: the paths split here
+        return dfs(root)[1]
+@@ TEST:
+s = Solution()
+assert tree_to_list(s.lcaDeepestLeaves(tree([3, 5, 1, 6, 2, 0, 8, None, None, 7, 4]))) == [2, 7, 4]
+assert tree_to_list(s.lcaDeepestLeaves(tree([1]))) == [1]
+assert tree_to_list(s.lcaDeepestLeaves(tree([0, 1, 3, None, 2]))) == [2]
+assert tree_to_list(s.lcaDeepestLeaves(tree([1, 2, 3]))) == [1, 2, 3]
+assert tree_to_list(s.lcaDeepestLeaves(tree([1, 2, None, 3, None, 4]))) == [4]
+@@ PATTERN: Sorted Array → BST
+@@ SPOT: Use this when you must build a height-balanced BST from sorted values: make the middle element the root and build each half the same way.
+@@ PROBLEM: convert-sorted-array-to-binary-search-tree
+@@ APPROACH:
+Taking the middle element as the root puts half the values on each side, so the two subtrees have almost equal height. The sorted order already matches the BST order.
+`build(lo, hi)` works on indices instead of slices, so no copies are made.
+@@ COMPLEXITY: O(n) time, O(log n) recursion stack
+@@ CODE:
+class Solution:
+    def sortedArrayToBST(self, nums: List[int]) -> Optional[TreeNode]:
+        def build(lo, hi):                   # builds a tree from nums[lo:hi]
+            if lo >= hi:
+                return None
+            mid = (lo + hi) // 2             # the middle becomes the root: balanced
+            return TreeNode(nums[mid], build(lo, mid), build(mid + 1, hi))
+        return build(0, len(nums))
+@@ TEST:
+def inorder(n):
+    return inorder(n.left) + [n.val] + inorder(n.right) if n else []
+
+def balanced_height(n):
+    if not n: return 0
+    l, r = balanced_height(n.left), balanced_height(n.right)
+    assert abs(l - r) <= 1
+    return 1 + max(l, r)
+
+s = Solution()
+for nums in ([-10, -3, 0, 5, 9], [1, 3], [1], [1, 2, 3, 4, 5, 6, 7], list(range(10000))):
+    root = s.sortedArrayToBST(nums)
+    assert inorder(root) == nums
+    balanced_height(root)
+assert balanced_height(s.sortedArrayToBST(list(range(10000)))) <= 14
+assert s.sortedArrayToBST([]) is None
+@@ PROBLEM: convert-sorted-list-to-binary-search-tree
+@@ APPROACH:
+A linked list has no random access, so the middle is costly to find again and again. Copy the values into an array once, then it is the same question as the array version.
+`build(lo, hi)` takes the middle index as the root and recurses on each half.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def sortedListToBST(self, head: Optional[ListNode]) -> Optional[TreeNode]:
+        values = []
+        while head:                          # copy the list into an array for random access
+            values.append(head.val)
+            head = head.next
+        def build(lo, hi):
+            if lo >= hi:
+                return None
+            mid = (lo + hi) // 2             # the middle is the root: balanced
+            return TreeNode(values[mid], build(lo, mid), build(mid + 1, hi))
+        return build(0, len(values))
+@@ TEST:
+def inorder(n):
+    return inorder(n.left) + [n.val] + inorder(n.right) if n else []
+
+def balanced_height(n):
+    if not n: return 0
+    l, r = balanced_height(n.left), balanced_height(n.right)
+    assert abs(l - r) <= 1
+    return 1 + max(l, r)
+
+s = Solution()
+for nums in ([-10, -3, 0, 5, 9], [1, 3], [1], [1, 2, 3, 4, 5, 6], list(range(2000))):
+    root = s.sortedListToBST(ll(nums))
+    assert inorder(root) == nums
+    balanced_height(root)
+assert s.sortedListToBST(None) is None
+@@ PROBLEM: balance-a-binary-search-tree
+@@ APPROACH:
+Inorder of a BST is already sorted, so flatten the skewed tree into a sorted list first. That gives the "sorted array" input.
+Then rebuild with the middle as root. The values are the same, only the shape changes to height-balanced.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def balanceBST(self, root: TreeNode) -> TreeNode:
+        values = []
+        stack, node = [], root
+        while stack or node:                 # iterative inorder: sorted values
+            while node:
+                stack.append(node)
+                node = node.left
+            node = stack.pop()
+            values.append(node.val)
+            node = node.right
+        def build(lo, hi):
+            if lo >= hi:
+                return None
+            mid = (lo + hi) // 2             # the middle is the root: balanced
+            return TreeNode(values[mid], build(lo, mid), build(mid + 1, hi))
+        return build(0, len(values))
+@@ TEST:
+def inorder(n):
+    return inorder(n.left) + [n.val] + inorder(n.right) if n else []
+
+def balanced_height(n):
+    if not n: return 0
+    l, r = balanced_height(n.left), balanced_height(n.right)
+    assert abs(l - r) <= 1
+    return 1 + max(l, r)
+
+s = Solution()
+root = s.balanceBST(tree([1, None, 2, None, 3, None, 4, None, None]))
+assert inorder(root) == [1, 2, 3, 4]
+balanced_height(root)
+root = s.balanceBST(tree([2, 1, 3]))
+assert inorder(root) == [1, 2, 3]
+balanced_height(root)
+root = s.balanceBST(tree([7]))
+assert tree_to_list(root) == [7]
+head = TreeNode(1)
+cur = head
+for v in range(2, 5001):
+    cur.right = TreeNode(v)
+    cur = cur.right
+root = s.balanceBST(head)
+assert inorder(root) == list(range(1, 5001))
+assert balanced_height(root) <= 13

@@ -1,0 +1,796 @@
+@@ PATTERN: Basic Stack
+@@ SPOT: Use this when the most recent unfinished item must be handled first, such as undoing a step, evaluating postfix or processing nested groups.
+@@ PROBLEM: baseball-game
+@@ APPROACH:
+Each valid score is one item on the stack. A number is pushed, `C` pops the last score (undo), `D` pushes double of `scores[-1]` and `+` pushes `scores[-1] + scores[-2]`. The answer is the sum of what is left on the stack at the end.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def calPoints(self, operations: List[str]) -> int:
+        scores = []                                  # stack of valid round scores
+        for op in operations:
+            if op == "+":
+                scores.append(scores[-1] + scores[-2])   # peek the top two
+            elif op == "D":
+                scores.append(2 * scores[-1])            # peek the top
+            elif op == "C":
+                scores.pop()                             # undo the last score
+            else:
+                scores.append(int(op))                   # push a new score
+        return sum(scores)
+@@ TEST:
+s = Solution()
+assert s.calPoints(["5", "2", "C", "D", "+"]) == 30
+assert s.calPoints(["5", "-2", "4", "C", "D", "9", "+", "+"]) == 27
+assert s.calPoints(["1", "C"]) == 0
+assert s.calPoints(["1"]) == 1
+assert s.calPoints(["-1", "D", "+"]) == -6
+@@ PROBLEM: evaluate-reverse-polish-notation
+@@ APPROACH:
+Push every number onto the stack. An operator works on the two most recent numbers, so pop the right operand first, then the left, and push the result back. The single item left at the end is the answer. Division must truncate toward zero, which is why the code uses `int(a / b)`.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def evalRPN(self, tokens: List[str]) -> int:
+        st = []                              # stack of operands
+        for t in tokens:
+            if t in ("+", "-", "*", "/"):
+                b = st.pop()                 # right operand is on top
+                a = st.pop()                 # left operand is below it
+                if t == "+":
+                    st.append(a + b)
+                elif t == "-":
+                    st.append(a - b)
+                elif t == "*":
+                    st.append(a * b)
+                else:
+                    st.append(int(a / b))    # truncate toward zero
+            else:
+                st.append(int(t))            # push a number
+        return st[0]
+@@ TEST:
+s = Solution()
+assert s.evalRPN(["2", "1", "+", "3", "*"]) == 9
+assert s.evalRPN(["4", "13", "5", "/", "+"]) == 6
+assert s.evalRPN(["10", "6", "9", "3", "+", "-11", "*", "/", "*", "17", "+", "5", "+"]) == 22
+assert s.evalRPN(["5"]) == 5
+assert s.evalRPN(["-7", "2", "/"]) == -3
+assert s.evalRPN(["7", "-2", "/"]) == -3
+assert s.evalRPN(["3", "4", "-"]) == -1
+@@ PROBLEM: basic-calculator
+@@ APPROACH:
+Scan the string once, building the current number and remembering the sign of the next term. On `(` push the result so far and its sign onto the stack and start a fresh sub-total. On `)` close the sub-total, pop the saved pair and fold it in with `prev_result + prev_sign * result`. The stack remembers each unfinished outer expression, so nesting can be any depth.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def calculate(self, s: str) -> int:
+        st = []                              # saved (result, sign) for each open "("
+        result, num, sign = 0, 0, 1
+        for ch in s:
+            if ch.isdigit():
+                num = num * 10 + int(ch)
+            elif ch in "+-":
+                result += sign * num         # finish the previous term
+                num = 0
+                sign = 1 if ch == "+" else -1
+            elif ch == "(":
+                st.append((result, sign))    # push the unfinished outer expression
+                result, sign = 0, 1
+            elif ch == ")":
+                result += sign * num
+                num = 0
+                prev_result, prev_sign = st.pop()    # resume the outer expression
+                result = prev_result + prev_sign * result
+        return result + sign * num
+@@ TEST:
+s = Solution()
+assert s.calculate("1 + 1") == 2
+assert s.calculate(" 2-1 + 2 ") == 3
+assert s.calculate("(1+(4+5+2)-3)+(6+8)") == 23
+assert s.calculate("-(2+3)") == -5
+assert s.calculate("1-(-2)") == 3
+assert s.calculate("2147483647") == 2147483647
+assert s.calculate("- (3 + (4 + 5))") == -12
+assert s.calculate("10-(2-(3-4))") == 7
+@@ PATTERN: Parentheses Matching
+@@ SPOT: Use this when brackets must close in the right order: push each opener, and on a closer pop the latest opener and compare.
+@@ PROBLEM: valid-parentheses
+@@ APPROACH:
+Push every opener. When a closer arrives, the latest unclosed opener must be its partner, so pop and compare with the `pairs` map. If the stack is empty or the pair is wrong, the string is invalid. At the end the stack must be empty.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def isValid(self, s: str) -> bool:
+        pairs = {")": "(", "]": "[", "}": "{"}
+        st = []
+        for ch in s:
+            if ch in pairs:                          # a closer
+                if not st or st.pop() != pairs[ch]:  # latest opener must match
+                    return False
+            else:
+                st.append(ch)                        # an opener
+        return not st                                # nothing left unclosed
+@@ TEST:
+s = Solution()
+assert s.isValid("()") is True
+assert s.isValid("()[]{}") is True
+assert s.isValid("(]") is False
+assert s.isValid("([])") is True
+assert s.isValid("([)]") is False
+assert s.isValid("(") is False
+assert s.isValid(")") is False
+assert s.isValid("((") is False
+@@ PROBLEM: minimum-remove-to-make-valid-parentheses
+@@ APPROACH:
+Use the stack to hold the indices of `(` that have not found a partner yet. A `)` with an empty stack has no opener, so blank it out. After the scan, every index still on the stack is an unmatched `(`, so blank those too. What remains is valid with the fewest removals.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def minRemoveToMakeValid(self, s: str) -> str:
+        chars = list(s)
+        st = []                              # indices of "(" still waiting for a ")"
+        for i, ch in enumerate(chars):
+            if ch == "(":
+                st.append(i)
+            elif ch == ")":
+                if st:
+                    st.pop()                 # matched with the latest opener
+                else:
+                    chars[i] = ""            # no opener for this closer: drop it
+        for i in st:
+            chars[i] = ""                    # leftover openers: drop them
+        return "".join(chars)
+@@ TEST:
+s = Solution()
+assert s.minRemoveToMakeValid("lee(t(c)o)de)") in ["lee(t(c)o)de", "lee(t(c)ode)", "lee(t(co)de)"]
+assert s.minRemoveToMakeValid("a)b(c)d") == "ab(c)d"
+assert s.minRemoveToMakeValid("))((") == ""
+assert s.minRemoveToMakeValid("a") == "a"
+assert s.minRemoveToMakeValid("(a(b(c)d)") in ["a(b(c)d)", "(ab(c)d)", "(a(bc)d)"]
+@@ PROBLEM: longest-valid-parentheses
+@@ APPROACH:
+Keep indices on the stack, with `-1` at the bottom as the position just before the current valid stretch. Push the index of every `(`. On `)` pop; if the stack is now empty, this `)` is unmatched, so push its index as the new base. Otherwise the valid stretch ends at `i` and starts after `st[-1]`, so its length is `i - st[-1]`.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def longestValidParentheses(self, s: str) -> int:
+        st = [-1]                            # index just before the current valid stretch
+        best = 0
+        for i, ch in enumerate(s):
+            if ch == "(":
+                st.append(i)
+            else:
+                st.pop()                     # match with the latest opener (or the base)
+                if not st:
+                    st.append(i)             # unmatched ")": new base
+                else:
+                    best = max(best, i - st[-1])
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestValidParentheses("(()") == 2
+assert s.longestValidParentheses(")()())") == 4
+assert s.longestValidParentheses("") == 0
+assert s.longestValidParentheses("()(())") == 6
+assert s.longestValidParentheses("()(()") == 2
+assert s.longestValidParentheses(")(") == 0
+assert s.longestValidParentheses("(()())") == 6
+assert s.longestValidParentheses("((((") == 0
+@@ PATTERN: Monotonic Stack
+@@ SPOT: Use this when each element's answer depends on the nearest bigger or smaller element on one side, so you keep the stack sorted and pop whatever the new value beats.
+@@ PROBLEM: car-fleet
+@@ APPROACH:
+Sort the cars by position and walk from the one closest to the target. Each car has an arrival time if nothing blocks it. If its time is longer than the time on top of the stack, it can never catch the fleet ahead, so it starts a new fleet and is pushed. Otherwise it joins the fleet ahead. The stack stays strictly increasing in time and its size is the number of fleets.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def carFleet(self, target: int, position: List[int], speed: List[int]) -> int:
+        cars = sorted(zip(position, speed), reverse=True)   # closest to the target first
+        st = []                                             # arrival time of each fleet
+        for pos, spd in cars:
+            t = (target - pos) / spd
+            if not st or t > st[-1]:         # slower than the fleet ahead: new fleet
+                st.append(t)                 # stack stays increasing
+            # otherwise it catches up and merges into the fleet ahead
+        return len(st)
+@@ TEST:
+s = Solution()
+assert s.carFleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3]) == 3
+assert s.carFleet(10, [3], [3]) == 1
+assert s.carFleet(100, [0, 2, 4], [4, 2, 1]) == 1
+assert s.carFleet(10, [0, 4, 2], [2, 1, 3]) == 1
+assert s.carFleet(10, [6, 0], [5, 1]) == 2
+assert s.carFleet(10, [6, 0], [1, 5]) == 1
+@@ PROBLEM: 132-pattern
+@@ APPROACH:
+Scan from the right and keep a decreasing stack. When the current value `x` is bigger than the stack top, the popped values are smaller numbers to its right, so `x` can be the "3" and the largest popped value is the best "2", stored in `third`. Any later value that is smaller than `third` is the "1", so the answer is True. Each number is pushed and popped once.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def find132pattern(self, nums: List[int]) -> bool:
+        third = -inf                         # best "2" so far: it has a bigger "3" on its left
+        st = []                              # decreasing stack, scanning from the right
+        for x in reversed(nums):
+            if x < third:                    # x is the "1"
+                return True
+            while st and st[-1] < x:         # x beats these: x is their "3"
+                third = st.pop()             # last pop is the largest candidate for "2"
+            st.append(x)
+        return False
+@@ TEST:
+s = Solution()
+assert s.find132pattern([1, 2, 3, 4]) is False
+assert s.find132pattern([3, 1, 4, 2]) is True
+assert s.find132pattern([-1, 3, 2, 0]) is True
+assert s.find132pattern([1]) is False
+assert s.find132pattern([1, 0, 1, -4, -3]) is False
+assert s.find132pattern([3, 5, 0, 3, 4]) is True
+assert s.find132pattern([1, 3, 2]) is True
+assert s.find132pattern([4, 3, 2, 1]) is False
+@@ PROBLEM: trapping-rain-water
+@@ APPROACH:
+Keep a stack of bar indices with decreasing heights. When a taller bar `h` arrives, each shorter bar popped is a valley floor. The new stack top is its left wall and `h` is its right wall. That layer holds width times (lower wall minus floor) of water, and the layers add up to the total.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def trap(self, height: List[int]) -> int:
+        st = []                              # indices of bars, heights decreasing
+        water = 0
+        for i, h in enumerate(height):
+            while st and height[st[-1]] < h: # h is taller: the top is a valley floor
+                floor = st.pop()
+                if not st:
+                    break                    # no left wall, nothing is trapped
+                left = st[-1]
+                width = i - left - 1
+                water += width * (min(height[left], h) - height[floor])
+            st.append(i)
+        return water
+@@ TEST:
+s = Solution()
+assert s.trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]) == 6
+assert s.trap([4, 2, 0, 3, 2, 5]) == 9
+assert s.trap([5]) == 0
+assert s.trap([3, 3, 3]) == 0
+assert s.trap([2, 0, 2]) == 2
+assert s.trap([5, 4, 1, 2]) == 1
+assert s.trap([2, 0, 2, 0, 2]) == 4
+assert s.trap([3, 0, 0, 3]) == 6
+@@ PATTERN: Next Greater Element
+@@ SPOT: Use this when you need, for each element, the first larger value to its right, or how many steps away it is.
+@@ PROBLEM: next-greater-element-i
+@@ APPROACH:
+Run the decreasing-stack loop over `nums2`. Whenever a new value `x` is larger than the top, `x` is the next greater element of the popped value, so record it in a dict. Values never popped have no next greater element. Then look up each value of `nums1` in the dict.
+@@ COMPLEXITY: O(n + m) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def nextGreaterElement(self, nums1: List[int], nums2: List[int]) -> List[int]:
+        nxt = {}                             # value -> its next greater value in nums2
+        st = []                              # decreasing stack of values
+        for x in nums2:
+            while st and st[-1] < x:         # x is the answer for everything it beats
+                nxt[st.pop()] = x
+            st.append(x)
+        return [nxt.get(x, -1) for x in nums1]
+@@ TEST:
+s = Solution()
+assert s.nextGreaterElement([4, 1, 2], [1, 3, 4, 2]) == [-1, 3, -1]
+assert s.nextGreaterElement([2, 4], [1, 2, 3, 4]) == [3, -1]
+assert s.nextGreaterElement([1], [1]) == [-1]
+assert s.nextGreaterElement([1], [2, 1]) == [-1]
+assert s.nextGreaterElement([1, 3, 5, 2, 4], [6, 5, 4, 3, 2, 1, 7]) == [7, 7, 7, 7, 7]
+@@ PROBLEM: daily-temperatures
+@@ APPROACH:
+Keep a stack of day indices whose temperatures are decreasing, so they are the days still waiting for a warmer day. When day `i` is warmer than the top, pop that day `j` and its answer is `i - j`. Push `i` and carry on. Days left on the stack never get a warmer day and keep 0.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def dailyTemperatures(self, temperatures: List[int]) -> List[int]:
+        ans = [0] * len(temperatures)
+        st = []                              # indices of days waiting, temperatures decreasing
+        for i, t in enumerate(temperatures):
+            while st and temperatures[st[-1]] < t:   # today is warmer than the top
+                j = st.pop()
+                ans[j] = i - j               # day j found its warmer day
+            st.append(i)
+        return ans
+@@ TEST:
+s = Solution()
+assert s.dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73]) == [1, 1, 4, 2, 1, 1, 0, 0]
+assert s.dailyTemperatures([30, 40, 50, 60]) == [1, 1, 1, 0]
+assert s.dailyTemperatures([30, 60, 90]) == [1, 1, 0]
+assert s.dailyTemperatures([50]) == [0]
+assert s.dailyTemperatures([60, 60, 60]) == [0, 0, 0]
+assert s.dailyTemperatures([90, 80, 70]) == [0, 0, 0]
+@@ PROBLEM: next-greater-element-ii
+@@ APPROACH:
+The array is circular, so walk it twice (`2 * n` steps) and read values with `i % n`. Use the same decreasing stack of indices and answer each popped index with the new value. Only push indices during the first lap, so every index is pushed once. Indices still on the stack after two laps have no greater element and keep -1.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def nextGreaterElements(self, nums: List[int]) -> List[int]:
+        n = len(nums)
+        ans = [-1] * n
+        st = []                              # indices, values decreasing
+        for i in range(2 * n):               # two laps simulate the circle
+            x = nums[i % n]
+            while st and nums[st[-1]] < x:   # x is the next greater of the top
+                ans[st.pop()] = x
+            if i < n:
+                st.append(i)                 # push only in the first lap
+        return ans
+@@ TEST:
+s = Solution()
+assert s.nextGreaterElements([1, 2, 1]) == [2, -1, 2]
+assert s.nextGreaterElements([1, 2, 3, 4, 3]) == [2, 3, 4, -1, 4]
+assert s.nextGreaterElements([5]) == [-1]
+assert s.nextGreaterElements([2, 2, 2]) == [-1, -1, -1]
+assert s.nextGreaterElements([3, 1, 2]) == [-1, 2, 3]
+@@ PATTERN: Next Smaller Element
+@@ SPOT: Use this when you need the first smaller value to the right, or when a bigger item must be dropped as soon as a smaller one shows up.
+@@ PROBLEM: final-prices-with-a-special-discount-in-a-shop
+@@ APPROACH:
+Keep an increasing stack of indices, flipping the rule from next greater to next smaller. When the current price `p` is less than or equal to the top price, `p` is the discount for that item, so pop it and subtract. Items never popped get no discount and keep their full price.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def finalPrices(self, prices: List[int]) -> List[int]:
+        ans = prices[:]                      # full price unless a discount is found
+        st = []                              # indices, prices increasing
+        for i, p in enumerate(prices):
+            while st and prices[st[-1]] >= p:    # p is the next smaller-or-equal price
+                j = st.pop()
+                ans[j] = prices[j] - p       # apply the discount
+            st.append(i)
+        return ans
+@@ TEST:
+s = Solution()
+assert s.finalPrices([8, 4, 6, 2, 3]) == [4, 2, 4, 2, 3]
+assert s.finalPrices([1, 2, 3, 4, 5]) == [1, 2, 3, 4, 5]
+assert s.finalPrices([10, 1, 1, 6]) == [9, 0, 1, 6]
+assert s.finalPrices([5]) == [5]
+assert s.finalPrices([3, 3, 3]) == [0, 0, 3]
+@@ PROBLEM: remove-k-digits
+@@ APPROACH:
+To make the number small, a digit that is bigger than the one after it should go. Keep an increasing stack of digits. When the new digit is smaller than the top, pop the top (it just found its next smaller digit) and use up one removal. If removals are left at the end, cut them from the tail, then strip leading zeros.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def removeKdigits(self, num: str, k: int) -> str:
+        st = []                              # digits, non-decreasing
+        for d in num:
+            while k and st and st[-1] > d:   # d is smaller: drop the bigger digit before it
+                st.pop()
+                k -= 1
+            st.append(d)
+        if k:
+            st = st[:-k]                     # stack is non-decreasing, so cut the largest tail
+        return "".join(st).lstrip("0") or "0"
+@@ TEST:
+s = Solution()
+assert s.removeKdigits("1432219", 3) == "1219"
+assert s.removeKdigits("10200", 1) == "200"
+assert s.removeKdigits("10", 2) == "0"
+assert s.removeKdigits("112", 1) == "11"
+assert s.removeKdigits("9", 1) == "0"
+assert s.removeKdigits("1234567890", 9) == "0"
+assert s.removeKdigits("12345", 2) == "123"
+assert s.removeKdigits("100", 1) == "0"
+assert s.removeKdigits("43214321", 4) == "1321"
+@@ PROBLEM: remove-duplicate-letters
+@@ APPROACH:
+Build the smallest result with an increasing stack of letters, using the next-smaller rule: a bigger letter on top is dropped when a smaller letter arrives. The extra idea is that a letter may only be dropped if it appears again later, which `last[...] > i` checks. The `seen` set keeps each letter in the stack at most once.
+@@ COMPLEXITY: O(n) time, O(1) extra space (26 letters)
+@@ CODE:
+class Solution:
+    def removeDuplicateLetters(self, s: str) -> str:
+        last = {c: i for i, c in enumerate(s)}   # last position of each letter
+        st, seen = [], set()
+        for i, c in enumerate(s):
+            if c in seen:
+                continue                     # already placed in the best spot
+            while st and st[-1] > c and last[st[-1]] > i:   # bigger on top and it comes again later
+                seen.discard(st.pop())
+            st.append(c)
+            seen.add(c)
+        return "".join(st)
+@@ TEST:
+s = Solution()
+assert s.removeDuplicateLetters("bcabc") == "abc"
+assert s.removeDuplicateLetters("cbacdcbc") == "acdb"
+assert s.removeDuplicateLetters("a") == "a"
+assert s.removeDuplicateLetters("ecbacba") == "eacb"
+assert s.removeDuplicateLetters("abacb") == "abc"
+assert s.removeDuplicateLetters("cdadabcc") == "adbc"
+assert s.removeDuplicateLetters("aaaa") == "a"
+@@ PATTERN: Previous Greater/Smaller
+@@ SPOT: Use this when each element needs the nearest smaller or bigger value on its left, which is what sits on top of the stack right after popping.
+@@ PROBLEM: sum-of-subarray-minimums
+@@ APPROACH:
+Count how many subarrays have `arr[mid]` as their minimum. Keep an increasing stack. When `mid` is popped by index `i`, the top after popping is the previous smaller element, so `left` is read from `st[-1]`, and `i` is the next smaller. `mid` is the minimum of `(mid - left) * (i - mid)` subarrays. A sentinel at the end pops everything.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def sumSubarrayMins(self, arr: List[int]) -> int:
+        st, total = [], 0                    # st: indices, values increasing
+        for i in range(len(arr) + 1):
+            cur = arr[i] if i < len(arr) else -1     # sentinel pops everything
+            while st and arr[st[-1]] > cur:  # cur is the next smaller of the top
+                mid = st.pop()
+                left = st[-1] if st else -1  # previous smaller: top after popping
+                total += arr[mid] * (mid - left) * (i - mid)
+            st.append(i)
+        return total % (10**9 + 7)
+@@ TEST:
+s = Solution()
+assert s.sumSubarrayMins([3, 1, 2, 4]) == 17
+assert s.sumSubarrayMins([11, 81, 94, 43, 3]) == 444
+assert s.sumSubarrayMins([1]) == 1
+assert s.sumSubarrayMins([2, 2]) == 6
+assert s.sumSubarrayMins([1, 2, 3]) == 10
+@@ PROBLEM: maximum-subarray-min-product
+@@ APPROACH:
+Treat each element as the minimum of a subarray and stretch it as far as it stays the minimum. When `mid` is popped by index `i`, the previous smaller element is `st[-1]` and the next smaller is `i`. The subarray runs from `st[-1] + 1` to `i - 1`, and a prefix-sum array gives its sum in O(1). Take the best `nums[mid] * sum`, and apply the modulo only at the end.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def maxSumMinProduct(self, nums: List[int]) -> int:
+        prefix = [0]
+        for x in nums:
+            prefix.append(prefix[-1] + x)    # prefix[i] = sum of nums[:i]
+        st, best = [], 0                     # st: indices, values increasing
+        for i in range(len(nums) + 1):
+            cur = nums[i] if i < len(nums) else 0    # sentinel 0 is below every value
+            while st and nums[st[-1]] >= cur:        # cur is the next smaller (or equal)
+                mid = st.pop()
+                left = st[-1] + 1 if st else 0       # just after the previous smaller
+                best = max(best, nums[mid] * (prefix[i] - prefix[left]))
+            st.append(i)
+        return best % (10**9 + 7)
+@@ TEST:
+s = Solution()
+assert s.maxSumMinProduct([1, 2, 3, 2]) == 14
+assert s.maxSumMinProduct([2, 3, 3, 1, 2]) == 18
+assert s.maxSumMinProduct([3, 1, 5, 6, 4, 2]) == 60
+assert s.maxSumMinProduct([5]) == 25
+assert s.maxSumMinProduct([1, 1]) == 2
+assert s.maxSumMinProduct([10**7, 10**7]) == (2 * 10**14) % (10**9 + 7)
+@@ PROBLEM: sum-of-subarray-ranges
+@@ APPROACH:
+A subarray's range is its max minus its min, so the answer is the sum of all maxes minus the sum of all mins. The sum of mins comes from the previous-smaller and next-smaller stack loop. The max of a subarray is the min of the negated array, so the same helper gives the sum of maxes. Two passes of the same loop solve the problem in O(n).
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def subArrayRanges(self, nums: List[int]) -> int:
+        def sum_of_mins(a):
+            st, total = [], 0                # st: indices, values increasing
+            for i in range(len(a) + 1):
+                cur = a[i] if i < len(a) else -inf   # sentinel pops everything
+                while st and a[st[-1]] > cur:
+                    mid = st.pop()
+                    left = st[-1] if st else -1      # previous smaller: top after popping
+                    total += a[mid] * (mid - left) * (i - mid)
+                st.append(i)
+            return total
+
+        # max of a subarray is the min of the negated array
+        return -sum_of_mins([-x for x in nums]) - sum_of_mins(nums)
+@@ TEST:
+s = Solution()
+assert s.subArrayRanges([1, 2, 3]) == 4
+assert s.subArrayRanges([1, 3, 3]) == 4
+assert s.subArrayRanges([4, -2, -3, 4, 1]) == 59
+assert s.subArrayRanges([5]) == 0
+assert s.subArrayRanges([2, 2]) == 0
+assert s.subArrayRanges([3, 1]) == 2
+@@ PATTERN: Stock Span
+@@ SPOT: Use this when you need how many consecutive earlier items are not bigger than the current one, which is how far you can stretch to the left.
+@@ PROBLEM: online-stock-span
+@@ APPROACH:
+Store `(price, span)` pairs on a decreasing stack. A new price swallows every earlier day whose price is less than or equal to it, so pop them and add their spans to today's span of 1. Push the new pair. Each price is pushed and popped at most once, so the cost per call is amortised O(1).
+@@ COMPLEXITY: O(1) amortised per call, O(n) extra space
+@@ CODE:
+class StockSpanner:
+    def __init__(self):
+        self.st = []                         # (price, span), prices strictly decreasing
+
+    def next(self, price: int) -> int:
+        span = 1                             # today counts
+        while self.st and self.st[-1][0] <= price:
+            span += self.st.pop()[1]         # absorb the span of each smaller-or-equal day
+        self.st.append((price, span))
+        return span
+@@ TEST:
+sp = StockSpanner()
+assert [sp.next(p) for p in [100, 80, 60, 70, 60, 75, 85]] == [1, 1, 1, 2, 1, 4, 6]
+sp2 = StockSpanner()
+assert [sp2.next(p) for p in [5, 5, 5]] == [1, 2, 3]
+sp3 = StockSpanner()
+assert [sp3.next(p) for p in [3, 2, 1]] == [1, 1, 1]
+@@ PROBLEM: number-of-subarrays-with-bounded-maximum
+@@ APPROACH:
+The stock span of `nums[i]` counts the subarrays ending at `i` where `nums[i]` is the maximum: `i - p`, with `p` the previous greater index. Those count only if `nums[i]` lies in `[left, right]`. Every subarray that starts at or before `p` has the same maximum as the ones ending at `p`, so add `ways[p]`. The stack finds `p` for each index.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def numSubarrayBoundedMax(self, nums: List[int], left: int, right: int) -> int:
+        st = []                              # indices, values strictly decreasing
+        ways = [0] * len(nums)               # ways[i]: good subarrays ending at i
+        for i, x in enumerate(nums):
+            while st and nums[st[-1]] <= x:  # pop days that are not greater than x
+                st.pop()
+            p = st[-1] if st else -1         # previous greater element
+            span = i - p                     # stock span of x
+            ways[i] = span if left <= x <= right else 0
+            if p >= 0:
+                ways[i] += ways[p]           # longer subarrays keep the maximum of p
+            st.append(i)
+        return sum(ways)
+@@ TEST:
+s = Solution()
+assert s.numSubarrayBoundedMax([2, 1, 4, 3], 2, 3) == 3
+assert s.numSubarrayBoundedMax([2, 9, 2, 5, 6], 2, 8) == 7
+assert s.numSubarrayBoundedMax([1], 1, 1) == 1
+assert s.numSubarrayBoundedMax([1], 2, 3) == 0
+assert s.numSubarrayBoundedMax([3, 3], 3, 3) == 3
+assert s.numSubarrayBoundedMax([5, 4, 3], 3, 4) == 3
+@@ PROBLEM: count-submatrices-with-all-ones
+@@ APPROACH:
+Turn each row into a histogram of consecutive ones above it. For column `j`, count the all-ones rectangles whose bottom-right corner is at `(row, j)`. The stack gives `p`, the previous column with a smaller height, which is the stock span idea. Rectangles within `(p, j]` number `heights[j] * (j - p)`, and those reaching past `p` are already counted in `count[p]`.
+@@ COMPLEXITY: O(m * n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def numSubmat(self, mat: List[List[int]]) -> int:
+        n = len(mat[0])
+        heights = [0] * n
+        answer = 0
+        for row in mat:
+            for j in range(n):
+                heights[j] = heights[j] + 1 if row[j] else 0   # histogram for this row
+            st = []                          # column indices, heights increasing
+            count = [0] * n                  # rectangles with bottom-right corner (row, j)
+            for j in range(n):
+                while st and heights[st[-1]] >= heights[j]:
+                    st.pop()
+                if st:
+                    p = st[-1]               # previous column with a smaller height
+                    count[j] = count[p] + heights[j] * (j - p)
+                else:
+                    count[j] = heights[j] * (j + 1)    # stretches to the left edge
+                st.append(j)
+                answer += count[j]
+        return answer
+@@ TEST:
+s = Solution()
+assert s.numSubmat([[1, 0, 1], [1, 1, 0], [1, 1, 0]]) == 13
+assert s.numSubmat([[0, 1, 1, 0], [0, 1, 1, 1], [1, 1, 1, 0]]) == 24
+assert s.numSubmat([[1]]) == 1
+assert s.numSubmat([[0]]) == 0
+assert s.numSubmat([[1, 1], [1, 1]]) == 9
+assert s.numSubmat([[1, 1, 1]]) == 6
+@@ PATTERN: Largest Rectangle in Histogram
+@@ SPOT: Use this when each bar is the shortest in some rectangle and you need how far that rectangle can stretch to the left and right.
+@@ PROBLEM: largest-rectangle-in-histogram
+@@ APPROACH:
+Keep an increasing stack of bar indices. When a shorter bar at `i` arrives, the popped bar has found its right limit `i`, and its left limit is the new top `st[-1]` (or -1). The widest rectangle with the popped bar as the shortest is `height * (i - left - 1)`. Appending a 0 as a sentinel forces every remaining bar to be popped.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def largestRectangleArea(self, heights: List[int]) -> int:
+        st, best = [], 0                     # st: indices of bars, heights increasing
+        for i, h in enumerate(heights + [0]):    # sentinel 0 flushes the stack
+            while st and heights[st[-1]] > h:    # bar i is the next smaller of the top
+                height = heights[st.pop()]
+                left = st[-1] if st else -1      # previous smaller bar
+                best = max(best, height * (i - left - 1))
+            st.append(i)
+        return best
+@@ TEST:
+s = Solution()
+assert s.largestRectangleArea([2, 1, 5, 6, 2, 3]) == 10
+assert s.largestRectangleArea([2, 4]) == 4
+assert s.largestRectangleArea([1]) == 1
+assert s.largestRectangleArea([0]) == 0
+assert s.largestRectangleArea([2, 2, 2]) == 6
+assert s.largestRectangleArea([6, 2, 5, 4, 5, 1, 6]) == 12
+assert s.largestRectangleArea([1, 2, 3, 4, 5]) == 9
+assert s.largestRectangleArea([5, 4, 3, 2, 1]) == 9
+@@ PROBLEM: maximal-rectangle
+@@ APPROACH:
+Build a histogram row by row: a column grows by 1 on a "1" and resets to 0 on a "0". After each row, the biggest all-ones rectangle that ends on that row is the largest rectangle in that histogram. Reuse the same stack routine for every row and keep the best.
+@@ COMPLEXITY: O(rows * cols) time, O(cols) extra space
+@@ CODE:
+class Solution:
+    def maximalRectangle(self, matrix: List[List[str]]) -> int:
+        if not matrix:
+            return 0
+        heights = [0] * len(matrix[0])
+        best = 0
+        for row in matrix:
+            for j, cell in enumerate(row):
+                heights[j] = heights[j] + 1 if cell == "1" else 0   # histogram for this row
+            best = max(best, self.largest_in_histogram(heights))
+        return best
+
+    def largest_in_histogram(self, heights: List[int]) -> int:
+        st, best = [], 0                     # st: indices of bars, heights increasing
+        for i, h in enumerate(heights + [0]):    # sentinel 0 flushes the stack
+            while st and heights[st[-1]] > h:
+                height = heights[st.pop()]
+                left = st[-1] if st else -1
+                best = max(best, height * (i - left - 1))
+            st.append(i)
+        return best
+@@ TEST:
+s = Solution()
+grid = [["1", "0", "1", "0", "0"], ["1", "0", "1", "1", "1"], ["1", "1", "1", "1", "1"], ["1", "0", "0", "1", "0"]]
+assert s.maximalRectangle(grid) == 6
+assert s.maximalRectangle([["0"]]) == 0
+assert s.maximalRectangle([["1"]]) == 1
+assert s.maximalRectangle([["1", "1"], ["1", "1"]]) == 4
+assert s.maximalRectangle([["0", "0"], ["0", "0"]]) == 0
+assert s.maximalRectangle([["1", "1", "1"]]) == 3
+@@ PROBLEM: maximum-score-of-a-good-subarray
+@@ APPROACH:
+The score is `min * length` of a subarray that must contain index `k`, which is a rectangle in the histogram `nums`. Run the largest-rectangle loop, but only count a rectangle when it covers `k`, that is `left < k < i`. The popped bar is the minimum of that rectangle, and its width is `i - left - 1`.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def maximumScore(self, nums: List[int], k: int) -> int:
+        st, best = [], 0                     # st: indices of bars, heights increasing
+        for i, h in enumerate(nums + [0]):   # sentinel 0 flushes the stack
+            while st and nums[st[-1]] > h:
+                mid = st.pop()               # mid is the minimum of the rectangle
+                left = st[-1] if st else -1  # previous smaller bar
+                if left < k < i:             # the rectangle must contain index k
+                    best = max(best, nums[mid] * (i - left - 1))
+            st.append(i)
+        return best
+@@ TEST:
+s = Solution()
+assert s.maximumScore([1, 4, 3, 7, 4, 5], 3) == 15
+assert s.maximumScore([5, 5, 4, 5, 4, 1, 1, 1], 0) == 20
+assert s.maximumScore([1], 0) == 1
+assert s.maximumScore([3, 3], 0) == 6
+assert s.maximumScore([6, 5, 4, 3], 3) == 12
+assert s.maximumScore([1, 2, 3, 4], 0) == 4
+@@ PATTERN: Min Stack
+@@ SPOT: Use this when a stack must also answer a question about everything beneath its top, such as the minimum or the most frequent value, in O(1).
+@@ PROBLEM: min-stack
+@@ APPROACH:
+Store a pair `(value, min_so_far)` in every entry. The new minimum is the smaller of the pushed value and the minimum of the entry below it. `pop` just removes the top pair, which restores the earlier minimum automatically. `getMin` reads the second item of the top pair.
+@@ COMPLEXITY: O(1) time per operation, O(n) extra space
+@@ CODE:
+class MinStack:
+    def __init__(self):
+        self.st = []                         # (value, min_so_far)
+
+    def push(self, val: int) -> None:
+        m = min(val, self.st[-1][1]) if self.st else val   # min of everything beneath, plus val
+        self.st.append((val, m))
+
+    def pop(self) -> None:
+        self.st.pop()
+
+    def top(self) -> int:
+        return self.st[-1][0]
+
+    def getMin(self) -> int:
+        return self.st[-1][1]                # the top remembers the minimum
+@@ TEST:
+ms = MinStack()
+ms.push(-2)
+ms.push(0)
+ms.push(-3)
+assert ms.getMin() == -3
+ms.pop()
+assert ms.top() == 0
+assert ms.getMin() == -2
+ms2 = MinStack()
+ms2.push(1)
+ms2.push(1)
+ms2.pop()
+assert ms2.getMin() == 1
+ms2.push(5)
+assert ms2.top() == 5
+assert ms2.getMin() == 1
+ms2.pop()
+ms2.pop()
+ms2.push(7)
+assert ms2.getMin() == 7
+@@ PROBLEM: design-a-stack-with-increment-operation
+@@ APPROACH:
+Same idea as Min Stack: keep extra information next to each entry. `inc[i]` is a pending add that applies to `st[0..i]`. `increment` only changes one cell, so it is O(1). On `pop`, add the pending value to the popped item and pass it down to the entry below, so it is still applied to the rest.
+@@ COMPLEXITY: O(1) time per operation, O(maxSize) extra space
+@@ CODE:
+class CustomStack:
+    def __init__(self, maxSize: int):
+        self.max_size = maxSize
+        self.st = []
+        self.inc = []                        # inc[i]: pending add for st[0..i]
+
+    def push(self, x: int) -> None:
+        if len(self.st) < self.max_size:
+            self.st.append(x)
+            self.inc.append(0)
+
+    def pop(self) -> int:
+        if not self.st:
+            return -1
+        add = self.inc.pop()
+        if self.inc:
+            self.inc[-1] += add              # hand the pending add to the entry below
+        return self.st.pop() + add
+
+    def increment(self, k: int, val: int) -> None:
+        i = min(k, len(self.st)) - 1
+        if i >= 0:
+            self.inc[i] += val               # remember it in one cell: O(1)
+@@ TEST:
+cs = CustomStack(3)
+cs.push(1)
+cs.push(2)
+assert cs.pop() == 2
+cs.push(2)
+cs.push(3)
+cs.push(4)
+cs.increment(5, 100)
+cs.increment(2, 100)
+assert cs.pop() == 103
+assert cs.pop() == 202
+assert cs.pop() == 201
+assert cs.pop() == -1
+cs2 = CustomStack(2)
+cs2.increment(1, 5)
+assert cs2.pop() == -1
+cs2.push(1)
+cs2.increment(10, 3)
+cs2.push(2)
+cs2.push(9)
+assert cs2.pop() == 2
+assert cs2.pop() == 4
+@@ PROBLEM: maximum-frequency-stack
+@@ APPROACH:
+The stack must answer "most frequent value, ties by most recent". Keep one stack per frequency: when a value reaches count `f`, push it onto `groups[f]`. The top of `groups[max_freq]` is the answer, and the value stays in the lower groups for its smaller counts. Each entry stores what is needed to answer in O(1), like the Min Stack idea.
+@@ COMPLEXITY: O(1) time per operation, O(n) extra space
+@@ CODE:
+from collections import defaultdict
+
+class FreqStack:
+    def __init__(self):
+        self.freq = defaultdict(int)         # value -> current count
+        self.groups = defaultdict(list)      # count -> stack of values that reached it
+        self.max_freq = 0
+
+    def push(self, val: int) -> None:
+        self.freq[val] += 1
+        f = self.freq[val]
+        self.max_freq = max(self.max_freq, f)
+        self.groups[f].append(val)           # val joins the stack for its new count
+
+    def pop(self) -> int:
+        val = self.groups[self.max_freq].pop()   # most recent among the most frequent
+        self.freq[val] -= 1
+        if not self.groups[self.max_freq]:
+            self.max_freq -= 1               # that frequency level is now empty
+        return val
+@@ TEST:
+fs = FreqStack()
+for v in [5, 7, 5, 7, 4, 5]:
+    fs.push(v)
+assert fs.pop() == 5
+assert fs.pop() == 7
+assert fs.pop() == 5
+assert fs.pop() == 4
+fs2 = FreqStack()
+for v in [1, 1, 1]:
+    fs2.push(v)
+assert [fs2.pop(), fs2.pop(), fs2.pop()] == [1, 1, 1]
+fs3 = FreqStack()
+for v in [1, 2, 3]:
+    fs3.push(v)
+assert [fs3.pop(), fs3.pop(), fs3.pop()] == [3, 2, 1]

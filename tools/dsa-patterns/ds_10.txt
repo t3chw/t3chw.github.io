@@ -1,0 +1,621 @@
+@@ PATTERN: Min Heap
+@@ SPOT: Use this when you keep asking for the smallest item so far while new items are pushed in between the asks.
+@@ PROBLEM: final-array-state-after-k-multiplication-operations-i
+@@ APPROACH:
+Each round needs the smallest number, and its value changes after the round. That is a push and pop on a min heap. Store (value, index) so that equal values are popped in index order, as the problem asks. Pop the smallest, multiply it, and push it back with `heappush`. Then write the heap contents back into their original positions.
+@@ COMPLEXITY: O((n + k) log n) time, O(n) extra space
+@@ CODE:
+import heapq
+
+class Solution:
+    def getFinalState(self, nums: List[int], k: int, multiplier: int) -> List[int]:
+        heap = [(x, i) for i, x in enumerate(nums)]   # (value, index): ties pop the smaller index first
+        heapq.heapify(heap)                           # build the min heap in O(n)
+        for _ in range(k):
+            x, i = heapq.heappop(heap)                # smallest value so far
+            heapq.heappush(heap, (x * multiplier, i)) # it goes back with its new value
+        result = [0] * len(nums)
+        for x, i in heap:
+            result[i] = x                             # heap order is not array order, so use the index
+        return result
+@@ TEST:
+s = Solution()
+assert s.getFinalState([2, 1, 3, 5, 6], 5, 2) == [8, 4, 6, 5, 6]
+assert s.getFinalState([1, 2], 3, 4) == [16, 8]
+assert s.getFinalState([5], 3, 2) == [40]
+assert s.getFinalState([1, 1], 1, 3) == [3, 1]
+assert s.getFinalState([4, 2, 2], 2, 5) == [4, 10, 10]
+@@ PROBLEM: seat-reservation-manager
+@@ APPROACH:
+This is a design question where `reserve` always needs the smallest free seat. Keep all free seat numbers in a min heap. `reserve` is `heappop`, and `unreserve` is `heappush` of the seat that came back. The heap is the whole data structure, so each call costs O(log n).
+@@ COMPLEXITY: O(n) to build, O(log n) per reserve or unreserve, O(n) space
+@@ CODE:
+import heapq
+
+class SeatManager:
+    def __init__(self, n: int):
+        self.free = list(range(1, n + 1))    # every seat starts free
+        heapq.heapify(self.free)             # min heap of free seat numbers
+
+    def reserve(self) -> int:
+        return heapq.heappop(self.free)      # the smallest free seat
+
+    def unreserve(self, seatNumber: int) -> None:
+        heapq.heappush(self.free, seatNumber)   # the seat becomes free again
+@@ TEST:
+m = SeatManager(5)
+assert m.reserve() == 1
+assert m.reserve() == 2
+m.unreserve(2)
+assert m.reserve() == 2
+assert m.reserve() == 3
+assert m.reserve() == 4
+assert m.reserve() == 5
+m.unreserve(5)
+assert m.reserve() == 5
+m = SeatManager(1)
+assert m.reserve() == 1
+m.unreserve(1)
+assert m.reserve() == 1
+m = SeatManager(3)
+assert [m.reserve(), m.reserve(), m.reserve()] == [1, 2, 3]
+m.unreserve(3)
+m.unreserve(1)
+assert m.reserve() == 1
+assert m.reserve() == 3
+@@ PROBLEM: trapping-rain-water-ii
+@@ APPROACH:
+Water inside the grid is held in by the lowest wall around it. Put the whole border in a min heap and always pop the lowest border cell. Look at its unseen neighbours: a neighbour lower than the popped cell holds `h - height` water. The neighbour then joins the border with height `max(h, height)`. Popping the lowest wall first is what guarantees the water level is right.
+@@ COMPLEXITY: O(m n log(m n)) time, O(m n) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def trapRainWater(self, heightMap: List[List[int]]) -> int:
+        rows, cols = len(heightMap), len(heightMap[0])
+        heap = []                                 # min heap of border cells: (height, row, col)
+        seen = [[False] * cols for _ in range(rows)]
+        for r in range(rows):
+            for c in range(cols):
+                if r in (0, rows - 1) or c in (0, cols - 1):
+                    heapq.heappush(heap, (heightMap[r][c], r, c))
+                    seen[r][c] = True
+        water = 0
+        while heap:
+            h, r, c = heapq.heappop(heap)         # the lowest wall on the current border
+            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):
+                if 0 <= nr < rows and 0 <= nc < cols and not seen[nr][nc]:
+                    seen[nr][nc] = True
+                    water += max(0, h - heightMap[nr][nc])    # the wall h holds this much water
+                    heapq.heappush(heap, (max(h, heightMap[nr][nc]), nr, nc))
+        return water
+@@ TEST:
+s = Solution()
+assert s.trapRainWater([[1, 4, 3, 1, 3, 2], [3, 2, 1, 3, 2, 4], [2, 3, 3, 2, 3, 1]]) == 4
+assert s.trapRainWater([[3, 3, 3, 3, 3], [3, 2, 2, 2, 3], [3, 2, 1, 2, 3], [3, 2, 2, 2, 3], [3, 3, 3, 3, 3]]) == 10
+assert s.trapRainWater([[5, 1, 5]]) == 0
+assert s.trapRainWater([[3, 3, 3], [3, 1, 3], [3, 3, 3]]) == 2
+assert s.trapRainWater([[5, 5, 5], [5, 1, 5], [5, 0, 5]]) == 0
+@@ PATTERN: Max Heap
+@@ SPOT: Use this when you keep asking for the largest item so far, so you store negated values in Python's min heap.
+@@ PROBLEM: last-stone-weight
+@@ APPROACH:
+Every round smashes the two heaviest stones, so you need the largest value again and again. Store `-stone` so `heappop` returns the heaviest. Pop twice, negate both, and push the difference back if there is one. The loop ends with at most one stone left.
+@@ COMPLEXITY: O(n log n) time, O(n) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def lastStoneWeight(self, stones: List[int]) -> int:
+        heap = [-s for s in stones]               # max heap: store negatives
+        heapq.heapify(heap)
+        while len(heap) > 1:
+            first = -heapq.heappop(heap)          # heaviest stone
+            second = -heapq.heappop(heap)         # second heaviest
+            if first != second:
+                heapq.heappush(heap, -(first - second))   # the leftover goes back in
+        return -heap[0] if heap else 0
+@@ TEST:
+s = Solution()
+assert s.lastStoneWeight([2, 7, 4, 1, 8, 1]) == 1
+assert s.lastStoneWeight([1]) == 1
+assert s.lastStoneWeight([2, 2]) == 0
+assert s.lastStoneWeight([3, 3, 3]) == 3
+assert s.lastStoneWeight([10, 4, 2, 10]) == 2
+@@ PROBLEM: reorganize-string
+@@ APPROACH:
+To avoid equal neighbours, always place the letter with the most copies left. Keep (negated count, letter) in a max heap. After placing a letter, hold it out for one turn so it cannot be placed twice in a row, then push it back with one fewer copy. If the heap is empty while a letter is still held, no valid order exists and the answer is an empty string.
+@@ COMPLEXITY: O(n log a) time where a is the alphabet size, O(n) space for the answer
+@@ CODE:
+import heapq
+from collections import Counter
+
+class Solution:
+    def reorganizeString(self, s: str) -> str:
+        heap = [(-count, ch) for ch, count in Counter(s).items()]   # max heap by count
+        heapq.heapify(heap)
+        result = []
+        held = None                                # the letter we just used, waiting one turn
+        while heap or held:
+            if not heap:
+                return ""                          # only the held letter is left, it would touch itself
+            count, ch = heapq.heappop(heap)        # letter with the most copies left
+            result.append(ch)
+            if held:
+                heapq.heappush(heap, held)         # the previous letter may be used again
+                held = None
+            if count + 1 < 0:                      # counts are negative: still has copies left
+                held = (count + 1, ch)
+        return "".join(result)
+@@ TEST:
+s = Solution()
+def valid(src):
+    out = s.reorganizeString(src)
+    return len(out) == len(src) and sorted(out) == sorted(src) and all(a != b for a, b in zip(out, out[1:]))
+assert s.reorganizeString("aab") == "aba"
+assert s.reorganizeString("aaab") == ""
+assert s.reorganizeString("a") == "a"
+assert valid("vvvlo")
+assert valid("aaaabbc")
+assert valid("abcabc")
+assert s.reorganizeString("bbbbbaaa") == ""
+@@ PROBLEM: minimum-number-of-refueling-stops
+@@ APPROACH:
+Drive as far as the fuel allows, and remember the fuel of every station you pass in a max heap. You do not need to decide at the station. When you cannot go further, pop the biggest tank you passed and act as if you had refuelled there. Each pop costs one stop, and the greedy choice of the biggest tank gives the fewest stops. If the heap is empty and you are still short, return -1.
+@@ COMPLEXITY: O(n log n) time, O(n) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def minRefuelStops(self, target: int, startFuel: int, stations: List[List[int]]) -> int:
+        reach = startFuel                          # farthest position we can get to so far
+        passed = []                                # max heap (negated) of fuel at stations we could stop at
+        stops = i = 0
+        while reach < target:
+            while i < len(stations) and stations[i][0] <= reach:
+                heapq.heappush(passed, -stations[i][1])   # in hindsight we may refuel here
+                i += 1
+            if not passed:
+                return -1                          # stuck: no station left to use
+            reach += -heapq.heappop(passed)        # take the biggest tank we passed
+            stops += 1
+        return stops
+@@ TEST:
+s = Solution()
+assert s.minRefuelStops(1, 1, []) == 0
+assert s.minRefuelStops(100, 1, [[10, 100]]) == -1
+assert s.minRefuelStops(100, 10, [[10, 60], [20, 30], [30, 30], [60, 40]]) == 2
+assert s.minRefuelStops(100, 50, [[25, 50], [50, 50]]) == 1
+assert s.minRefuelStops(100, 25, [[25, 25], [50, 25], [75, 25]]) == 3
+@@ PATTERN: Kth Largest/Smallest
+@@ SPOT: Use this when the question asks for the kth largest or kth smallest value and you do not need the full sorted order.
+@@ PROBLEM: kth-largest-element-in-a-stream
+@@ APPROACH:
+Keep a min heap that holds only the k largest numbers seen so far. Its top is the smallest of those winners, which is exactly the kth largest. After each `heappush`, if the heap has more than k items, pop the smallest. Each `add` then costs O(log k), and no sorting is ever done.
+@@ COMPLEXITY: O(log k) per add, O(k) space
+@@ CODE:
+import heapq
+
+class KthLargest:
+    def __init__(self, k: int, nums: List[int]):
+        self.k = k
+        self.heap = []                          # min heap of the k largest numbers so far
+        for x in nums:
+            self.add(x)
+
+    def add(self, val: int) -> int:
+        heapq.heappush(self.heap, val)
+        if len(self.heap) > self.k:
+            heapq.heappop(self.heap)            # kick out the smallest
+        return self.heap[0]                     # smallest of the k winners = kth largest
+@@ TEST:
+k = KthLargest(3, [4, 5, 8, 2])
+assert k.add(3) == 4
+assert k.add(5) == 5
+assert k.add(10) == 5
+assert k.add(9) == 8
+assert k.add(4) == 8
+k = KthLargest(1, [])
+assert k.add(-3) == -3
+assert k.add(-2) == -2
+assert k.add(-4) == -2
+assert k.add(0) == 0
+assert k.add(4) == 4
+k = KthLargest(2, [0])
+assert k.add(-1) == -1
+assert k.add(1) == 0
+assert k.add(-2) == 0
+assert k.add(3) == 1
+@@ PROBLEM: kth-largest-element-in-an-array
+@@ APPROACH:
+This is the same idea as the stream version, applied to a list. Push each number into a min heap and pop whenever the size passes k. What remains is the k largest numbers, and `heap[0]` is the kth largest. This is O(n log k), better than sorting when k is small. For the kth smallest you would keep a max heap of size k instead.
+@@ COMPLEXITY: O(n log k) time, O(k) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def findKthLargest(self, nums: List[int], k: int) -> int:
+        heap = []                               # min heap holding the k largest numbers
+        for x in nums:
+            heapq.heappush(heap, x)
+            if len(heap) > k:
+                heapq.heappop(heap)             # drop the smallest
+        return heap[0]                          # the kth largest
+@@ TEST:
+s = Solution()
+assert s.findKthLargest([3, 2, 1, 5, 6, 4], 2) == 5
+assert s.findKthLargest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4) == 4
+assert s.findKthLargest([1], 1) == 1
+assert s.findKthLargest([7, 7, 7], 2) == 7
+assert s.findKthLargest([-1, -3, -2], 3) == -3
+@@ PROBLEM: query-kth-smallest-trimmed-number
+@@ APPROACH:
+Each query asks for the kth smallest trimmed number, with ties broken by the smaller index. For the kth smallest, flip the idea: keep a max heap of size k by pushing negated keys. The key is `(trimmed value, index)`, so the tuple itself settles ties. After pushing, pop when the size passes k. The top is then the largest of the k smallest, which is the kth smallest.
+@@ COMPLEXITY: O(q n log k) time, O(k) extra space
+@@ CODE:
+import heapq
+
+class Solution:
+    def smallestTrimmedNumbers(self, nums: List[str], queries: List[List[int]]) -> List[int]:
+        answer = []
+        for k, trim in queries:
+            heap = []                                     # max heap (negated) of the k smallest keys
+            for i, num in enumerate(nums):
+                value = int(num[-trim:])                  # keep the rightmost `trim` digits
+                heapq.heappush(heap, (-value, -i))        # (value, index) compared as a pair
+                if len(heap) > k:
+                    heapq.heappop(heap)                   # drop the largest key
+            answer.append(-heap[0][1])                    # top = kth smallest, read its index
+        return answer
+@@ TEST:
+s = Solution()
+assert s.smallestTrimmedNumbers(["102", "473", "251", "814"], [[1, 1], [2, 3], [4, 2], [1, 2]]) == [2, 2, 1, 0]
+assert s.smallestTrimmedNumbers(["24", "37", "96", "04"], [[2, 1], [2, 2]]) == [3, 0]
+assert s.smallestTrimmedNumbers(["5"], [[1, 1]]) == [0]
+assert s.smallestTrimmedNumbers(["11", "11", "11"], [[3, 2], [1, 2]]) == [2, 0]
+@@ PATTERN: Top K Elements
+@@ SPOT: Use this when you need the K best items (most frequent, closest, highest scoring), not only the Kth one.
+@@ PROBLEM: top-k-frequent-elements
+@@ APPROACH:
+Count each value first, then pick the K counts that are largest. Push (count, value) into a min heap and pop when the size passes k, so the least frequent candidate is kicked out. What is left in the heap is the top K. This is O(n log k) instead of sorting all the distinct values.
+@@ COMPLEXITY: O(n log k) time, O(n) space
+@@ CODE:
+import heapq
+from collections import Counter
+
+class Solution:
+    def topKFrequent(self, nums: List[int], k: int) -> List[int]:
+        heap = []                                      # min heap of (count, value), at most k items
+        for value, count in Counter(nums).items():
+            heapq.heappush(heap, (count, value))
+            if len(heap) > k:
+                heapq.heappop(heap)                    # kick out the least frequent
+        return [value for count, value in heap]
+@@ TEST:
+s = Solution()
+assert sorted(s.topKFrequent([1, 1, 1, 2, 2, 3], 2)) == [1, 2]
+assert s.topKFrequent([1], 1) == [1]
+assert sorted(s.topKFrequent([4, 4, 4, 5, 5, 6, 6, 6, 6, 7], 2)) == [4, 6]
+assert s.topKFrequent([-1, -1, -2], 1) == [-1]
+assert sorted(s.topKFrequent([3, 3, 1, 1, 2], 3)) == [1, 2, 3]
+@@ PROBLEM: k-closest-points-to-origin
+@@ APPROACH:
+The K closest points are the K smallest distances, so keep a max heap of size k. Push the negated squared distance, and pop when the size passes k. The popped point is the farthest of the current K, so it cannot be a winner. Squared distance gives the same order as the real distance, so no square root is needed.
+@@ COMPLEXITY: O(n log k) time, O(k) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def kClosest(self, points: List[List[int]], k: int) -> List[List[int]]:
+        heap = []                                      # max heap (negated distance) of the k closest points
+        for x, y in points:
+            dist = x * x + y * y                       # squared distance, same order as the real one
+            heapq.heappush(heap, (-dist, x, y))
+            if len(heap) > k:
+                heapq.heappop(heap)                    # drop the farthest point
+        return [[x, y] for _, x, y in heap]
+@@ TEST:
+s = Solution()
+assert s.kClosest([[1, 3], [-2, 2]], 1) == [[-2, 2]]
+assert sorted(s.kClosest([[3, 3], [5, -1], [-2, 4]], 2)) == [[-2, 4], [3, 3]]
+assert sorted(s.kClosest([[1, 1], [2, 2]], 2)) == [[1, 1], [2, 2]]
+assert sorted(s.kClosest([[1, 1], [1, 1], [3, 3]], 2)) == [[1, 1], [1, 1]]
+assert s.kClosest([[0, 1], [1, 0]], 1) in ([[0, 1]], [[1, 0]])
+@@ PROBLEM: maximum-performance-of-a-team
+@@ APPROACH:
+Sort engineers by efficiency from high to low. When you reach an engineer, that engineer's efficiency is the smallest in the team, so only speed is left to choose. Keep the K largest speeds in a min heap with a running sum, and pop the slowest when the size passes k. The performance for this step is `speed_sum * eff`, and the answer is the best step.
+@@ COMPLEXITY: O(n log n) time, O(n) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def maxPerformance(self, n: int, speed: List[int], efficiency: List[int], k: int) -> int:
+        engineers = sorted(zip(efficiency, speed), reverse=True)   # best efficiency first
+        heap = []                                  # min heap of the k biggest speeds so far
+        speed_sum = best = 0
+        for eff, spd in engineers:
+            heapq.heappush(heap, spd)
+            speed_sum += spd
+            if len(heap) > k:
+                speed_sum -= heapq.heappop(heap)   # drop the slowest engineer
+            best = max(best, speed_sum * eff)      # eff is the lowest efficiency in this team
+        return best % (10 ** 9 + 7)
+@@ TEST:
+s = Solution()
+assert s.maxPerformance(6, [2, 10, 3, 1, 5, 8], [5, 4, 3, 9, 7, 2], 2) == 60
+assert s.maxPerformance(6, [2, 10, 3, 1, 5, 8], [5, 4, 3, 9, 7, 2], 3) == 68
+assert s.maxPerformance(6, [2, 10, 3, 1, 5, 8], [5, 4, 3, 9, 7, 2], 4) == 72
+assert s.maxPerformance(1, [5], [3], 1) == 15
+assert s.maxPerformance(3, [5, 1, 4], [1, 10, 3], 1) == 12
+assert s.maxPerformance(2, [10 ** 9, 10 ** 9], [10 ** 9, 10 ** 9], 2) == (2 * 10 ** 9 * 10 ** 9) % (10 ** 9 + 7)
+@@ PATTERN: K-way Merge
+@@ SPOT: Use this when you have K sorted lists or rows and need their merged order, or the smallest values across all of them.
+@@ PROBLEM: kth-smallest-element-in-a-sorted-matrix
+@@ APPROACH:
+Every row is a sorted list, so this is a K-way merge of the rows. Put the first element of each row in a min heap as (value, row, col). Pop the smallest, then push the next element of the same row. After k - 1 pops, the top of the heap is the kth smallest. The heap never holds more than one entry per row.
+@@ COMPLEXITY: O(k log min(n, k)) time, O(min(n, k)) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def kthSmallest(self, matrix: List[List[int]], k: int) -> int:
+        n = len(matrix)
+        heap = [(matrix[r][0], r, 0) for r in range(min(n, k))]   # head of each row: (value, row, col)
+        heapq.heapify(heap)
+        for _ in range(k - 1):
+            value, r, c = heapq.heappop(heap)                     # smallest head
+            if c + 1 < n:
+                heapq.heappush(heap, (matrix[r][c + 1], r, c + 1))   # refill from the same row
+        return heap[0][0]
+@@ TEST:
+s = Solution()
+assert s.kthSmallest([[1, 5, 9], [10, 11, 13], [12, 13, 15]], 8) == 13
+assert s.kthSmallest([[-5]], 1) == -5
+assert [s.kthSmallest([[1, 2], [1, 3]], k) for k in (1, 2, 3, 4)] == [1, 1, 2, 3]
+assert s.kthSmallest([[1, 2], [3, 4]], 4) == 4
+assert s.kthSmallest([[1, 3, 5], [2, 4, 6], [3, 5, 7]], 5) == 4
+@@ PROBLEM: merge-k-sorted-lists
+@@ APPROACH:
+Put the head node of each list in a min heap. Pop the smallest node, attach it to the answer, and push that node's next node. The list index `i` sits between the value and the node, so two equal values never make Python compare ListNode objects. The heap holds at most k nodes, so each of the N nodes costs O(log k).
+@@ COMPLEXITY: O(N log k) time for N nodes in total, O(k) extra space
+@@ CODE:
+import heapq
+
+class Solution:
+    def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
+        heap = [(node.val, i, node) for i, node in enumerate(lists) if node]   # head of each list
+        heapq.heapify(heap)                          # list id i breaks ties, nodes are never compared
+        dummy = tail = ListNode()
+        while heap:
+            _, i, node = heapq.heappop(heap)         # smallest head among all lists
+            tail.next = node
+            tail = node
+            if node.next:
+                heapq.heappush(heap, (node.next.val, i, node.next))   # refill from the same list
+        return dummy.next
+@@ TEST:
+s = Solution()
+assert to_list(s.mergeKLists([ll([1, 4, 5]), ll([1, 3, 4]), ll([2, 6])])) == [1, 1, 2, 3, 4, 4, 5, 6]
+assert s.mergeKLists([]) is None
+assert s.mergeKLists([None]) is None
+assert to_list(s.mergeKLists([ll([1]), None, ll([0])])) == [0, 1]
+assert to_list(s.mergeKLists([ll([2, 2]), ll([2])])) == [2, 2, 2]
+assert to_list(s.mergeKLists([ll([-3, -1]), ll([-2, 5, 9])])) == [-3, -2, -1, 5, 9]
+@@ PROBLEM: smallest-range-covering-elements-from-k-lists
+@@ APPROACH:
+A range that covers all K lists must contain one number from each list. Keep one candidate per list in a min heap, and track the largest candidate in `current_max`. The heap top is the smallest candidate, so `[low, current_max]` is the best range for this moment. To shrink the range, advance the list that holds the smallest candidate. Stop when that list runs out.
+@@ COMPLEXITY: O(N log k) time for N numbers in total, O(k) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def smallestRange(self, nums: List[List[int]]) -> List[int]:
+        heap = [(row[0], i, 0) for i, row in enumerate(nums)]   # one candidate per list
+        heapq.heapify(heap)
+        current_max = max(row[0] for row in nums)               # largest candidate right now
+        best = [heap[0][0], current_max]
+        while True:
+            low, i, j = heapq.heappop(heap)                     # smallest candidate
+            if current_max - low < best[1] - best[0]:
+                best = [low, current_max]                       # a tighter range that covers all lists
+            if j + 1 == len(nums[i]):
+                return best                                     # this list is used up, no more full ranges
+            nxt = nums[i][j + 1]
+            current_max = max(current_max, nxt)
+            heapq.heappush(heap, (nxt, i, j + 1))               # refill from the same list
+@@ TEST:
+s = Solution()
+assert s.smallestRange([[4, 10, 15, 24, 26], [0, 9, 12, 20], [5, 18, 22, 30]]) == [20, 24]
+assert s.smallestRange([[1, 2, 3], [1, 2, 3], [1, 2, 3]]) == [1, 1]
+assert s.smallestRange([[1, 2, 3]]) == [1, 1]
+assert s.smallestRange([[1], [5]]) == [1, 5]
+assert s.smallestRange([[-5, 0], [-3, 10]]) == [-5, -3]
+@@ PATTERN: Two Heaps
+@@ SPOT: Use this when two groups need their own best-first order at once, such as items still waiting and items ready now.
+@@ PROBLEM: the-number-of-the-smallest-unoccupied-chair
+@@ APPROACH:
+Two heaps run side by side. `free` holds the empty chair numbers, smallest first. `busy` holds (leave time, chair) for seated friends, earliest leaver first. Handle friends in arrival order. Before seating one, move every chair whose friend has left from `busy` to `free`. Then `heappop(free)` is the smallest empty chair.
+@@ COMPLEXITY: O(n log n) time, O(n) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def smallestChair(self, times: List[List[int]], targetFriend: int) -> int:
+        order = sorted(range(len(times)), key=lambda i: times[i][0])   # friends by arrival time
+        free = list(range(len(times)))              # heap 1: empty chairs, smallest number first
+        heapq.heapify(free)
+        busy = []                                   # heap 2: (leave time, chair) of seated friends
+        for i in order:
+            arrive, leave = times[i]
+            while busy and busy[0][0] <= arrive:    # these friends have left, their chairs are empty
+                heapq.heappush(free, heapq.heappop(busy)[1])
+            chair = heapq.heappop(free)             # smallest empty chair
+            if i == targetFriend:
+                return chair
+            heapq.heappush(busy, (leave, chair))
+@@ TEST:
+s = Solution()
+assert s.smallestChair([[1, 4], [2, 3], [4, 6]], 1) == 1
+assert s.smallestChair([[3, 10], [1, 5], [2, 6]], 0) == 2
+assert s.smallestChair([[1, 2]], 0) == 0
+assert s.smallestChair([[1, 2], [3, 4]], 1) == 0
+assert s.smallestChair([[1, 4], [4, 6]], 1) == 0
+@@ PROBLEM: total-cost-to-hire-k-workers
+@@ APPROACH:
+Only the first `candidates` and the last `candidates` workers can be hired, so give each end its own min heap, `front` and `back`. Each round, compare the two tops and hire the cheaper one. A tie goes to `front`, which holds the smaller index. After a hire, slide that end inward by pushing the next unseen worker into the same heap.
+@@ COMPLEXITY: O((c + k) log c) time for c = candidates, O(c) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def totalCost(self, costs: List[int], k: int, candidates: int) -> int:
+        n = len(costs)
+        front = costs[:candidates]                       # heap 1: first candidates workers
+        back = costs[max(candidates, n - candidates):]   # heap 2: last candidates workers
+        heapq.heapify(front)
+        heapq.heapify(back)
+        lo, hi = candidates, n - candidates - 1          # next unseen worker from each end
+        total = 0
+        for _ in range(k):
+            if not back or (front and front[0] <= back[0]):   # ties go to the smaller index
+                total += heapq.heappop(front)
+                if lo <= hi:
+                    heapq.heappush(front, costs[lo])          # slide the front window inward
+                    lo += 1
+            else:
+                total += heapq.heappop(back)
+                if lo <= hi:
+                    heapq.heappush(back, costs[hi])           # slide the back window inward
+                    hi -= 1
+        return total
+@@ TEST:
+s = Solution()
+assert s.totalCost([17, 12, 10, 2, 7, 2, 11, 20, 8], 3, 4) == 11
+assert s.totalCost([1, 2, 4, 1], 3, 3) == 4
+assert s.totalCost([5], 1, 1) == 5
+assert s.totalCost([3, 3], 2, 1) == 6
+assert s.totalCost([9, 1, 8, 2, 7, 3], 2, 1) == 10
+@@ PROBLEM: ipo
+@@ APPROACH:
+Use two heaps for two groups of projects. `locked` is a min heap by capital for projects you cannot afford yet. `ready` is a max heap by profit for projects you can afford now. Each round, move every project whose capital is at most `w` from `locked` to `ready`. Then take the most profitable ready project and add its profit to `w`, which may unlock more.
+@@ COMPLEXITY: O((n + k) log n) time, O(n) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def findMaximizedCapital(self, k: int, w: int, profits: List[int], capital: List[int]) -> int:
+        locked = list(zip(capital, profits))        # heap 1: not affordable yet, cheapest first
+        heapq.heapify(locked)
+        ready = []                                  # heap 2: affordable, biggest profit first (negated)
+        for _ in range(k):
+            while locked and locked[0][0] <= w:     # move newly affordable projects across
+                cap, profit = heapq.heappop(locked)
+                heapq.heappush(ready, -profit)
+            if not ready:
+                break                               # nothing affordable, stop early
+            w += -heapq.heappop(ready)              # take the most profitable project
+        return w
+@@ TEST:
+s = Solution()
+assert s.findMaximizedCapital(2, 0, [1, 2, 3], [0, 1, 1]) == 4
+assert s.findMaximizedCapital(3, 0, [1, 2, 3], [0, 1, 2]) == 6
+assert s.findMaximizedCapital(1, 0, [1], [2]) == 0
+assert s.findMaximizedCapital(2, 100, [5, 1, 3], [200, 0, 50]) == 104
+assert s.findMaximizedCapital(5, 0, [4, 2], [0, 0]) == 6
+@@ PATTERN: Median from Data Stream
+@@ SPOT: Use this when numbers keep arriving (or a window slides) and you must report the median after every change.
+@@ PROBLEM: find-median-from-data-stream
+@@ APPROACH:
+Split the numbers into a lower half in a max heap `lo` (negated) and an upper half in a min heap `hi`. In `addNum`, push into `lo`, move its biggest to `hi`, and move one back if `hi` got bigger. This keeps `lo` the same size as `hi` or one larger, and every number in `lo` is at most every number in `hi`. The median is then at the tops, so `findMedian` is O(1).
+@@ COMPLEXITY: O(log n) per addNum, O(1) per findMedian, O(n) space
+@@ CODE:
+import heapq
+
+class MedianFinder:
+    def __init__(self):
+        self.lo = []                                   # max heap (negated): the lower half
+        self.hi = []                                   # min heap: the upper half
+
+    def addNum(self, num: int) -> None:
+        heapq.heappush(self.lo, -num)
+        heapq.heappush(self.hi, -heapq.heappop(self.lo))     # move the biggest of lo up to hi
+        if len(self.hi) > len(self.lo):                      # keep lo the same size or one bigger
+            heapq.heappush(self.lo, -heapq.heappop(self.hi))
+
+    def findMedian(self) -> float:
+        if len(self.lo) > len(self.hi):
+            return float(-self.lo[0])                        # odd count: the top of lo
+        return (-self.lo[0] + self.hi[0]) / 2                # even count: average of the two tops
+@@ TEST:
+m = MedianFinder()
+m.addNum(1)
+m.addNum(2)
+assert m.findMedian() == 1.5
+m.addNum(3)
+assert m.findMedian() == 2.0
+m = MedianFinder()
+m.addNum(5)
+assert m.findMedian() == 5
+m.addNum(5)
+assert m.findMedian() == 5
+m.addNum(1)
+assert m.findMedian() == 5
+m.addNum(1)
+assert m.findMedian() == 3
+m = MedianFinder()
+m.addNum(3)
+assert m.findMedian() == 3
+m.addNum(2)
+assert m.findMedian() == 2.5
+m.addNum(1)
+assert m.findMedian() == 2
+m.addNum(-10)
+assert m.findMedian() == 1.5
+@@ PROBLEM: sliding-window-median
+@@ APPROACH:
+Use the same two heaps, `small` (a negated max heap) and `large`, but now numbers also leave the window. A heap cannot remove from the middle, so record the leaver in `buried` and only pop it when it reaches a heap top (`prune`). Track the live size of each heap separately, because the real sizes include buried values. After each add and remove, `rebalance` so `small` is the same size as `large` or one larger. The median is then read from the tops.
+@@ COMPLEXITY: O(n log k) time, O(n) space
+@@ CODE:
+import heapq
+from collections import defaultdict
+
+class Solution:
+    def medianSlidingWindow(self, nums: List[int], k: int) -> List[float]:
+        small, large = [], []                  # small: max heap (negated) lower half, large: min heap upper half
+        buried = defaultdict(int)              # numbers that left the window but are still inside a heap
+        size = [0, 0]                          # live sizes of small and large
+
+        def prune(heap, sign):                 # pop buried numbers sitting on top of a heap
+            while heap and buried[sign * heap[0]] > 0:
+                buried[sign * heap[0]] -= 1
+                heapq.heappop(heap)
+
+        result = []
+        for i, x in enumerate(nums):
+            if not small or x <= -small[0]:    # add x to the half it belongs to
+                heapq.heappush(small, -x); size[0] += 1
+            else:
+                heapq.heappush(large, x); size[1] += 1
+            if i >= k:                         # the oldest number leaves the window
+                out = nums[i - k]
+                buried[out] += 1               # lazy delete: remove it later
+                size[0 if out <= -small[0] else 1] -= 1
+                prune(small, -1); prune(large, 1)
+            if size[0] > size[1] + 1:          # rebalance: move one top across
+                heapq.heappush(large, -heapq.heappop(small)); size[0] -= 1; size[1] += 1
+                prune(small, -1)
+            elif size[0] < size[1]:
+                heapq.heappush(small, -heapq.heappop(large)); size[1] -= 1; size[0] += 1
+                prune(large, 1)
+            if i >= k - 1:
+                result.append(float(-small[0]) if k % 2 else (-small[0] + large[0]) / 2)
+        return result
+@@ TEST:
+s = Solution()
+assert s.medianSlidingWindow([1, 3, -1, -3, 5, 3, 6, 7], 3) == [1, -1, -1, 3, 5, 6]
+assert s.medianSlidingWindow([1, 2, 3, 4, 2, 3, 1, 4, 2], 3) == [2, 3, 3, 3, 2, 3, 2]
+assert s.medianSlidingWindow([5, 6], 1) == [5, 6]
+assert s.medianSlidingWindow([1, 2, 3, 4], 2) == [1.5, 2.5, 3.5]
+assert s.medianSlidingWindow([2147483647, 2147483647], 2) == [2147483647.0]
+assert s.medianSlidingWindow([1, 1, 1, 1], 2) == [1, 1, 1]
+assert s.medianSlidingWindow([4, 3, 2, 1], 4) == [2.5]

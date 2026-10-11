@@ -1,0 +1,1654 @@
+@@ PATTERN: BFS
+@@ SPOT: Use this when you need the fewest steps in an unweighted graph or grid, or when nodes must be handled level by level.
+@@ PROBLEM: nearest-exit-from-entrance-in-maze
+@@ APPROACH:
+The maze is a grid graph where each open cell joins its four open neighbours, so the fewest steps to an exit is a BFS from the entrance.
+The queue holds (row, col, steps). The line maze[nr][nc] = '+' turns a cell into a wall when it is pushed, which is the seen mark.
+The first open border cell found (other than the entrance, which is already marked) is reached by the fewest steps, so return steps + 1 at once.
+If the queue empties without reaching a border cell, there is no exit.
+@@ COMPLEXITY: O(rows * cols) time and space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def nearestExit(self, maze: List[List[str]], entrance: List[int]) -> int:
+        rows, cols = len(maze), len(maze[0])
+        q = deque([(entrance[0], entrance[1], 0)])
+        maze[entrance[0]][entrance[1]] = '+'         # the entrance is seen, so it never counts as an exit
+        while q:
+            r, c, steps = q.popleft()
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and maze[nr][nc] == '.':
+                    if nr in (0, rows - 1) or nc in (0, cols - 1):
+                        return steps + 1             # BFS: the first exit found is the nearest
+                    maze[nr][nc] = '+'               # mark seen when pushed
+                    q.append((nr, nc, steps + 1))
+        return -1
+@@ TEST:
+s = Solution()
+assert s.nearestExit([["+", "+", ".", "+"], [".", ".", ".", "+"], ["+", "+", "+", "."]], [1, 2]) == 1
+assert s.nearestExit([["+", "+", "+"], [".", ".", "."], ["+", "+", "+"]], [1, 0]) == 2
+assert s.nearestExit([[".", "+"]], [0, 0]) == -1
+assert s.nearestExit([["."]], [0, 0]) == -1
+assert s.nearestExit([[".", "."]], [0, 0]) == 1
+maze = [["+", "+", "+", "+", "+"],
+        ["+", ".", ".", ".", "+"],
+        ["+", ".", "+", ".", "+"],
+        ["+", ".", "+", ".", "."],
+        ["+", "+", "+", "+", "+"]]
+assert s.nearestExit(maze, [1, 1]) == 5
+@@ PROBLEM: 01-matrix
+@@ APPROACH:
+Searching from every 1 for its nearest 0 would repeat work. Reverse it: start from all the 0 cells together (multi-source BFS) and let the distance spread outwards.
+Every 0 is queued with distance 0 and every 1 starts as -1, meaning not seen yet.
+The first time a cell is reached, dist[nr][nc] == -1 turns false and its value is dist[r][c] + 1, which is already the shortest distance.
+@@ COMPLEXITY: O(rows * cols) time and space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def updateMatrix(self, mat: List[List[int]]) -> List[List[int]]:
+        rows, cols = len(mat), len(mat[0])
+        dist = [[-1] * cols for _ in range(rows)]    # -1 means not seen yet
+        q = deque()
+        for r in range(rows):
+            for c in range(cols):
+                if mat[r][c] == 0:
+                    dist[r][c] = 0
+                    q.append((r, c))                 # every 0 is a BFS source
+        while q:
+            r, c = q.popleft()
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and dist[nr][nc] == -1:
+                    dist[nr][nc] = dist[r][c] + 1    # first arrival is the shortest distance
+                    q.append((nr, nc))
+        return dist
+@@ TEST:
+s = Solution()
+assert s.updateMatrix([[0, 0, 0], [0, 1, 0], [0, 0, 0]]) == [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
+assert s.updateMatrix([[0, 0, 0], [0, 1, 0], [1, 1, 1]]) == [[0, 0, 0], [0, 1, 0], [1, 2, 1]]
+assert s.updateMatrix([[0]]) == [[0]]
+assert s.updateMatrix([[0, 1, 1, 1]]) == [[0, 1, 2, 3]]
+assert s.updateMatrix([[1, 1], [1, 0]]) == [[2, 1], [1, 0]]
+assert s.updateMatrix([[1], [1], [0], [1]]) == [[2], [1], [0], [1]]
+@@ PROBLEM: bus-routes
+@@ APPROACH:
+The nodes to search over are the buses, not the stops, because the answer counts buses taken. Riding one bus reaches every stop on its route for the cost of 1.
+First map each stop to the routes that pass through it. Then run BFS where the queue holds (stop, buses taken so far).
+From a stop, board every route not yet used, and push each new stop on that route with buses + 1.
+The seen_routes set matters: a route is scanned once, so the total work stays linear in the number of stops listed.
+@@ COMPLEXITY: O(total stops across all routes) time and space
+@@ CODE:
+from collections import deque, defaultdict
+
+class Solution:
+    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:
+        if source == target:
+            return 0
+        stop_routes = defaultdict(list)              # stop -> indexes of routes through it
+        for i, route in enumerate(routes):
+            for stop in route:
+                stop_routes[stop].append(i)
+        q = deque([(source, 0)])
+        seen_stops = {source}
+        seen_routes = set()
+        while q:
+            stop, buses = q.popleft()
+            for i in stop_routes[stop]:
+                if i in seen_routes:
+                    continue
+                seen_routes.add(i)                   # each route is boarded at most once
+                for nxt in routes[i]:
+                    if nxt == target:
+                        return buses + 1             # BFS level = number of buses taken
+                    if nxt not in seen_stops:
+                        seen_stops.add(nxt)
+                        q.append((nxt, buses + 1))
+        return -1
+@@ TEST:
+s = Solution()
+assert s.numBusesToDestination([[1, 2, 7], [3, 6, 7]], 1, 6) == 2
+assert s.numBusesToDestination([[7, 12], [4, 5, 15], [6], [15, 19], [9, 12, 13]], 15, 12) == -1
+assert s.numBusesToDestination([[1, 7], [3, 5]], 5, 5) == 0
+assert s.numBusesToDestination([[1, 2, 7]], 1, 7) == 1
+assert s.numBusesToDestination([[1, 2], [2, 3], [3, 4], [4, 5]], 1, 5) == 4
+assert s.numBusesToDestination([[1, 2, 3, 4, 5], [5, 6], [1, 6]], 1, 6) == 1
+assert s.numBusesToDestination([[1, 2], [3, 4]], 1, 4) == -1
+@@ PATTERN: DFS
+@@ SPOT: Use this when you must explore everything reachable, list or count paths, or try choices and backtrack.
+@@ PROBLEM: flood-fill
+@@ APPROACH:
+Start at (sr, sc) and recurse into the four neighbours that still have the old colour.
+Painting a cell with the new colour is also the seen mark, so no cell is visited twice.
+The early return when old == color matters: if nothing would change, the recursion would never stop.
+@@ COMPLEXITY: O(rows * cols) time, O(rows * cols) recursion stack in the worst case
+@@ CODE:
+class Solution:
+    def floodFill(self, image: List[List[int]], sr: int, sc: int, color: int) -> List[List[int]]:
+        old = image[sr][sc]
+        if old == color:                     # nothing to paint, and no seen mark would ever be set
+            return image
+        rows, cols = len(image), len(image[0])
+
+        def dfs(r, c):
+            if not (0 <= r < rows and 0 <= c < cols) or image[r][c] != old:
+                return
+            image[r][c] = color              # painting doubles as the seen mark
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                dfs(r + dr, c + dc)          # explore each neighbour fully before the next
+
+        dfs(sr, sc)
+        return image
+@@ TEST:
+s = Solution()
+assert s.floodFill([[1, 1, 1], [1, 1, 0], [1, 0, 1]], 1, 1, 2) == [[2, 2, 2], [2, 2, 0], [2, 0, 1]]
+assert s.floodFill([[0, 0, 0], [0, 0, 0]], 0, 0, 0) == [[0, 0, 0], [0, 0, 0]]
+assert s.floodFill([[0]], 0, 0, 5) == [[5]]
+assert s.floodFill([[1, 0], [0, 1]], 0, 0, 3) == [[3, 0], [0, 1]]
+@@ PROBLEM: all-paths-from-source-to-target
+@@ APPROACH:
+Listing paths is DFS with backtracking: append the next node to path, recurse, then pop it.
+When the DFS reaches the last node, copy the current path into the answer (the copy matters because path keeps changing).
+The graph is a DAG, so there are no cycles and no seen set is needed. A seen set would hide valid paths that share a node.
+@@ COMPLEXITY: O(2^n * n) time in the worst case, O(n) extra space for the path
+@@ CODE:
+class Solution:
+    def allPathsSourceTarget(self, graph: List[List[int]]) -> List[List[int]]:
+        target = len(graph) - 1
+        paths, path = [], [0]
+
+        def dfs(u):
+            if u == target:
+                paths.append(path[:])        # copy: path is reused by later branches
+                return
+            for v in graph[u]:
+                path.append(v)               # choose
+                dfs(v)                       # explore
+                path.pop()                   # un-choose (backtrack)
+
+        dfs(0)
+        return paths
+@@ TEST:
+s = Solution()
+assert sorted(s.allPathsSourceTarget([[1, 2], [3], [3], []])) == [[0, 1, 3], [0, 2, 3]]
+assert sorted(s.allPathsSourceTarget([[4, 3, 1], [3, 2, 4], [3], [4], []])) == sorted([[0, 4], [0, 3, 4], [0, 1, 3, 4], [0, 1, 2, 3, 4], [0, 1, 4]])
+assert s.allPathsSourceTarget([[1], []]) == [[0, 1]]
+assert s.allPathsSourceTarget([[1], [2], []]) == [[0, 1, 2]]
+@@ PROBLEM: reconstruct-itinerary
+@@ APPROACH:
+The tickets are directed edges and the route must use every one exactly once, so this is a DFS that walks edges, not nodes.
+From JFK, always take the smallest destination next. Add an airport to route only after all of its tickets are used (post-order).
+Reading route backwards gives the itinerary, because the airport where we get stuck is the last stop.
+Sorting in reverse order lets list.pop() hand out the smallest name in O(1).
+@@ COMPLEXITY: O(E log E) time, O(E) space
+@@ CODE:
+from collections import defaultdict
+
+class Solution:
+    def findItinerary(self, tickets: List[List[str]]) -> List[str]:
+        adj = defaultdict(list)
+        for src, dst in sorted(tickets, reverse=True):   # reverse sort: pop() gives the smallest name
+            adj[src].append(dst)
+        route = []
+
+        def dfs(airport):
+            while adj[airport]:
+                dfs(adj[airport].pop())                  # use each ticket once
+            route.append(airport)                        # post-order: add after all tickets are used
+
+        dfs("JFK")
+        return route[::-1]
+@@ TEST:
+s = Solution()
+assert s.findItinerary([["MUC", "LHR"], ["JFK", "MUC"], ["SFO", "SJC"], ["LHR", "SFO"]]) == ["JFK", "MUC", "LHR", "SFO", "SJC"]
+assert s.findItinerary([["JFK", "SFO"], ["JFK", "ATL"], ["SFO", "ATL"], ["ATL", "JFK"], ["ATL", "SFO"]]) == ["JFK", "ATL", "JFK", "SFO", "ATL", "SFO"]
+assert s.findItinerary([["JFK", "KUL"]]) == ["JFK", "KUL"]
+assert s.findItinerary([["JFK", "KUL"], ["JFK", "NRT"], ["NRT", "JFK"]]) == ["JFK", "NRT", "JFK", "KUL"]
+@@ PATTERN: Connected Components
+@@ SPOT: Use this when the question asks how many separate groups, islands or provinces there are, or how big each group is.
+@@ PROBLEM: number-of-provinces
+@@ APPROACH:
+Cities are nodes and isConnected is an adjacency matrix.
+Loop over every city. Each time one is unseen, a new province starts, so run dfs to mark its whole group and add 1.
+The number of times dfs is launched from the outer loop is the number of components.
+@@ COMPLEXITY: O(n^2) time, O(n) space
+@@ CODE:
+class Solution:
+    def findCircleNum(self, isConnected: List[List[int]]) -> int:
+        n = len(isConnected)
+        seen = set()
+
+        def dfs(u):
+            seen.add(u)
+            for v in range(n):
+                if isConnected[u][v] and v not in seen:
+                    dfs(v)
+
+        provinces = 0
+        for city in range(n):            # loop over all nodes
+            if city not in seen:         # an unseen node starts a new component
+                dfs(city)                # flood-fill its whole group
+                provinces += 1
+        return provinces
+@@ TEST:
+s = Solution()
+assert s.findCircleNum([[1, 1, 0], [1, 1, 0], [0, 0, 1]]) == 2
+assert s.findCircleNum([[1, 0, 0], [0, 1, 0], [0, 0, 1]]) == 3
+assert s.findCircleNum([[1]]) == 1
+assert s.findCircleNum([[1, 1, 1], [1, 1, 1], [1, 1, 1]]) == 1
+assert s.findCircleNum([[1, 0, 0, 1], [0, 1, 1, 0], [0, 1, 1, 0], [1, 0, 0, 1]]) == 2
+@@ PROBLEM: number-of-islands
+@@ APPROACH:
+Same idea on a grid: each cell is a node and its neighbours are the 4 direction vectors.
+Scan every cell. A land cell that has not been visited starts a new island, so run dfs and add 1.
+The dfs sinks each land cell it visits (writes "0"), which acts as the seen mark and stops the same island being counted twice.
+@@ COMPLEXITY: O(rows * cols) time and space
+@@ CODE:
+class Solution:
+    def numIslands(self, grid: List[List[str]]) -> int:
+        rows, cols = len(grid), len(grid[0])
+
+        def dfs(r, c):
+            if not (0 <= r < rows and 0 <= c < cols) or grid[r][c] != "1":
+                return
+            grid[r][c] = "0"                     # sink the land so it is never counted again
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                dfs(r + dr, c + dc)
+
+        islands = 0
+        for r in range(rows):
+            for c in range(cols):
+                if grid[r][c] == "1":            # unseen land: a new component
+                    dfs(r, c)
+                    islands += 1
+        return islands
+@@ TEST:
+s = Solution()
+assert s.numIslands([["1", "1", "1", "1", "0"], ["1", "1", "0", "1", "0"], ["1", "1", "0", "0", "0"], ["0", "0", "0", "0", "0"]]) == 1
+assert s.numIslands([["1", "1", "0", "0", "0"], ["1", "1", "0", "0", "0"], ["0", "0", "1", "0", "0"], ["0", "0", "0", "1", "1"]]) == 3
+assert s.numIslands([["0"]]) == 0
+assert s.numIslands([["1"]]) == 1
+assert s.numIslands([["1", "0", "1"], ["0", "1", "0"], ["1", "0", "1"]]) == 5
+@@ PROBLEM: making-a-large-island
+@@ APPROACH:
+First find the components: run dfs on each island, label its cells with a new id (2, 3, ...) and store its area in size.
+Then try every water cell. Flipping it joins the distinct islands around it, so the new area is 1 plus their sizes.
+The set touching removes duplicates, so one island that borders the cell on two sides is counted once.
+If there is no water, the answer is the biggest island, which is the starting value of best.
+@@ COMPLEXITY: O(n^2) time and space
+@@ CODE:
+class Solution:
+    def largestIsland(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        dirs = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        size = {}                                    # island id -> area
+
+        def dfs(r, c, island_id):
+            grid[r][c] = island_id                   # label the cell with its component id
+            area = 1
+            for dr, dc in dirs:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < n and 0 <= nc < n and grid[nr][nc] == 1:
+                    area += dfs(nr, nc, island_id)
+            return area
+
+        next_id = 2                                  # ids start at 2 so they differ from 0 and 1
+        for r in range(n):
+            for c in range(n):
+                if grid[r][c] == 1:
+                    size[next_id] = dfs(r, c, next_id)
+                    next_id += 1
+        best = max(size.values(), default=0)
+        for r in range(n):
+            for c in range(n):
+                if grid[r][c] == 0:
+                    touching = {grid[r + dr][c + dc] for dr, dc in dirs
+                                if 0 <= r + dr < n and 0 <= c + dc < n and grid[r + dr][c + dc] > 1}
+                    best = max(best, 1 + sum(size[i] for i in touching))   # flip this water cell
+        return best
+@@ TEST:
+s = Solution()
+assert s.largestIsland([[1, 0], [0, 1]]) == 3
+assert s.largestIsland([[1, 1], [1, 0]]) == 4
+assert s.largestIsland([[1, 1], [1, 1]]) == 4
+assert s.largestIsland([[0]]) == 1
+assert s.largestIsland([[1]]) == 1
+assert s.largestIsland([[1, 0, 1], [0, 0, 0], [1, 0, 1]]) == 3
+assert s.largestIsland([[1, 0, 1], [0, 1, 0], [1, 0, 1]]) == 4
+@@ PATTERN: Cycle Detection
+@@ SPOT: Use this when you must know whether a graph has a cycle: prerequisites that can never finish, a loop in a grid, or a walk that returns to itself.
+@@ PROBLEM: course-schedule
+@@ APPROACH:
+A prerequisite cycle is a directed cycle, so a node seen before is not enough. Use DFS with three states: unvisited, in the current path, done.
+Reaching a node that is in the current path means a cycle, so the courses cannot all be finished.
+Setting a node to DONE after its neighbours are explored means it is never explored again.
+@@ COMPLEXITY: O(V + E) time, O(V + E) space
+@@ CODE:
+from collections import defaultdict
+
+class Solution:
+    def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:
+        adj = defaultdict(list)
+        for course, pre in prerequisites:
+            adj[pre].append(course)
+        UNVISITED, IN_PATH, DONE = 0, 1, 2
+        state = [UNVISITED] * numCourses
+
+        def has_cycle(u):
+            state[u] = IN_PATH                  # u is on the current DFS path
+            for v in adj[u]:
+                if state[v] == IN_PATH:         # back to a node on our own path: cycle
+                    return True
+                if state[v] == UNVISITED and has_cycle(v):
+                    return True
+            state[u] = DONE                     # fully explored, safe to skip next time
+            return False
+
+        return not any(state[c] == UNVISITED and has_cycle(c) for c in range(numCourses))
+@@ TEST:
+s = Solution()
+assert s.canFinish(2, [[1, 0]]) == True
+assert s.canFinish(2, [[1, 0], [0, 1]]) == False
+assert s.canFinish(1, []) == True
+assert s.canFinish(3, [[0, 1], [1, 2], [2, 0]]) == False
+assert s.canFinish(4, [[1, 0], [2, 1], [3, 2]]) == True
+assert s.canFinish(4, [[1, 0], [2, 0], [3, 1], [3, 2]]) == True
+assert s.canFinish(5, [[1, 0], [2, 1], [3, 2], [1, 3]]) == False
+@@ PROBLEM: detect-cycles-in-2d-grid
+@@ APPROACH:
+This graph is undirected, so the rule is: a cycle exists when the walk meets a seen cell that is not the cell it came from.
+Each stack entry carries its parent (pr, pc). Skipping the parent is the key line.
+Any other same-letter neighbour that is already seen closes a loop. In a grid, such a loop always has at least 4 cells, so no extra length check is needed.
+The loop uses an explicit stack, so a large grid cannot overflow the recursion limit.
+@@ COMPLEXITY: O(rows * cols) time and space
+@@ CODE:
+class Solution:
+    def containsCycle(self, grid: List[List[str]]) -> bool:
+        rows, cols = len(grid), len(grid[0])
+        seen = [[False] * cols for _ in range(rows)]
+        for sr in range(rows):
+            for sc in range(cols):
+                if seen[sr][sc]:
+                    continue
+                seen[sr][sc] = True
+                stack = [(sr, sc, -1, -1)]              # (row, col, parent row, parent col)
+                while stack:
+                    r, c, pr, pc = stack.pop()
+                    for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                        nr, nc = r + dr, c + dc
+                        if not (0 <= nr < rows and 0 <= nc < cols) or grid[nr][nc] != grid[r][c]:
+                            continue
+                        if (nr, nc) == (pr, pc):        # the cell we came from is not a cycle
+                            continue
+                        if seen[nr][nc]:                # seen and not our parent: cycle
+                            return True
+                        seen[nr][nc] = True
+                        stack.append((nr, nc, r, c))
+        return False
+@@ TEST:
+s = Solution()
+assert s.containsCycle([["a", "a", "a", "a"], ["a", "b", "b", "a"], ["a", "b", "b", "a"], ["a", "a", "a", "a"]]) == True
+assert s.containsCycle([["c", "c", "c", "a"], ["c", "d", "c", "c"], ["c", "c", "e", "c"], ["f", "c", "c", "c"]]) == True
+assert s.containsCycle([["a", "b", "b"], ["b", "z", "b"], ["b", "b", "a"]]) == False
+assert s.containsCycle([["a"]]) == False
+assert s.containsCycle([["a", "a"]]) == False
+assert s.containsCycle([["a", "a"], ["a", "a"]]) == True
+assert s.containsCycle([["a", "a", "a"], ["b", "b", "a"]]) == False
+@@ PROBLEM: longest-cycle-in-a-graph
+@@ APPROACH:
+Every node has at most one outgoing edge, so each walk is a single path that either ends or runs into a node already seen.
+Give each node a global time stamp when it is first reached. Remember the stamp where the current walk began (begin).
+If the walk lands on a node with dist[u] >= begin, that node is on the current path (the "in-path" state), so the cycle length is clock - dist[u].
+If it lands on a node from an earlier walk, that node is finished (the "done" state) and gives no new cycle. Each node is stamped once.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+class Solution:
+    def longestCycle(self, edges: List[int]) -> int:
+        n = len(edges)
+        dist = [0] * n                      # time stamp of first visit, 0 = unvisited
+        clock = 1
+        best = -1
+        for start in range(n):
+            if dist[start]:
+                continue
+            begin = clock                   # stamps from this walk are >= begin
+            u = start
+            while u != -1 and not dist[u]:
+                dist[u] = clock
+                clock += 1
+                u = edges[u]
+            if u != -1 and dist[u] >= begin:        # landed on the current path: a new cycle
+                best = max(best, clock - dist[u])
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestCycle([3, 3, 4, 2, 3]) == 3
+assert s.longestCycle([2, -1, 3, 1]) == -1
+assert s.longestCycle([1, 0]) == 2
+assert s.longestCycle([1, 2, 0]) == 3
+assert s.longestCycle([1, 0, 3, 2, 3]) == 2
+assert s.longestCycle([1, 2, 3, 4, 2, 6, 5]) == 3
+@@ PATTERN: Bipartite Graph
+@@ SPOT: Use this when nodes must be split into two sides so that no edge joins two nodes on the same side (conflicts, dislikes, odd cycles).
+@@ PROBLEM: is-graph-bipartite
+@@ APPROACH:
+Two-colour the graph with BFS. A start node gets colour 0, and each unseen neighbour gets the opposite colour with color[u] ^ 1.
+If an edge joins two nodes with the same colour, there is an odd cycle, so the answer is False.
+The outer loop over s starts a new BFS in every component, because the graph may be disconnected.
+@@ COMPLEXITY: O(V + E) time, O(V) space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def isBipartite(self, graph: List[List[int]]) -> bool:
+        n = len(graph)
+        color = [-1] * n
+        for s in range(n):                          # graph may be disconnected
+            if color[s] != -1:
+                continue
+            color[s] = 0
+            q = deque([s])
+            while q:
+                u = q.popleft()
+                for v in graph[u]:
+                    if color[v] == -1:
+                        color[v] = color[u] ^ 1     # neighbours get the opposite colour
+                        q.append(v)
+                    elif color[v] == color[u]:      # same colour on both ends: odd cycle
+                        return False
+        return True
+@@ TEST:
+s = Solution()
+assert s.isBipartite([[1, 2, 3], [0, 2], [0, 1, 3], [0, 2]]) == False
+assert s.isBipartite([[1, 3], [0, 2], [1, 3], [0, 2]]) == True
+assert s.isBipartite([[]]) == True
+assert s.isBipartite([[], []]) == True
+assert s.isBipartite([[1, 2], [0, 2], [0, 1]]) == False
+assert s.isBipartite([[1], [0], [3, 4], [2, 4], [2, 3]]) == False
+@@ PROBLEM: possible-bipartition
+@@ APPROACH:
+Each dislike pair is an edge. Splitting people into two groups where nobody shares a group with someone they dislike is the same as 2-colouring this graph.
+Build the adjacency list (people are numbered from 1, so it has n + 1 slots), then colour each component with BFS.
+Meeting a neighbour with the same colour means an odd cycle of dislikes, so the answer is False.
+@@ COMPLEXITY: O(n + E) time, O(n + E) space
+@@ CODE:
+from collections import deque, defaultdict
+
+class Solution:
+    def possibleBipartition(self, n: int, dislikes: List[List[int]]) -> bool:
+        adj = defaultdict(list)
+        for a, b in dislikes:
+            adj[a].append(b)
+            adj[b].append(a)
+        color = [-1] * (n + 1)
+        for s in range(1, n + 1):
+            if color[s] != -1:
+                continue
+            color[s] = 0
+            q = deque([s])
+            while q:
+                u = q.popleft()
+                for v in adj[u]:
+                    if color[v] == -1:
+                        color[v] = color[u] ^ 1     # put the disliked person in the other group
+                        q.append(v)
+                    elif color[v] == color[u]:      # both would be in the same group: impossible
+                        return False
+        return True
+@@ TEST:
+s = Solution()
+assert s.possibleBipartition(4, [[1, 2], [1, 3], [2, 4]]) == True
+assert s.possibleBipartition(3, [[1, 2], [1, 3], [2, 3]]) == False
+assert s.possibleBipartition(5, [[1, 2], [2, 3], [3, 4], [4, 5], [1, 5]]) == False
+assert s.possibleBipartition(1, []) == True
+assert s.possibleBipartition(2, []) == True
+assert s.possibleBipartition(6, [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [1, 6]]) == True
+@@ PROBLEM: divide-nodes-into-the-maximum-number-of-groups
+@@ APPROACH:
+Every edge must join nodes in neighbouring groups, so groups behave like BFS levels and each component must be bipartite.
+BFS from a node: an edge between two nodes on the same level means an odd cycle, so return -1.
+For one component, the number of BFS levels from a start node is the number of groups it can form. Try every node as the start and keep the best.
+The component is identified by its smallest node label. Add the best value of each component.
+@@ COMPLEXITY: O(n * (n + m)) time, O(n + m) space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def magnificentSets(self, n: int, edges: List[List[int]]) -> int:
+        adj = [[] for _ in range(n + 1)]
+        for u, v in edges:
+            adj[u].append(v)
+            adj[v].append(u)
+
+        def bfs(src):
+            level = {src: 0}
+            q = deque([src])
+            while q:
+                u = q.popleft()
+                for v in adj[u]:
+                    if v not in level:
+                        level[v] = level[u] + 1
+                        q.append(v)
+                    elif level[v] == level[u]:      # same level on both ends: odd cycle
+                        return -1, 0
+            return max(level.values()) + 1, min(level)   # groups, component id
+
+        best = {}                                    # component id -> most groups
+        for start in range(1, n + 1):
+            groups, comp = bfs(start)
+            if groups == -1:
+                return -1
+            best[comp] = max(best.get(comp, 0), groups)
+        return sum(best.values())
+@@ TEST:
+s = Solution()
+assert s.magnificentSets(6, [[1, 2], [1, 4], [1, 5], [2, 6], [2, 3], [4, 6]]) == 4
+assert s.magnificentSets(3, [[1, 2], [2, 3], [3, 1]]) == -1
+assert s.magnificentSets(2, []) == 2
+assert s.magnificentSets(3, [[1, 2]]) == 3
+assert s.magnificentSets(4, [[1, 2], [2, 3], [3, 4]]) == 4
+assert s.magnificentSets(1, []) == 1
+@@ PATTERN: Topological Sort
+@@ SPOT: Use this when an edge means "A must come before B" and you need a valid order, a cycle check, or the longest chain through the dependencies.
+@@ PROBLEM: course-schedule-ii
+@@ APPROACH:
+Kahn's algorithm. Count each course's prerequisites (in-degree) and start the queue with the courses that have none.
+Pop a course, append it to order, and lower the in-degree of every course it unlocks. A course whose in-degree reaches 0 joins the queue.
+If order ends up shorter than numCourses, the rest are stuck in a cycle, so return an empty list.
+@@ COMPLEXITY: O(V + E) time, O(V + E) space
+@@ CODE:
+from collections import deque, defaultdict
+
+class Solution:
+    def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:
+        adj, indeg = defaultdict(list), [0] * numCourses
+        for course, pre in prerequisites:
+            adj[pre].append(course)             # edge: pre -> course
+            indeg[course] += 1
+        q = deque(i for i in range(numCourses) if indeg[i] == 0)
+        order = []
+        while q:
+            u = q.popleft()
+            order.append(u)
+            for v in adj[u]:
+                indeg[v] -= 1                   # one prerequisite of v is now done
+                if indeg[v] == 0:
+                    q.append(v)
+        return order if len(order) == numCourses else []    # short = cycle exists
+@@ TEST:
+def valid_order(order, n, prereqs):
+    if sorted(order) != list(range(n)):
+        return False
+    pos = {c: i for i, c in enumerate(order)}
+    return all(pos[pre] < pos[course] for course, pre in prereqs)
+
+s = Solution()
+assert valid_order(s.findOrder(2, [[1, 0]]), 2, [[1, 0]])
+assert s.findOrder(2, [[1, 0]]) == [0, 1]
+assert valid_order(s.findOrder(4, [[1, 0], [2, 0], [3, 1], [3, 2]]), 4, [[1, 0], [2, 0], [3, 1], [3, 2]])
+assert s.findOrder(1, []) == [0]
+assert s.findOrder(2, [[1, 0], [0, 1]]) == []
+assert s.findOrder(3, [[0, 1], [1, 2], [2, 0]]) == []
+assert valid_order(s.findOrder(3, []), 3, [])
+@@ PROBLEM: find-all-possible-recipes-from-given-supplies
+@@ APPROACH:
+Make each ingredient a node with an edge to every recipe that needs it. A recipe's in-degree is the number of ingredients it needs.
+The queue starts with the supplies, which need nothing. When a recipe's in-degree drops to 0 it can be made, so record it and push it, because it may be an ingredient of another recipe.
+Recipes in a cycle, or missing an ingredient, never reach in-degree 0 and are left out.
+@@ COMPLEXITY: O(V + E) time, O(V + E) space
+@@ CODE:
+from collections import deque, defaultdict
+
+class Solution:
+    def findAllRecipes(self, recipes: List[str], ingredients: List[List[str]], supplies: List[str]) -> List[str]:
+        adj = defaultdict(list)                  # ingredient -> recipes that need it
+        indeg = {}
+        for recipe, needs in zip(recipes, ingredients):
+            indeg[recipe] = len(needs)
+            for item in needs:
+                adj[item].append(recipe)
+        q = deque(supplies)                      # supplies are the nodes with in-degree 0
+        made = []
+        while q:
+            item = q.popleft()
+            for recipe in adj[item]:
+                indeg[recipe] -= 1
+                if indeg[recipe] == 0:           # every ingredient is available
+                    made.append(recipe)
+                    q.append(recipe)
+        return made
+@@ TEST:
+s = Solution()
+assert sorted(s.findAllRecipes(["bread"], [["yeast", "flour"]], ["yeast", "flour", "corn"])) == ["bread"]
+assert sorted(s.findAllRecipes(["bread", "sandwich"], [["yeast", "flour"], ["bread", "meat"]], ["yeast", "flour", "meat"])) == ["bread", "sandwich"]
+assert sorted(s.findAllRecipes(["bread", "sandwich", "burger"], [["yeast", "flour"], ["bread", "meat"], ["sandwich", "meat", "bread"]], ["yeast", "flour", "meat"])) == ["bread", "burger", "sandwich"]
+assert s.findAllRecipes(["a", "b"], [["b"], ["a"]], []) == []
+assert s.findAllRecipes(["a"], [["x"]], ["y"]) == []
+assert s.findAllRecipes(["a", "b"], [["x"], ["a", "y"]], ["x"]) == ["a"]
+@@ PROBLEM: parallel-courses-iii
+@@ APPROACH:
+A course can start only after all its prerequisites finish, so it starts at the latest finish time among them.
+Process the courses in Kahn's order and keep start[v] = the largest finish time seen so far for v. When u is popped its finish time is start[u] + time[u].
+The answer is the largest finish time. This is the longest path in a DAG, computed while taking the topological order.
+@@ COMPLEXITY: O(n + E) time, O(n + E) space
+@@ CODE:
+from collections import deque, defaultdict
+
+class Solution:
+    def minimumTime(self, n: int, relations: List[List[int]], time: List[int]) -> int:
+        adj, indeg = defaultdict(list), [0] * n
+        for prev, nxt in relations:
+            adj[prev - 1].append(nxt - 1)
+            indeg[nxt - 1] += 1
+        start = [0] * n                          # earliest month each course can begin
+        q = deque(i for i in range(n) if indeg[i] == 0)
+        answer = 0
+        while q:
+            u = q.popleft()
+            end = start[u] + time[u]
+            answer = max(answer, end)
+            for v in adj[u]:
+                start[v] = max(start[v], end)    # v waits for its slowest prerequisite
+                indeg[v] -= 1
+                if indeg[v] == 0:
+                    q.append(v)
+        return answer
+@@ TEST:
+s = Solution()
+assert s.minimumTime(3, [[1, 3], [2, 3]], [3, 2, 5]) == 8
+assert s.minimumTime(5, [[1, 5], [2, 5], [3, 5], [3, 4], [4, 5]], [1, 2, 3, 4, 5]) == 12
+assert s.minimumTime(1, [], [7]) == 7
+assert s.minimumTime(3, [], [4, 9, 2]) == 9
+assert s.minimumTime(4, [[1, 2], [2, 3], [3, 4]], [1, 1, 1, 1]) == 4
+@@ PATTERN: Shortest Path
+@@ SPOT: Use this when every move costs 1 (BFS) or only 0 or 1 (0-1 BFS with a deque), and the state may need more than the node itself.
+@@ PROBLEM: shortest-path-in-binary-matrix
+@@ APPROACH:
+Every move costs 1, so BFS finds the shortest path. The only change from a normal grid BFS is 8 neighbours, which two loops over (-1, 0, 1) produce.
+The queue entry carries the path length so far, and the first time the bottom-right cell is popped, that length is the answer.
+Writing 1 into a cell when it is queued marks it as seen. A blocked start or end cell returns -1 at once.
+@@ COMPLEXITY: O(n^2) time, O(n^2) space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def shortestPathBinaryMatrix(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        if grid[0][0] == 1 or grid[n - 1][n - 1] == 1:
+            return -1
+        grid[0][0] = 1                              # mark seen
+        q = deque([(0, 0, 1)])                      # (row, col, path length so far)
+        while q:
+            r, c, dist = q.popleft()
+            if r == n - 1 and c == n - 1:
+                return dist                         # BFS: first arrival is the shortest
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):               # 8 directions
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < n and 0 <= nc < n and grid[nr][nc] == 0:
+                        grid[nr][nc] = 1
+                        q.append((nr, nc, dist + 1))
+        return -1
+@@ TEST:
+s = Solution()
+assert s.shortestPathBinaryMatrix([[0, 1], [1, 0]]) == 2
+assert s.shortestPathBinaryMatrix([[0, 0, 0], [1, 1, 0], [1, 1, 0]]) == 4
+assert s.shortestPathBinaryMatrix([[1, 0, 0], [1, 1, 0], [1, 1, 0]]) == -1
+assert s.shortestPathBinaryMatrix([[0]]) == 1
+assert s.shortestPathBinaryMatrix([[1]]) == -1
+assert s.shortestPathBinaryMatrix([[0, 1], [1, 1]]) == -1
+@@ PROBLEM: shortest-path-with-alternating-colors
+@@ APPROACH:
+The best way into a node depends on the colour of the last edge used, so a BFS state is (node, colour of last edge), not the node alone.
+From a state, only edges of the other colour may be taken: nxt = color ^ 1. Start at node 0 with both colours so either colour can go first.
+The first time a node is popped in any state, its step count is the shortest alternating path. The seen set is over states.
+@@ COMPLEXITY: O(n + E) time, O(n + E) space
+@@ CODE:
+from collections import deque, defaultdict
+
+class Solution:
+    def shortestAlternatingPaths(self, n: int, redEdges: List[List[int]], blueEdges: List[List[int]]) -> List[int]:
+        adj = {0: defaultdict(list), 1: defaultdict(list)}   # 0 = red, 1 = blue
+        for u, v in redEdges:
+            adj[0][u].append(v)
+        for u, v in blueEdges:
+            adj[1][u].append(v)
+        answer = [-1] * n
+        q = deque([(0, 0, 0), (0, 1, 0)])           # (node, colour of last edge, steps)
+        seen = {(0, 0), (0, 1)}                     # states, not only nodes
+        while q:
+            u, color, steps = q.popleft()
+            if answer[u] == -1:
+                answer[u] = steps                   # first arrival is the shortest
+            nxt = color ^ 1                         # next edge must have the other colour
+            for v in adj[nxt][u]:
+                if (v, nxt) not in seen:
+                    seen.add((v, nxt))
+                    q.append((v, nxt, steps + 1))
+        return answer
+@@ TEST:
+s = Solution()
+assert s.shortestAlternatingPaths(3, [[0, 1], [1, 2]], []) == [0, 1, -1]
+assert s.shortestAlternatingPaths(3, [[0, 1]], [[2, 1]]) == [0, 1, -1]
+assert s.shortestAlternatingPaths(5, [[0, 1], [1, 2], [2, 3], [3, 4]], [[1, 2], [2, 3], [3, 1]]) == [0, 1, 2, 3, 7]
+assert s.shortestAlternatingPaths(1, [], []) == [0]
+assert s.shortestAlternatingPaths(3, [[0, 1], [0, 2]], []) == [0, 1, 1]
+@@ PROBLEM: minimum-obstacle-removal-to-reach-corner
+@@ APPROACH:
+Stepping into an empty cell costs 0 and into an obstacle costs 1, so edge weights are only 0 or 1. That is the case for 0-1 BFS.
+Use a deque instead of a heap: a cost-0 move goes to the front (appendleft), a cost-1 move goes to the back. The deque stays ordered by distance, like Dijkstra's heap but in O(1) per push.
+dist[r][c] is the fewest obstacles removed to reach that cell, and a cell is re-queued only when its distance improves.
+@@ COMPLEXITY: O(rows * cols) time and space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def minimumObstacles(self, grid: List[List[int]]) -> int:
+        rows, cols = len(grid), len(grid[0])
+        dist = [[float("inf")] * cols for _ in range(rows)]
+        dist[0][0] = 0
+        dq = deque([(0, 0)])
+        while dq:
+            r, c = dq.popleft()
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols:
+                    cost = dist[r][c] + grid[nr][nc]     # entering an obstacle costs 1
+                    if cost < dist[nr][nc]:
+                        dist[nr][nc] = cost
+                        if grid[nr][nc] == 0:
+                            dq.appendleft((nr, nc))      # weight 0: front of the deque
+                        else:
+                            dq.append((nr, nc))          # weight 1: back of the deque
+        return dist[rows - 1][cols - 1]
+@@ TEST:
+s = Solution()
+assert s.minimumObstacles([[0, 1, 1], [1, 1, 0], [1, 1, 0]]) == 2
+assert s.minimumObstacles([[0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 0, 0, 1, 0]]) == 0
+assert s.minimumObstacles([[0]]) == 0
+assert s.minimumObstacles([[0, 1], [1, 0]]) == 1
+assert s.minimumObstacles([[0, 1, 1, 0]]) == 2
+@@ PATTERN: Dijkstra
+@@ SPOT: Use this when edges have non-negative weights (or a cost that never goes down) and you need the cheapest route from one source.
+@@ PROBLEM: network-delay-time
+@@ APPROACH:
+Directed weighted graph, one source k, all weights non-negative: the textbook Dijkstra case.
+Keep a min heap of (distance, node). Pop the closest one; if d > dist[u] it is a stale entry, so skip it.
+Otherwise relax every outgoing edge and push any improved distance. The signal reaches everyone at the largest distance, or -1 if some node stays at infinity.
+@@ COMPLEXITY: O((V + E) log V) time, O(V + E) space
+@@ CODE:
+import heapq
+from math import inf
+from collections import defaultdict
+
+class Solution:
+    def networkDelayTime(self, times: List[List[int]], n: int, k: int) -> int:
+        adj = defaultdict(list)
+        for u, v, w in times:
+            adj[u].append((v, w))
+        dist = [inf] * (n + 1)
+        dist[k] = 0
+        heap = [(0, k)]
+        while heap:
+            d, u = heapq.heappop(heap)          # closest unsettled node
+            if d > dist[u]:
+                continue                        # stale entry
+            for v, w in adj[u]:
+                if d + w < dist[v]:             # relax the edge
+                    dist[v] = d + w
+                    heapq.heappush(heap, (dist[v], v))
+        slowest = max(dist[1:])
+        return slowest if slowest < inf else -1
+@@ TEST:
+s = Solution()
+assert s.networkDelayTime([[2, 1, 1], [2, 3, 1], [3, 4, 1]], 4, 2) == 2
+assert s.networkDelayTime([[1, 2, 1]], 2, 1) == 1
+assert s.networkDelayTime([[1, 2, 1]], 2, 2) == -1
+assert s.networkDelayTime([], 1, 1) == 0
+assert s.networkDelayTime([[1, 2, 10], [1, 3, 1], [3, 2, 1]], 3, 1) == 2
+@@ PROBLEM: number-of-ways-to-arrive-at-destination
+@@ APPROACH:
+Run Dijkstra from city 0, and also keep ways[v], the number of shortest paths that reach v.
+If d + t is strictly shorter than dist[v], the old paths are worse, so replace: ways[v] = ways[u]. If it is equal, another shortest path exists, so add: ways[v] += ways[u].
+Every road takes at least 1 minute, so ways[u] is complete by the time u is popped. Take the answer modulo 10^9 + 7.
+@@ COMPLEXITY: O((V + E) log V) time, O(V + E) space
+@@ CODE:
+import heapq
+from math import inf
+from collections import defaultdict
+
+class Solution:
+    def countPaths(self, n: int, roads: List[List[int]]) -> int:
+        MOD = 10**9 + 7
+        adj = defaultdict(list)
+        for u, v, t in roads:
+            adj[u].append((v, t))
+            adj[v].append((u, t))
+        dist = [inf] * n
+        dist[0] = 0
+        ways = [0] * n
+        ways[0] = 1
+        heap = [(0, 0)]
+        while heap:
+            d, u = heapq.heappop(heap)
+            if d > dist[u]:
+                continue                        # stale entry
+            for v, t in adj[u]:
+                if d + t < dist[v]:             # strictly shorter: forget the old count
+                    dist[v] = d + t
+                    ways[v] = ways[u]
+                    heapq.heappush(heap, (dist[v], v))
+                elif d + t == dist[v]:          # tie: one more shortest path
+                    ways[v] = (ways[v] + ways[u]) % MOD
+        return ways[n - 1] % MOD
+@@ TEST:
+s = Solution()
+assert s.countPaths(7, [[0, 6, 7], [0, 1, 2], [1, 2, 3], [1, 3, 3], [6, 3, 3], [3, 5, 1], [6, 5, 1], [2, 5, 1], [0, 4, 5], [4, 6, 2]]) == 4
+assert s.countPaths(2, [[1, 0, 10]]) == 1
+assert s.countPaths(1, []) == 1
+assert s.countPaths(4, [[0, 1, 1], [0, 2, 1], [1, 3, 1], [2, 3, 1]]) == 2
+assert s.countPaths(3, [[0, 1, 1], [1, 2, 1], [0, 2, 5]]) == 1
+@@ PROBLEM: minimum-time-to-visit-a-cell-in-a-grid
+@@ APPROACH:
+A cell can only be entered when the clock has reached its value, and you can wait only by stepping back and forth, which costs 2 minutes at a time. So the arrival time into a neighbour keeps the parity of t + 1.
+The earliest arrival is max(t + 1, value + (value - t - 1) % 2). Costs never decrease, so Dijkstra with this arrival formula still works.
+If both cells next to the start are locked past minute 1, you cannot even bounce, so the answer is -1. Otherwise every cell is reachable.
+@@ COMPLEXITY: O(rows * cols * log(rows * cols)) time, O(rows * cols) space
+@@ CODE:
+import heapq
+from math import inf
+
+class Solution:
+    def minimumTime(self, grid: List[List[int]]) -> int:
+        if grid[0][1] > 1 and grid[1][0] > 1:          # cannot make the first move or wait at the start
+            return -1
+        rows, cols = len(grid), len(grid[0])
+        dist = [[inf] * cols for _ in range(rows)]
+        dist[0][0] = 0
+        heap = [(0, 0, 0)]                             # (time, row, col)
+        while heap:
+            t, r, c = heapq.heappop(heap)
+            if t > dist[r][c]:
+                continue                               # stale entry
+            if r == rows - 1 and c == cols - 1:
+                return t
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols:
+                    # wait by bouncing back and forth: arrival keeps the parity of t + 1
+                    arrive = max(t + 1, grid[nr][nc] + (grid[nr][nc] - t - 1) % 2)
+                    if arrive < dist[nr][nc]:
+                        dist[nr][nc] = arrive
+                        heapq.heappush(heap, (arrive, nr, nc))
+        return -1
+@@ TEST:
+s = Solution()
+assert s.minimumTime([[0, 1, 3, 2], [5, 1, 2, 5], [4, 3, 8, 6]]) == 7
+assert s.minimumTime([[0, 2, 4], [3, 2, 1], [1, 0, 4]]) == -1
+assert s.minimumTime([[0, 0], [0, 0]]) == 2
+assert s.minimumTime([[0, 1], [1, 0]]) == 2
+assert s.minimumTime([[0, 1, 5], [9, 9, 9]]) == 9
+@@ PATTERN: Bellman-Ford
+@@ SPOT: Use this when you need single-source shortest paths with a cap on the number of edges, with negative weights, or when relaxing every edge in rounds is the simplest model.
+@@ PROBLEM: cheapest-flights-within-k-stops
+@@ APPROACH:
+Bellman-Ford with a fixed number of rounds: after round i, dist holds the cheapest price using at most i flights.
+At most k stops means at most k + 1 flights, so run exactly k + 1 rounds and relax every edge in each.
+Each round reads from dist but writes to a copy (nxt), so one round cannot chain two flights together. That copy is the key line.
+@@ COMPLEXITY: O(k * E) time, O(n) space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def findCheapestPrice(self, n: int, flights: List[List[int]], src: int, dst: int, k: int) -> int:
+        dist = [inf] * n
+        dist[src] = 0
+        for _ in range(k + 1):                       # k stops = k + 1 flights
+            nxt = dist[:]                            # read old values, write new ones
+            for u, v, price in flights:
+                if dist[u] + price < nxt[v]:         # relax the edge
+                    nxt[v] = dist[u] + price
+            dist = nxt
+        return dist[dst] if dist[dst] < inf else -1
+@@ TEST:
+s = Solution()
+assert s.findCheapestPrice(4, [[0, 1, 100], [1, 2, 100], [2, 0, 100], [1, 3, 600], [2, 3, 200]], 0, 3, 1) == 700
+assert s.findCheapestPrice(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 1) == 200
+assert s.findCheapestPrice(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 0) == 500
+assert s.findCheapestPrice(2, [], 0, 1, 1) == -1
+assert s.findCheapestPrice(3, [[0, 1, 1], [1, 2, 1]], 0, 2, 0) == -1
+@@ PROBLEM: path-with-maximum-probability
+@@ APPROACH:
+Same relax-every-edge loop, but it maximises a product of probabilities instead of minimising a sum. best[v] is the highest probability found so far to reach v.
+The edges are undirected, so each one is relaxed in both directions.
+A best path has at most n - 1 edges and probabilities never exceed 1, so n - 1 rounds are enough. Stop early when a full pass changes nothing. On the largest inputs Dijkstra with a max heap is faster.
+@@ COMPLEXITY: O(n * E) time worst case (usually far less with the early exit), O(n) space
+@@ CODE:
+class Solution:
+    def maxProbability(self, n: int, edges: List[List[int]], succProb: List[float], start_node: int, end_node: int) -> float:
+        best = [0.0] * n
+        best[start_node] = 1.0
+        for _ in range(n - 1):
+            changed = False
+            for (u, v), p in zip(edges, succProb):
+                if best[u] * p > best[v]:            # relax u -> v
+                    best[v] = best[u] * p
+                    changed = True
+                if best[v] * p > best[u]:            # relax v -> u (undirected)
+                    best[u] = best[v] * p
+                    changed = True
+            if not changed:                          # nothing improved: done early
+                break
+        return best[end_node]
+@@ TEST:
+s = Solution()
+assert abs(s.maxProbability(3, [[0, 1], [1, 2], [0, 2]], [0.5, 0.5, 0.2], 0, 2) - 0.25) < 1e-5
+assert abs(s.maxProbability(3, [[0, 1], [1, 2], [0, 2]], [0.5, 0.5, 0.3], 0, 2) - 0.3) < 1e-5
+assert s.maxProbability(3, [[0, 1]], [0.5], 0, 2) == 0.0
+assert abs(s.maxProbability(4, [[0, 1], [1, 2], [2, 3]], [0.5, 0.5, 0.5], 3, 0) - 0.125) < 1e-5
+assert s.maxProbability(2, [[0, 1]], [0.0], 0, 1) == 0.0
+@@ PROBLEM: minimum-cost-to-reach-destination-in-time
+@@ APPROACH:
+Bellman-Ford again, but the rounds are minutes instead of edge counts: dp[t][v] is the cheapest cost to be standing in city v at exactly minute t.
+For each minute t, relax every road both ways: arriving at v at minute t from u at minute t - w costs dp[t - w][u] plus the fee of v.
+The answer is the cheapest dp[t][n - 1] over all t up to maxTime, or -1 if none is finite.
+@@ COMPLEXITY: O(maxTime * E) time, O(maxTime * n) space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def minCost(self, maxTime: int, edges: List[List[int]], passingFees: List[int]) -> int:
+        n = len(passingFees)
+        dp = [[inf] * n for _ in range(maxTime + 1)]   # dp[t][v]: cheapest way to be in v at minute t
+        dp[0][0] = passingFees[0]
+        for t in range(1, maxTime + 1):
+            for u, v, w in edges:                      # relax every road in this round
+                if w <= t:
+                    dp[t][v] = min(dp[t][v], dp[t - w][u] + passingFees[v])
+                    dp[t][u] = min(dp[t][u], dp[t - w][v] + passingFees[u])
+        best = min(dp[t][n - 1] for t in range(maxTime + 1))
+        return best if best < inf else -1
+@@ TEST:
+s = Solution()
+e = [[0, 1, 10], [1, 2, 10], [2, 5, 10], [0, 3, 1], [3, 4, 10], [4, 5, 15]]
+f = [5, 1, 2, 20, 20, 3]
+assert s.minCost(30, e, f) == 11
+assert s.minCost(29, e, f) == 48
+assert s.minCost(25, e, f) == -1
+assert s.minCost(1, [[0, 1, 1]], [1, 2]) == 3
+assert s.minCost(3, [[0, 1, 2], [1, 2, 2]], [1, 1, 1]) == -1
+assert s.minCost(4, [[0, 1, 2], [1, 2, 2]], [1, 1, 1]) == 3
+@@ PATTERN: Floyd-Warshall
+@@ SPOT: Use this when the graph is small (a few hundred nodes at most) and you need the shortest distance, or only reachability, between every pair.
+@@ PROBLEM: find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance
+@@ APPROACH:
+The question needs the distance from every city to every other city, and n is at most 100, so run Floyd-Warshall to fill dist[i][j].
+The loop over k, the intermediate city, must be the outermost one. Then count, for each city, how many others are within the threshold.
+Pick the city with the fewest; on a tie take the larger index, which is why the comparison is <=.
+@@ COMPLEXITY: O(n^3) time, O(n^2) space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def findTheCity(self, n: int, edges: List[List[int]], distanceThreshold: int) -> int:
+        dist = [[inf] * n for _ in range(n)]
+        for i in range(n):
+            dist[i][i] = 0
+        for u, v, w in edges:
+            dist[u][v] = dist[v][u] = w
+        for k in range(n):                           # k (the intermediate node) is the OUTER loop
+            for i in range(n):
+                for j in range(n):
+                    if dist[i][k] + dist[k][j] < dist[i][j]:
+                        dist[i][j] = dist[i][k] + dist[k][j]
+        best_city, fewest = -1, inf
+        for i in range(n):
+            reach = sum(1 for j in range(n) if j != i and dist[i][j] <= distanceThreshold)
+            if reach <= fewest:                      # ties go to the larger index
+                best_city, fewest = i, reach
+        return best_city
+@@ TEST:
+s = Solution()
+assert s.findTheCity(4, [[0, 1, 3], [1, 2, 1], [1, 3, 4], [2, 3, 1]], 4) == 3
+assert s.findTheCity(5, [[0, 1, 2], [0, 4, 8], [1, 2, 3], [1, 4, 2], [2, 3, 1], [3, 4, 1]], 2) == 0
+assert s.findTheCity(2, [[0, 1, 5]], 1) == 1
+assert s.findTheCity(2, [[0, 1, 5]], 5) == 1
+assert s.findTheCity(3, [[0, 1, 1], [1, 2, 1]], 1) == 2
+@@ PROBLEM: course-schedule-iv
+@@ APPROACH:
+Floyd-Warshall can also compute reachability. Let reach[i][j] be True when course i is a prerequisite of course j, directly or through a chain.
+Use the same three loops with k outermost, but replace min/+ with or/and: reach[i][j] becomes True if reach[i][k] and reach[k][j].
+After that, every query is one table lookup.
+@@ COMPLEXITY: O(n^3 + q) time, O(n^2) space
+@@ CODE:
+class Solution:
+    def checkIfPrerequisite(self, numCourses: int, prerequisites: List[List[int]], queries: List[List[int]]) -> List[bool]:
+        n = numCourses
+        reach = [[False] * n for _ in range(n)]
+        for a, b in prerequisites:
+            reach[a][b] = True                       # direct prerequisite
+        for k in range(n):                           # intermediate course is the OUTER loop
+            for i in range(n):
+                for j in range(n):
+                    if reach[i][k] and reach[k][j]:  # i -> k -> j
+                        reach[i][j] = True
+        return [reach[a][b] for a, b in queries]
+@@ TEST:
+s = Solution()
+assert s.checkIfPrerequisite(2, [[1, 0]], [[0, 1], [1, 0]]) == [False, True]
+assert s.checkIfPrerequisite(2, [], [[1, 0], [0, 1]]) == [False, False]
+assert s.checkIfPrerequisite(3, [[1, 2], [1, 0], [2, 0]], [[1, 0], [1, 2]]) == [True, True]
+assert s.checkIfPrerequisite(4, [[0, 1], [1, 2], [2, 3]], [[0, 3], [3, 0], [1, 3]]) == [True, False, True]
+assert s.checkIfPrerequisite(1, [], [[0, 0]]) == [False]
+@@ PROBLEM: design-graph-with-shortest-path-calculator
+@@ APPROACH:
+Keep the full distance table and build it once with Floyd-Warshall. A query is then a lookup.
+When an edge (u, v, w) is added, any new shortest path uses it once, so it has the form i -> u -> v -> j. One O(n^2) sweep over all pairs with dist[i][u] + w + dist[v][j] updates the table, no need to rerun all three loops.
+A distance of infinity is reported as -1.
+@@ COMPLEXITY: constructor O(n^3), addEdge O(n^2), shortestPath O(1); O(n^2) space
+@@ CODE:
+from math import inf
+
+class Graph:
+    def __init__(self, n: int, edges: List[List[int]]):
+        self.n = n
+        self.dist = [[inf] * n for _ in range(n)]
+        for i in range(n):
+            self.dist[i][i] = 0
+        for u, v, w in edges:
+            self.dist[u][v] = min(self.dist[u][v], w)
+        for k in range(n):                            # Floyd-Warshall, k outermost
+            for i in range(n):
+                for j in range(n):
+                    if self.dist[i][k] + self.dist[k][j] < self.dist[i][j]:
+                        self.dist[i][j] = self.dist[i][k] + self.dist[k][j]
+
+    def addEdge(self, edge: List[int]) -> None:
+        u, v, w = edge
+        d = self.dist
+        for i in range(self.n):
+            for j in range(self.n):
+                # a new shortest path uses the new edge once: i -> u -> v -> j
+                d[i][j] = min(d[i][j], d[i][u] + w + d[v][j])
+
+    def shortestPath(self, node1: int, node2: int) -> int:
+        d = self.dist[node1][node2]
+        return -1 if d == inf else d
+@@ TEST:
+g = Graph(4, [[0, 2, 5], [0, 1, 2], [1, 2, 1], [3, 0, 3]])
+assert g.shortestPath(3, 2) == 6
+assert g.shortestPath(0, 3) == -1
+g.addEdge([1, 3, 4])
+assert g.shortestPath(0, 3) == 6
+assert g.shortestPath(2, 2) == 0
+g.addEdge([2, 3, 1])
+assert g.shortestPath(0, 3) == 4
+assert g.shortestPath(3, 3) == 0
+g = Graph(2, [])
+assert g.shortestPath(0, 1) == -1
+g.addEdge([0, 1, 7])
+assert g.shortestPath(0, 1) == 7
+assert g.shortestPath(1, 0) == -1
+@@ PATTERN: Minimum Spanning Tree
+@@ SPOT: Use this when you must connect all nodes with the least total cost (V - 1 edges, no cycle), or decide which edges every cheapest tree needs.
+@@ PROBLEM: min-cost-to-connect-all-points
+@@ APPROACH:
+Every pair of points is an edge weighted by Manhattan distance, so the graph is dense and the answer is the weight of its MST. Prim fits a dense graph.
+Grow the tree from point 0. key[v] is the cheapest edge from the tree to v. Each step adds the outside point with the smallest key and adds that key to the total, then updates the keys of the rest.
+A plain scan finds the smallest key, so no heap is needed: O(n) per step and O(n^2) overall, instead of sorting about n^2 / 2 edges.
+@@ COMPLEXITY: O(n^2) time, O(n) space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def minCostConnectPoints(self, points: List[List[int]]) -> int:
+        n = len(points)
+        key = [inf] * n                          # cheapest edge from the tree to each point
+        key[0] = 0
+        in_tree = [False] * n
+        total = 0
+        for _ in range(n):
+            u = -1
+            for v in range(n):                   # cheapest point still outside the tree
+                if not in_tree[v] and (u == -1 or key[v] < key[u]):
+                    u = v
+            in_tree[u] = True
+            total += key[u]                      # this edge joins u to the tree
+            for v in range(n):
+                if not in_tree[v]:
+                    d = abs(points[u][0] - points[v][0]) + abs(points[u][1] - points[v][1])
+                    key[v] = min(key[v], d)      # u may now be the closest tree point to v
+        return total
+@@ TEST:
+s = Solution()
+assert s.minCostConnectPoints([[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]]) == 20
+assert s.minCostConnectPoints([[3, 12], [-2, 5], [-4, 1]]) == 18
+assert s.minCostConnectPoints([[0, 0]]) == 0
+assert s.minCostConnectPoints([[0, 0], [1, 1]]) == 2
+assert s.minCostConnectPoints([[0, 0], [1, 0], [2, 0], [3, 0]]) == 3
+@@ PROBLEM: remove-max-number-of-edges-to-keep-graph-fully-traversable
+@@ APPROACH:
+Alice and Bob each need a spanning tree, so keep one DSU per person. Each person's tree needs exactly n - 1 useful unions, and every other edge can be removed.
+An edge usable by both (type 3) serves two people at once, so take those first, the way Kruskal takes the cheapest edge first. Then add the single-person edges.
+An edge is kept only if union returns True for someone. If either person ends with fewer than n - 1 unions, the graph is not fully traversable and the answer is -1. Otherwise removable = total edges - kept edges.
+@@ COMPLEXITY: O(E * alpha(n)) time, O(n) space
+@@ CODE:
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]       # path compression
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False                        # already connected: this edge is useless
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+class Solution:
+    def maxNumEdgesToRemove(self, n: int, edges: List[List[int]]) -> int:
+        alice, bob = DSU(n + 1), DSU(n + 1)
+        alice_joins = bob_joins = kept = 0
+        for t, u, v in edges:                   # shared edges first
+            if t == 3:
+                a, b = alice.union(u, v), bob.union(u, v)
+                alice_joins += a
+                bob_joins += b
+                kept += a or b
+        for t, u, v in edges:                   # then edges for one person only
+            if t == 1 and alice.union(u, v):
+                alice_joins += 1
+                kept += 1
+            elif t == 2 and bob.union(u, v):
+                bob_joins += 1
+                kept += 1
+        if alice_joins != n - 1 or bob_joins != n - 1:   # someone cannot reach everyone
+            return -1
+        return len(edges) - kept
+@@ TEST:
+s = Solution()
+assert s.maxNumEdgesToRemove(4, [[3, 1, 2], [3, 2, 3], [1, 1, 3], [1, 2, 4], [1, 1, 2], [2, 3, 4]]) == 2
+assert s.maxNumEdgesToRemove(4, [[3, 1, 2], [3, 2, 3], [1, 1, 4], [2, 1, 4]]) == 0
+assert s.maxNumEdgesToRemove(4, [[3, 2, 3], [1, 1, 2], [2, 3, 4]]) == -1
+assert s.maxNumEdgesToRemove(2, [[3, 1, 2], [1, 1, 2], [2, 1, 2]]) == 2
+assert s.maxNumEdgesToRemove(2, [[1, 1, 2], [2, 1, 2]]) == 0
+assert s.maxNumEdgesToRemove(1, []) == 0
+@@ PROBLEM: find-critical-and-pseudo-critical-edges-in-minimum-spanning-tree
+@@ APPROACH:
+Write a helper mst(skip, force) that runs Kruskal over the edges sorted by weight, optionally skipping one edge or forcing one in first. It returns the tree weight, or infinity if the tree cannot be built.
+An edge is critical if skipping it makes the MST heavier or impossible: every MST needs it. If it is not critical but forcing it in still gives the base weight, it is pseudo-critical: some MST uses it, not all.
+With at most 200 edges, running Kruskal about twice per edge is fast enough.
+@@ COMPLEXITY: O(E^2 * alpha(n)) time, O(n + E) space
+@@ CODE:
+from math import inf
+
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]       # path compression
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+class Solution:
+    def findCriticalAndPseudoCriticalEdges(self, n: int, edges: List[List[int]]) -> List[List[int]]:
+        order = sorted(range(len(edges)), key=lambda i: edges[i][2])    # edge indexes, lightest first
+
+        def mst(skip=-1, force=-1):
+            dsu = DSU(n)
+            total = joined = 0
+            if force != -1:                      # take this edge before anything else
+                u, v, w = edges[force]
+                dsu.union(u, v)
+                total, joined = w, 1
+            for i in order:
+                if i == skip:
+                    continue
+                u, v, w = edges[i]
+                if dsu.union(u, v):              # Kruskal: keep edges that join two groups
+                    total += w
+                    joined += 1
+            return total if joined == n - 1 else inf
+
+        base = mst()
+        critical, pseudo = [], []
+        for i in range(len(edges)):
+            if mst(skip=i) > base:               # without it the MST is worse: critical
+                critical.append(i)
+            elif mst(force=i) == base:           # usable in some MST: pseudo-critical
+                pseudo.append(i)
+        return [critical, pseudo]
+@@ TEST:
+s = Solution()
+r = s.findCriticalAndPseudoCriticalEdges(5, [[0, 1, 1], [1, 2, 1], [2, 3, 2], [0, 3, 2], [0, 4, 3], [3, 4, 3], [1, 4, 6]])
+assert [sorted(r[0]), sorted(r[1])] == [[0, 1], [2, 3, 4, 5]]
+r = s.findCriticalAndPseudoCriticalEdges(4, [[0, 1, 1], [1, 2, 1], [2, 3, 1], [0, 3, 1]])
+assert [sorted(r[0]), sorted(r[1])] == [[], [0, 1, 2, 3]]
+r = s.findCriticalAndPseudoCriticalEdges(2, [[0, 1, 5]])
+assert [sorted(r[0]), sorted(r[1])] == [[0], []]
+r = s.findCriticalAndPseudoCriticalEdges(3, [[0, 1, 1], [1, 2, 2], [0, 2, 3]])
+assert [sorted(r[0]), sorted(r[1])] == [[0, 1], []]
+@@ PATTERN: Kruskal
+@@ SPOT: Use this when edges can be sorted by weight and you take each one that joins two different groups, or when queries ask what is connected using only edges up to some weight.
+@@ PROBLEM: path-with-minimum-effort
+@@ APPROACH:
+A route's effort is its largest height step, so we want to join the two corners using the smallest possible largest edge. That is exactly what Kruskal builds.
+Make an edge between each pair of neighbouring cells, weighted by the height difference, and sort them. Union them in that order.
+The first edge after which find(0) == find(target) is the answer: every lighter edge is already used, so no better route exists.
+@@ COMPLEXITY: O(E log E) time with E about 2 * rows * cols, O(E) space
+@@ CODE:
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]       # path compression
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+class Solution:
+    def minimumEffortPath(self, heights: List[List[int]]) -> int:
+        rows, cols = len(heights), len(heights[0])
+        edges = []                                # (height difference, cell a, cell b)
+        for r in range(rows):
+            for c in range(cols):
+                if r + 1 < rows:
+                    edges.append((abs(heights[r][c] - heights[r + 1][c]), r * cols + c, (r + 1) * cols + c))
+                if c + 1 < cols:
+                    edges.append((abs(heights[r][c] - heights[r][c + 1]), r * cols + c, r * cols + c + 1))
+        edges.sort()                              # Kruskal: lightest edge first
+        dsu = DSU(rows * cols)
+        target = rows * cols - 1
+        for effort, a, b in edges:
+            dsu.union(a, b)
+            if dsu.find(0) == dsu.find(target):   # the corners became connected
+                return effort                     # this edge is the biggest step on the best route
+        return 0                                  # a single cell needs no effort
+@@ TEST:
+s = Solution()
+assert s.minimumEffortPath([[1, 2, 2], [3, 8, 2], [5, 3, 5]]) == 2
+assert s.minimumEffortPath([[1, 2, 3], [3, 8, 4], [5, 3, 5]]) == 1
+assert s.minimumEffortPath([[1, 2, 1, 1, 1], [1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 1, 1, 2, 1]]) == 0
+assert s.minimumEffortPath([[7]]) == 0
+assert s.minimumEffortPath([[1, 10], [10, 1]]) == 9
+assert s.minimumEffortPath([[1, 3], [2, 2]]) == 1
+@@ PROBLEM: checking-existence-of-edge-length-limited-paths
+@@ APPROACH:
+Sort the edges by weight and answer the queries offline in order of increasing limit. One DSU is reused for all of them.
+For each query, move the pointer e forward and union every edge whose weight is strictly below the limit. This is Kruskal paused at each limit.
+Then find(p) == find(q) says whether p and q are connected using only edges that light. Answers are stored back at the query's original index.
+@@ COMPLEXITY: O(E log E + Q log Q) time, O(n + Q) space
+@@ CODE:
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]       # path compression
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+class Solution:
+    def distanceLimitedPathsExist(self, n: int, edgeList: List[List[int]], queries: List[List[int]]) -> List[bool]:
+        edgeList.sort(key=lambda e: e[2])                              # Kruskal order: lightest first
+        order = sorted(range(len(queries)), key=lambda i: queries[i][2])   # smallest limit first
+        dsu = DSU(n)
+        answer = [False] * len(queries)
+        e = 0
+        for qi in order:
+            p, q, limit = queries[qi]
+            while e < len(edgeList) and edgeList[e][2] < limit:        # add every edge below the limit
+                dsu.union(edgeList[e][0], edgeList[e][1])
+                e += 1
+            answer[qi] = dsu.find(p) == dsu.find(q)
+        return answer
+@@ TEST:
+s = Solution()
+assert s.distanceLimitedPathsExist(3, [[0, 1, 2], [1, 2, 4], [2, 0, 8], [1, 0, 16]], [[0, 1, 2], [0, 2, 5]]) == [False, True]
+assert s.distanceLimitedPathsExist(5, [[0, 1, 10], [1, 2, 5], [2, 3, 9], [3, 4, 13]], [[0, 4, 14], [1, 4, 13]]) == [True, False]
+assert s.distanceLimitedPathsExist(2, [], [[0, 1, 5]]) == [False]
+assert s.distanceLimitedPathsExist(2, [], [[0, 0, 1]]) == [True]
+assert s.distanceLimitedPathsExist(3, [[0, 1, 1], [1, 2, 1]], [[0, 2, 1], [0, 2, 2]]) == [False, True]
+@@ PROBLEM: number-of-good-paths
+@@ APPROACH:
+A good path starts and ends on equal values and never passes a larger one. Give each edge the weight max(vals[u], vals[v]) and process edges in that order, as Kruskal does.
+Each component remembers its peak value (top) and how many nodes hold it (count). When two components merge and have the same peak, every pair of peak nodes, one from each side, is a new good path: count[a] * count[b].
+If the peaks differ, the lower side can never end a good path with the higher side, so only the larger peak's count is kept. Every single node is also a good path, so paths starts at n.
+@@ COMPLEXITY: O(E log E) time, O(n) space
+@@ CODE:
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]       # path compression
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+class Solution:
+    def numberOfGoodPaths(self, vals: List[int], edges: List[List[int]]) -> int:
+        n = len(vals)
+        dsu = DSU(n)
+        top = vals[:]                           # top[root]: biggest value in the component
+        count = [1] * n                         # count[root]: how many nodes hold that value
+        edges.sort(key=lambda e: max(vals[e[0]], vals[e[1]]))   # Kruskal: by edge weight
+        paths = n                               # every single node is a good path
+        for u, v in edges:
+            a, b = dsu.find(u), dsu.find(v)
+            if a == b:
+                continue
+            peak = max(top[a], top[b])
+            if top[a] == top[b]:                # equal peaks: pair them up
+                paths += count[a] * count[b]
+            ways = (count[a] if top[a] == peak else 0) + (count[b] if top[b] == peak else 0)
+            dsu.union(a, b)
+            root = dsu.find(a)
+            top[root], count[root] = peak, ways
+        return paths
+@@ TEST:
+s = Solution()
+assert s.numberOfGoodPaths([1, 3, 2, 1, 3], [[0, 1], [0, 2], [2, 3], [2, 4]]) == 6
+assert s.numberOfGoodPaths([1, 1, 2, 2, 3], [[0, 1], [1, 2], [2, 3], [2, 4]]) == 7
+assert s.numberOfGoodPaths([1], []) == 1
+assert s.numberOfGoodPaths([2, 2], [[0, 1]]) == 3
+assert s.numberOfGoodPaths([2, 1, 2], [[0, 1], [1, 2]]) == 4
+assert s.numberOfGoodPaths([1, 2, 1], [[0, 1], [1, 2]]) == 3
+@@ PATTERN: Prim
+@@ SPOT: Use this when you can grow one region from a start node and must always take the cheapest (or best) node on its border, which a heap hands out.
+@@ PROBLEM: find-the-safest-path-in-a-grid
+@@ APPROACH:
+First run a multi-source BFS from every thief to get dist, the distance of each cell to the nearest thief.
+Then grow a region from (0, 0) Prim-style: the heap holds the border cells, and each step takes the safest one (max heap, so values are negated).
+The path is only as safe as its least safe cell, so keep the running minimum of the popped values. When the bottom-right cell is popped, that minimum is the answer: while a safer border cell exists it is taken first.
+@@ COMPLEXITY: O(n^2 log n) time, O(n^2) space
+@@ CODE:
+import heapq
+from collections import deque
+
+class Solution:
+    def maximumSafenessFactor(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        dirs = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        dist = [[-1] * n for _ in range(n)]          # distance to the nearest thief
+        q = deque()
+        for r in range(n):
+            for c in range(n):
+                if grid[r][c] == 1:
+                    dist[r][c] = 0
+                    q.append((r, c))
+        while q:                                     # multi-source BFS from all thieves
+            r, c = q.popleft()
+            for dr, dc in dirs:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < n and 0 <= nc < n and dist[nr][nc] == -1:
+                    dist[nr][nc] = dist[r][c] + 1
+                    q.append((nr, nc))
+        heap = [(-dist[0][0], 0, 0)]                 # border of the grown region, safest first
+        seen = [[False] * n for _ in range(n)]
+        seen[0][0] = True
+        safest = dist[0][0]
+        while heap:
+            neg, r, c = heapq.heappop(heap)          # Prim: best cell on the border
+            safest = min(safest, -neg)               # a path is only as safe as its worst cell
+            if r == n - 1 and c == n - 1:
+                return safest
+            for dr, dc in dirs:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < n and 0 <= nc < n and not seen[nr][nc]:
+                    seen[nr][nc] = True
+                    heapq.heappush(heap, (-dist[nr][nc], nr, nc))
+        return 0
+@@ TEST:
+s = Solution()
+assert s.maximumSafenessFactor([[1, 0, 0], [0, 0, 0], [0, 0, 1]]) == 0
+assert s.maximumSafenessFactor([[0, 0, 1], [0, 0, 0], [0, 0, 0]]) == 2
+assert s.maximumSafenessFactor([[0, 0, 0, 1], [0, 0, 0, 0], [0, 0, 0, 0], [1, 0, 0, 0]]) == 2
+assert s.maximumSafenessFactor([[1]]) == 0
+assert s.maximumSafenessFactor([[0, 0, 0], [0, 0, 0], [1, 0, 0]]) == 2
+assert s.maximumSafenessFactor([[0, 0], [0, 1]]) == 0
+@@ PROBLEM: swim-in-rising-water
+@@ APPROACH:
+The water level must be at least as high as every cell on the path, so the answer is the smallest possible highest cell on a route to the corner.
+Grow a region from (0, 0) with a min heap of border cells keyed by elevation. Always pop the lowest border cell, as Prim picks the cheapest edge leaving the tree.
+Keep time = max(time, elevation) over the popped cells. When the bottom-right cell is popped, time is the answer, because every lower border cell was already used.
+@@ COMPLEXITY: O(n^2 log n) time, O(n^2) space
+@@ CODE:
+import heapq
+
+class Solution:
+    def swimInWater(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        heap = [(grid[0][0], 0, 0)]              # border cells keyed by elevation
+        seen = {(0, 0)}
+        time = 0
+        while heap:
+            h, r, c = heapq.heappop(heap)        # Prim: lowest cell on the border
+            time = max(time, h)                  # water must reach this cell's height
+            if r == n - 1 and c == n - 1:
+                return time
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < n and 0 <= nc < n and (nr, nc) not in seen:
+                    seen.add((nr, nc))
+                    heapq.heappush(heap, (grid[nr][nc], nr, nc))
+        return time
+@@ TEST:
+s = Solution()
+assert s.swimInWater([[0, 2], [1, 3]]) == 3
+assert s.swimInWater([[0, 1, 2, 3, 4], [24, 23, 22, 21, 5], [12, 13, 14, 15, 16], [11, 17, 18, 19, 20], [10, 9, 8, 7, 6]]) == 16
+assert s.swimInWater([[0]]) == 0
+assert s.swimInWater([[0, 1], [2, 3]]) == 3
+assert s.swimInWater([[3, 2], [0, 1]]) == 3
+@@ PATTERN: DSU / Union-Find
+@@ SPOT: Use this when groups keep merging and you must ask "are these two in the same group?", especially with edges that arrive one at a time or in sorted order.
+@@ PROBLEM: redundant-connection
+@@ APPROACH:
+The input is a tree plus one extra edge. Add the edges one by one with union.
+union returns False when both ends already share a leader, which means this edge would close a cycle. The first such edge is the answer.
+The first failing union is the edge that completes the cycle, which is the one that appears last in the input among the cycle's edges, as the problem asks.
+@@ COMPLEXITY: O(n * alpha(n)) time, O(n) space
+@@ CODE:
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]       # path compression
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False                        # already connected: this edge closes a cycle
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a                         # union by size: attach the small tree under the big one
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+class Solution:
+    def findRedundantConnection(self, edges: List[List[int]]) -> List[int]:
+        dsu = DSU(len(edges) + 1)               # nodes are numbered 1..n
+        for u, v in edges:
+            if not dsu.union(u, v):             # same group already: redundant edge
+                return [u, v]
+        return []
+@@ TEST:
+s = Solution()
+assert s.findRedundantConnection([[1, 2], [1, 3], [2, 3]]) == [2, 3]
+assert s.findRedundantConnection([[1, 2], [2, 3], [3, 4], [1, 4], [1, 5]]) == [1, 4]
+assert s.findRedundantConnection([[1, 2], [2, 3], [3, 1]]) == [3, 1]
+assert s.findRedundantConnection([[1, 2], [1, 2]]) == [1, 2]
+assert s.findRedundantConnection([[1, 4], [3, 4], [1, 3], [1, 2], [4, 5]]) == [1, 3]
+@@ PROBLEM: accounts-merge
+@@ APPROACH:
+Make each account a node. Two accounts that share an email belong to the same person, so union them.
+owner remembers the first account that held each email. When an email is seen again, union the current account with that owner.
+At the end, group the emails by the leader of their account, sort each group, and put the name in front.
+@@ COMPLEXITY: O(N * L * alpha(N) + E log E) time for N accounts, E emails; O(E) space
+@@ CODE:
+from collections import defaultdict
+
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]       # path compression
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+class Solution:
+    def accountsMerge(self, accounts: List[List[str]]) -> List[List[str]]:
+        dsu = DSU(len(accounts))
+        owner = {}                                   # email -> first account that had it
+        for i, acc in enumerate(accounts):
+            for email in acc[1:]:
+                if email in owner:
+                    dsu.union(i, owner[email])       # shared email: same person
+                else:
+                    owner[email] = i
+        groups = defaultdict(list)
+        for email, i in owner.items():
+            groups[dsu.find(i)].append(email)        # group emails by the leader account
+        return [[accounts[root][0]] + sorted(emails) for root, emails in groups.items()]
+@@ TEST:
+s = Solution()
+got = s.accountsMerge([["John", "johnsmith@mail.com", "john_newyork@mail.com"], ["John", "johnsmith@mail.com", "john00@mail.com"], ["Mary", "mary@mail.com"], ["John", "johnnybravo@mail.com"]])
+assert sorted(got) == sorted([["John", "john00@mail.com", "john_newyork@mail.com", "johnsmith@mail.com"], ["Mary", "mary@mail.com"], ["John", "johnnybravo@mail.com"]])
+got = s.accountsMerge([["Gabe", "Gabe0@m.co", "Gabe3@m.co", "Gabe1@m.co"], ["Kevin", "Kevin3@m.co", "Kevin5@m.co", "Kevin0@m.co"], ["Ethan", "Ethan5@m.co", "Ethan4@m.co", "Ethan0@m.co"], ["Hanzo", "Hanzo3@m.co", "Hanzo1@m.co", "Hanzo0@m.co"], ["Fern", "Fern5@m.co", "Fern1@m.co", "Fern0@m.co"]])
+assert sorted(got) == sorted([["Ethan", "Ethan0@m.co", "Ethan4@m.co", "Ethan5@m.co"], ["Gabe", "Gabe0@m.co", "Gabe1@m.co", "Gabe3@m.co"], ["Hanzo", "Hanzo0@m.co", "Hanzo1@m.co", "Hanzo3@m.co"], ["Kevin", "Kevin0@m.co", "Kevin3@m.co", "Kevin5@m.co"], ["Fern", "Fern0@m.co", "Fern1@m.co", "Fern5@m.co"]])
+assert s.accountsMerge([["A", "x", "y"], ["A", "y", "z"], ["A", "z", "w"]]) == [["A", "w", "x", "y", "z"]]
+assert s.accountsMerge([["A", "a@x"]]) == [["A", "a@x"]]
+@@ PROBLEM: find-all-people-with-secret
+@@ APPROACH:
+Sort the meetings by time and handle all meetings of the same minute together. Within a minute, union the two people of every meeting, so the secret spreads along any chain of meetings.
+After that minute, a person who is not in person 0's group never actually got the secret, so undo their unions by resetting them to their own group (the reset step).
+At the end, everyone whose leader is the same as person 0's leader knows the secret.
+@@ COMPLEXITY: O(M log M + M * alpha(n)) time, O(n) space
+@@ CODE:
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]       # path compression
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+    def reset(self, x):
+        self.p[x] = x                           # leave the group, become a singleton again
+        self.sz[x] = 1
+
+class Solution:
+    def findAllPeople(self, n: int, meetings: List[List[int]], firstPerson: int) -> List[int]:
+        dsu = DSU(n)
+        dsu.union(0, firstPerson)
+        meetings.sort(key=lambda m: m[2])               # earliest meeting first
+        i = 0
+        while i < len(meetings):
+            j = i
+            while j < len(meetings) and meetings[j][2] == meetings[i][2]:
+                j += 1                                  # meetings[i:j] share the same minute
+            for x, y, _ in meetings[i:j]:
+                dsu.union(x, y)
+            for x, y, _ in meetings[i:j]:
+                if dsu.find(x) != dsu.find(0):          # no secret reached them: undo their merge
+                    dsu.reset(x)
+                    dsu.reset(y)
+            i = j
+        return [p for p in range(n) if dsu.find(p) == dsu.find(0)]
+@@ TEST:
+s = Solution()
+assert sorted(s.findAllPeople(6, [[1, 2, 5], [2, 3, 8], [1, 5, 10]], 1)) == [0, 1, 2, 3, 5]
+assert sorted(s.findAllPeople(4, [[3, 1, 3], [1, 2, 2], [0, 3, 3]], 3)) == [0, 1, 3]
+assert sorted(s.findAllPeople(5, [[3, 4, 2], [1, 2, 1], [2, 3, 1]], 1)) == [0, 1, 2, 3, 4]
+assert sorted(s.findAllPeople(3, [], 2)) == [0, 2]
+assert sorted(s.findAllPeople(4, [[1, 2, 1], [2, 3, 2]], 3)) == [0, 2, 3]

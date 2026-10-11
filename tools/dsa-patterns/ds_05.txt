@@ -1,0 +1,581 @@
+@@ PATTERN: Basic Queue
+@@ SPOT: Use this when items must be handled in the order they arrived, or when old items expire from the front while new ones join at the back.
+@@ PROBLEM: number-of-recent-calls
+@@ APPROACH:
+Every ping joins the back of a deque, and the deque always holds the calls from the last 3000 ms.
+Calls are added in increasing time order, so the oldest call is always at the front.
+The while loop pops expired calls from the front with popleft, which is O(1). The answer is the size of the deque.
+@@ COMPLEXITY: O(1) amortized per ping, O(W) space where W is the number of calls in the window
+@@ CODE:
+from collections import deque
+
+class RecentCounter:
+    def __init__(self):
+        self.q = deque()
+
+    def ping(self, t: int) -> int:
+        self.q.append(t)                    # newest call joins the back
+        while self.q[0] < t - 3000:         # oldest calls leave from the front
+            self.q.popleft()
+        return len(self.q)
+@@ TEST:
+c = RecentCounter()
+assert c.ping(1) == 1
+assert c.ping(100) == 2
+assert c.ping(3001) == 3
+assert c.ping(3002) == 3
+c = RecentCounter()
+assert c.ping(1) == 1
+assert c.ping(3001) == 2
+assert c.ping(3002) == 2
+assert c.ping(10000) == 1
+@@ PROBLEM: implement-stack-using-queues
+@@ APPROACH:
+A queue gives out the oldest item first, but a stack must give out the newest item first.
+After each push, rotate the queue: move every older item from the front to the back, so the new item ends up at the front.
+Then pop is just popleft and top is the front item. The rotation loop in push is the key line.
+@@ COMPLEXITY: push O(n), pop O(1), top O(1), empty O(1); O(n) space
+@@ CODE:
+from collections import deque
+
+class MyStack:
+    def __init__(self):
+        self.q = deque()
+
+    def push(self, x: int) -> None:
+        self.q.append(x)
+        for _ in range(len(self.q) - 1):         # send every older item behind x
+            self.q.append(self.q.popleft())
+
+    def pop(self) -> int:
+        return self.q.popleft()                  # the front is the newest item
+
+    def top(self) -> int:
+        return self.q[0]
+
+    def empty(self) -> bool:
+        return not self.q
+@@ TEST:
+s = MyStack()
+s.push(1)
+s.push(2)
+assert s.top() == 2
+assert s.pop() == 2
+assert s.empty() == False
+assert s.pop() == 1
+assert s.empty() == True
+s = MyStack()
+assert s.empty() == True
+for v in (3, 4, 5):
+    s.push(v)
+assert s.top() == 5
+assert [s.pop(), s.pop(), s.pop()] == [5, 4, 3]
+assert s.empty() == True
+@@ PROBLEM: dota2-senate
+@@ APPROACH:
+Keep two queues holding the positions of the Radiant and Dire senators, in voting order.
+Each round, take the front senator of each queue. The one with the smaller position votes first and bans the other.
+The winner goes back to the end of its queue with position + n, which means "I vote again next round". The senator who was banned is not re-added.
+The loop ends when one queue is empty.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def predictPartyVictory(self, senate: str) -> str:
+        n = len(senate)
+        radiant, dire = deque(), deque()
+        for i, party in enumerate(senate):
+            (radiant if party == "R" else dire).append(i)
+        while radiant and dire:
+            r, d = radiant.popleft(), dire.popleft()
+            if r < d:
+                radiant.append(r + n)       # winner re-joins the back for the next round
+            else:
+                dire.append(d + n)
+        return "Radiant" if radiant else "Dire"
+@@ TEST:
+s = Solution()
+assert s.predictPartyVictory("RD") == "Radiant"
+assert s.predictPartyVictory("RDD") == "Dire"
+assert s.predictPartyVictory("R") == "Radiant"
+assert s.predictPartyVictory("D") == "Dire"
+assert s.predictPartyVictory("DDRRR") == "Dire"
+assert s.predictPartyVictory("RRDDD") == "Radiant"
+@@ PATTERN: Circular Queue
+@@ SPOT: Use this when you need a fixed-size buffer that reuses freed slots by wrapping indices with modulo, or when positions on a ring wrap around.
+@@ PROBLEM: design-circular-queue
+@@ APPROACH:
+Store the items in a fixed array and track only head (index of the front item) and size.
+The slot for a new item is (head + size) % cap, so after the end of the array it wraps back to index 0 and reuses freed slots.
+Tracking size tells full (size == cap) from empty (size == 0), which two indices alone cannot do.
+@@ COMPLEXITY: O(1) time per operation, O(k) space
+@@ CODE:
+class MyCircularQueue:
+    def __init__(self, k: int):
+        self.data = [0] * k
+        self.cap = k
+        self.head = 0                  # index of the front item
+        self.size = 0                  # track size to tell full from empty
+
+    def enQueue(self, value: int) -> bool:
+        if self.isFull():
+            return False
+        self.data[(self.head + self.size) % self.cap] = value    # wrap with modulo
+        self.size += 1
+        return True
+
+    def deQueue(self) -> bool:
+        if self.isEmpty():
+            return False
+        self.head = (self.head + 1) % self.cap                   # freed slot is reused later
+        self.size -= 1
+        return True
+
+    def Front(self) -> int:
+        return -1 if self.isEmpty() else self.data[self.head]
+
+    def Rear(self) -> int:
+        return -1 if self.isEmpty() else self.data[(self.head + self.size - 1) % self.cap]
+
+    def isEmpty(self) -> bool:
+        return self.size == 0
+
+    def isFull(self) -> bool:
+        return self.size == self.cap
+@@ TEST:
+q = MyCircularQueue(3)
+assert q.enQueue(1) == True
+assert q.enQueue(2) == True
+assert q.enQueue(3) == True
+assert q.enQueue(4) == False
+assert q.Rear() == 3
+assert q.isFull() == True
+assert q.deQueue() == True
+assert q.enQueue(4) == True
+assert q.Rear() == 4
+assert q.Front() == 2
+q = MyCircularQueue(1)
+assert q.Front() == -1
+assert q.Rear() == -1
+assert q.isEmpty() == True
+assert q.deQueue() == False
+assert q.enQueue(7) == True
+assert q.enQueue(8) == False
+assert q.Front() == 7 and q.Rear() == 7
+assert q.deQueue() == True
+assert q.enQueue(9) == True
+assert q.Front() == 9
+@@ PROBLEM: design-circular-deque
+@@ APPROACH:
+Same fixed array with head and size, but now both ends can grow.
+Insert at the back writes to (head + size) % cap. Insert at the front first moves head one step left with (head - 1) % cap, which wraps from 0 to the last index.
+Deleting from the back only shrinks size. Deleting from the front moves head right.
+@@ COMPLEXITY: O(1) time per operation, O(k) space
+@@ CODE:
+class MyCircularDeque:
+    def __init__(self, k: int):
+        self.data = [0] * k
+        self.cap = k
+        self.head = 0
+        self.size = 0
+
+    def insertFront(self, value: int) -> bool:
+        if self.isFull():
+            return False
+        self.head = (self.head - 1) % self.cap      # step left, wrapping 0 -> cap - 1
+        self.data[self.head] = value
+        self.size += 1
+        return True
+
+    def insertLast(self, value: int) -> bool:
+        if self.isFull():
+            return False
+        self.data[(self.head + self.size) % self.cap] = value
+        self.size += 1
+        return True
+
+    def deleteFront(self) -> bool:
+        if self.isEmpty():
+            return False
+        self.head = (self.head + 1) % self.cap
+        self.size -= 1
+        return True
+
+    def deleteLast(self) -> bool:
+        if self.isEmpty():
+            return False
+        self.size -= 1
+        return True
+
+    def getFront(self) -> int:
+        return -1 if self.isEmpty() else self.data[self.head]
+
+    def getRear(self) -> int:
+        return -1 if self.isEmpty() else self.data[(self.head + self.size - 1) % self.cap]
+
+    def isEmpty(self) -> bool:
+        return self.size == 0
+
+    def isFull(self) -> bool:
+        return self.size == self.cap
+@@ TEST:
+d = MyCircularDeque(3)
+assert d.insertLast(1) == True
+assert d.insertLast(2) == True
+assert d.insertFront(3) == True
+assert d.insertFront(4) == False
+assert d.getRear() == 2
+assert d.isFull() == True
+assert d.deleteLast() == True
+assert d.insertFront(4) == True
+assert d.getFront() == 4
+d = MyCircularDeque(2)
+assert d.getFront() == -1 and d.getRear() == -1
+assert d.deleteFront() == False and d.deleteLast() == False
+assert d.insertFront(5) == True
+assert d.insertFront(6) == True
+assert d.getFront() == 6 and d.getRear() == 5
+assert d.insertLast(7) == False
+assert d.deleteFront() == True
+assert d.insertLast(8) == True
+assert d.getFront() == 5 and d.getRear() == 8
+@@ PROBLEM: find-the-winner-of-the-circular-game
+@@ APPROACH:
+The friends sit on a ring, so counting k steps from the current spot must wrap past the end of the list.
+The line idx = (idx + k - 1) % len(friends) is the same modulo wrap as in the circular queue.
+That index is the friend who leaves. Counting restarts at the friend now sitting at the same index, so idx is kept as it is.
+Repeat until one friend remains.
+@@ COMPLEXITY: O(n^2) time (each pop shifts the list), O(n) space
+@@ CODE:
+class Solution:
+    def findTheWinner(self, n: int, k: int) -> int:
+        friends = list(range(1, n + 1))
+        idx = 0
+        while len(friends) > 1:
+            idx = (idx + k - 1) % len(friends)    # walk k steps around the ring
+            friends.pop(idx)                      # next count starts at this same index
+        return friends[0]
+@@ TEST:
+s = Solution()
+assert s.findTheWinner(5, 2) == 3
+assert s.findTheWinner(6, 5) == 1
+assert s.findTheWinner(1, 1) == 1
+assert s.findTheWinner(2, 1) == 2
+assert s.findTheWinner(3, 3) == 2
+@@ PATTERN: Sliding Window Maximum
+@@ SPOT: Use this when you need the maximum of every window of size k as it slides across an array, or the best earlier value inside a window that moves with the current position.
+@@ PROBLEM: sliding-window-maximum
+@@ APPROACH:
+Keep a deque of indices whose values are decreasing, so the front index is always the window maximum.
+For each new x, pop smaller values off the back, because they can never be a maximum again while x is in the window.
+Pop the front if its index has left the window (dq[0] <= i - k). Once i >= k - 1, record nums[dq[0]].
+Each index enters and leaves the deque once, so the whole pass is O(n) instead of O(nk).
+@@ COMPLEXITY: O(n) time, O(k) extra space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def maxSlidingWindow(self, nums: List[int], k: int) -> List[int]:
+        dq, out = deque(), []                  # dq holds indices, values decreasing
+        for i, x in enumerate(nums):
+            while dq and nums[dq[-1]] <= x:    # smaller values behind x are useless
+                dq.pop()
+            dq.append(i)
+            if dq[0] <= i - k:                 # front index left the window
+                dq.popleft()
+            if i >= k - 1:
+                out.append(nums[dq[0]])        # front is the window maximum
+        return out
+@@ TEST:
+s = Solution()
+assert s.maxSlidingWindow([1, 3, -1, -3, 5, 3, 6, 7], 3) == [3, 3, 5, 5, 6, 7]
+assert s.maxSlidingWindow([1], 1) == [1]
+assert s.maxSlidingWindow([9, 11], 2) == [11]
+assert s.maxSlidingWindow([4, 3, 2, 1], 2) == [4, 3, 2]
+assert s.maxSlidingWindow([1, 1, 1, 1], 2) == [1, 1, 1]
+assert s.maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4) == [7, 7, 7, 7, 7]
+assert s.maxSlidingWindow([7, 2, 4], 2) == [7, 4]
+@@ PROBLEM: constrained-subsequence-sum
+@@ APPROACH:
+Let dp[i] be the best sum of a valid subsequence that ends at index i. Then dp[i] = nums[i] + max(0, best dp among the previous k indices).
+That "best dp in the last k indices" is a sliding window maximum, so keep a deque of indices with decreasing dp values.
+Pop the front when it is more than k behind i, read the maximum from dp[dq[0]], then push i after popping smaller dp values.
+The answer is the largest dp[i].
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+from math import inf
+
+from collections import deque
+
+class Solution:
+    def constrainedSubsetSum(self, nums: List[int], k: int) -> int:
+        dp = [0] * len(nums)
+        dq = deque()                              # indices, dp values decreasing
+        best = -inf
+        for i, x in enumerate(nums):
+            if dq and dq[0] < i - k:              # front is more than k behind
+                dq.popleft()
+            dp[i] = x + (dp[dq[0]] if dq and dp[dq[0]] > 0 else 0)
+            while dq and dp[dq[-1]] <= dp[i]:     # smaller dp values are never the max again
+                dq.pop()
+            dq.append(i)
+            best = max(best, dp[i])
+        return best
+@@ TEST:
+s = Solution()
+assert s.constrainedSubsetSum([10, 2, -10, 5, 20], 2) == 37
+assert s.constrainedSubsetSum([-1, -2, -3], 1) == -1
+assert s.constrainedSubsetSum([10, -2, -10, -5, 20], 2) == 23
+assert s.constrainedSubsetSum([5], 1) == 5
+assert s.constrainedSubsetSum([-5], 1) == -5
+assert s.constrainedSubsetSum([5, -1, -1, 5], 2) == 9
+assert s.constrainedSubsetSum([5, -1, -1, 5], 1) == 8
+@@ PROBLEM: max-value-of-equation
+@@ APPROACH:
+For i < j the value is yi + yj + xj - xi, which splits into (yi - xi) + (yj + xj). For each j we want the largest (yi - xi) among earlier points with xj - xi <= k.
+That is a sliding window maximum, where the window is defined by the x distance instead of by index count.
+The deque keeps (yi - xi, xi) with decreasing first values. Pop from the front while xj - xi > k, then the front gives the best partner for j.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+from math import inf
+
+from collections import deque
+
+class Solution:
+    def findMaxValueOfEquation(self, points: List[List[int]], k: int) -> int:
+        dq = deque()                              # (y - x, x), y - x decreasing
+        best = -inf
+        for x, y in points:
+            while dq and x - dq[0][1] > k:        # too far to the left
+                dq.popleft()
+            if dq:
+                best = max(best, dq[0][0] + y + x)    # best (yi - xi) + (yj + xj)
+            while dq and dq[-1][0] <= y - x:      # smaller y - x is never the max again
+                dq.pop()
+            dq.append((y - x, x))
+        return best
+@@ TEST:
+s = Solution()
+assert s.findMaxValueOfEquation([[1, 3], [2, 0], [5, 10], [6, -10]], 1) == 4
+assert s.findMaxValueOfEquation([[0, 0], [3, 0], [9, 2]], 3) == 3
+assert s.findMaxValueOfEquation([[-19, 9], [-15, -19], [-5, -8]], 10) == -6
+assert s.findMaxValueOfEquation([[0, 0], [1, 1]], 1) == 2
+@@ PATTERN: Monotonic Deque
+@@ SPOT: Use this when you must keep reading the minimum or maximum of a range whose left edge moves, such as a variable window or a range of earlier prefix sums.
+@@ PROBLEM: longest-continuous-subarray-with-absolute-diff-less-than-or-equal-to-limit
+@@ APPROACH:
+A window is valid when its max minus its min is at most limit. Keep two deques of indices: one with decreasing values (front = window max) and one with increasing values (front = window min).
+Move right one step at a time. While the window is invalid, move left forward and pop any front index that fell off the left edge.
+The longest valid window seen is the answer.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def longestSubarray(self, nums: List[int], limit: int) -> int:
+        maxq, minq = deque(), deque()          # indices; maxq values decreasing, minq increasing
+        left = best = 0
+        for right, x in enumerate(nums):
+            while maxq and nums[maxq[-1]] <= x:
+                maxq.pop()
+            maxq.append(right)
+            while minq and nums[minq[-1]] >= x:
+                minq.pop()
+            minq.append(right)
+            while nums[maxq[0]] - nums[minq[0]] > limit:    # window invalid: shrink from the left
+                left += 1
+                if maxq[0] < left:
+                    maxq.popleft()
+                if minq[0] < left:
+                    minq.popleft()
+            best = max(best, right - left + 1)
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestSubarray([8, 2, 4, 7], 4) == 2
+assert s.longestSubarray([10, 1, 2, 4, 7, 2], 5) == 4
+assert s.longestSubarray([4, 2, 2, 2, 4, 4, 2, 2], 0) == 3
+assert s.longestSubarray([1], 1) == 1
+assert s.longestSubarray([5, 5, 5], 1) == 3
+assert s.longestSubarray([9, 7, 5, 3], 2) == 2
+@@ PROBLEM: maximum-sum-circular-subarray
+@@ APPROACH:
+A circular subarray is an ordinary subarray of nums + nums that is at most n long. Build prefix sums over the doubled array.
+For each end j, the best sum is prefix[j] minus the smallest prefix[i] with j - n <= i < j. That is a window minimum over prefix values.
+Keep a deque of indices with increasing prefix values. Pop the front when it is more than n behind j, and read the minimum from the front.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+from math import inf
+
+from collections import deque
+
+class Solution:
+    def maxSubarraySumCircular(self, nums: List[int]) -> int:
+        n = len(nums)
+        prefix = [0]
+        for x in nums + nums:                     # prefix sums of the doubled array
+            prefix.append(prefix[-1] + x)
+        dq = deque([0])                           # indices, prefix values increasing
+        best = -inf
+        for j in range(1, 2 * n + 1):
+            if dq[0] < j - n:                     # subarray would be longer than n
+                dq.popleft()
+            best = max(best, prefix[j] - prefix[dq[0]])    # front = smallest prefix in range
+            while dq and prefix[dq[-1]] >= prefix[j]:
+                dq.pop()
+            dq.append(j)
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxSubarraySumCircular([1, -2, 3, -2]) == 3
+assert s.maxSubarraySumCircular([5, -3, 5]) == 10
+assert s.maxSubarraySumCircular([-3, -2, -3]) == -2
+assert s.maxSubarraySumCircular([3, -2, 2, -3]) == 3
+assert s.maxSubarraySumCircular([3]) == 3
+assert s.maxSubarraySumCircular([-5]) == -5
+assert s.maxSubarraySumCircular([3, -1, 2, -1]) == 4
+@@ PROBLEM: shortest-subarray-with-sum-at-least-k
+@@ APPROACH:
+With prefix sums, a subarray (i, j] has sum prefix[j] - prefix[i]. We want the closest i for which this is at least k. Negative numbers rule out a plain two-pointer window.
+Keep a deque of indices with increasing prefix values. While the front gives sum >= k, record j - i and pop it: any later j would only be longer.
+Before pushing j, pop back indices whose prefix is >= prefix[j]. They start longer and smaller-sum subarrays than j, so they are never better.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+from math import inf
+
+from collections import deque
+
+class Solution:
+    def shortestSubarray(self, nums: List[int], k: int) -> int:
+        prefix = [0]
+        for x in nums:
+            prefix.append(prefix[-1] + x)
+        dq = deque()                               # indices, prefix values increasing
+        best = inf
+        for j, p in enumerate(prefix):
+            while dq and p - prefix[dq[0]] >= k:   # valid: the front cannot do better later
+                best = min(best, j - dq.popleft())
+            while dq and prefix[dq[-1]] >= p:      # keep the deque increasing
+                dq.pop()
+            dq.append(j)
+        return best if best != inf else -1
+@@ TEST:
+s = Solution()
+assert s.shortestSubarray([1], 1) == 1
+assert s.shortestSubarray([1, 2], 4) == -1
+assert s.shortestSubarray([2, -1, 2], 3) == 3
+assert s.shortestSubarray([84, -37, 32, 40, 95], 167) == 3
+assert s.shortestSubarray([-28, 81, -20, 28, -29], 89) == 3
+assert s.shortestSubarray([48, 99, 37, 4, -31], 140) == 2
+assert s.shortestSubarray([1], 2) == -1
+@@ PATTERN: BFS using Queue
+@@ SPOT: Use this when you need the fewest steps in an unweighted graph, grid or word-transformation puzzle, or must visit nodes level by level.
+@@ PROBLEM: find-if-path-exists-in-graph
+@@ APPROACH:
+Build an adjacency list, then run BFS from the source with a queue and a seen set.
+Mark a node as seen when you push it, not when you pop it, so no node enters the queue twice.
+If the destination is ever popped, a path exists. If the queue empties first, it does not.
+@@ COMPLEXITY: O(V + E) time, O(V + E) space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def validPath(self, n: int, edges: List[List[int]], source: int, destination: int) -> bool:
+        adj = [[] for _ in range(n)]
+        for a, b in edges:
+            adj[a].append(b)
+            adj[b].append(a)
+        seen, q = {source}, deque([source])
+        while q:
+            u = q.popleft()
+            if u == destination:
+                return True
+            for v in adj[u]:
+                if v not in seen:
+                    seen.add(v)                   # mark seen on push
+                    q.append(v)
+        return False
+@@ TEST:
+s = Solution()
+assert s.validPath(3, [[0, 1], [1, 2], [2, 0]], 0, 2) == True
+assert s.validPath(6, [[0, 1], [0, 2], [3, 5], [5, 4], [4, 3]], 0, 5) == False
+assert s.validPath(1, [], 0, 0) == True
+assert s.validPath(2, [], 0, 1) == False
+assert s.validPath(4, [[0, 1], [1, 2], [2, 3]], 3, 0) == True
+@@ PROBLEM: rotting-oranges
+@@ APPROACH:
+Put every rotten orange in the queue first (multi-source BFS), and count the fresh ones.
+Each pass of the for _ in range(len(q)) loop handles one level of the queue, which is one minute of rotting spread.
+A fresh neighbour is turned rotten and pushed in the same step, so it is never queued twice.
+If fresh oranges are left when the queue empties, return -1.
+@@ COMPLEXITY: O(rows * cols) time and space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def orangesRotting(self, grid: List[List[int]]) -> int:
+        rows, cols = len(grid), len(grid[0])
+        q, fresh = deque(), 0
+        for r in range(rows):
+            for c in range(cols):
+                if grid[r][c] == 2:
+                    q.append((r, c))              # all rotten oranges start together
+                elif grid[r][c] == 1:
+                    fresh += 1
+        minutes = 0
+        while q and fresh:
+            for _ in range(len(q)):               # one level = one minute
+                r, c = q.popleft()
+                for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:
+                        grid[nr][nc] = 2          # mark seen on push
+                        fresh -= 1
+                        q.append((nr, nc))
+            minutes += 1
+        return minutes if fresh == 0 else -1
+@@ TEST:
+s = Solution()
+assert s.orangesRotting([[2, 1, 1], [1, 1, 0], [0, 1, 1]]) == 4
+assert s.orangesRotting([[2, 1, 1], [0, 1, 1], [1, 0, 1]]) == -1
+assert s.orangesRotting([[0, 2]]) == 0
+assert s.orangesRotting([[0]]) == 0
+assert s.orangesRotting([[1]]) == -1
+assert s.orangesRotting([[2, 2], [1, 1], [0, 0], [2, 0]]) == 1
+@@ PROBLEM: word-ladder
+@@ APPROACH:
+Treat each word as a node, with an edge to every word that differs by one letter. The shortest ladder is the shortest path in an unweighted graph, so BFS finds it.
+Neighbours are not stored: for each position try all 26 letters and keep the result if it is in the word set and not yet seen.
+Process the queue level by level, with steps counting words in the ladder. The first time endWord is popped, steps is the answer.
+@@ COMPLEXITY: O(N * L^2 * 26) time, O(N * L) space (N words of length L)
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def ladderLength(self, beginWord: str, endWord: str, wordList: List[str]) -> int:
+        words = set(wordList)
+        if endWord not in words:
+            return 0
+        q, seen = deque([beginWord]), {beginWord}
+        steps = 1
+        while q:
+            for _ in range(len(q)):               # one level = one more word in the ladder
+                word = q.popleft()
+                if word == endWord:
+                    return steps
+                for i in range(len(word)):
+                    for ch in "abcdefghijklmnopqrstuvwxyz":
+                        nxt = word[:i] + ch + word[i + 1:]
+                        if nxt in words and nxt not in seen:
+                            seen.add(nxt)         # mark seen on push
+                            q.append(nxt)
+            steps += 1
+        return 0
+@@ TEST:
+s = Solution()
+assert s.ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log", "cog"]) == 5
+assert s.ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log"]) == 0
+assert s.ladderLength("a", "c", ["a", "b", "c"]) == 2
+assert s.ladderLength("hot", "dog", ["hot", "dog"]) == 0
+assert s.ladderLength("hot", "dot", ["dot"]) == 2

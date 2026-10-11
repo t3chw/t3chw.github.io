@@ -1,0 +1,604 @@
+@@ PATTERN: AND / OR / XOR
+@@ SPOT: Use this when the question compares or combines the binary digits of numbers: AND keeps shared 1s, OR keeps any 1, XOR keeps the bits that differ.
+@@ PROBLEM: binary-number-with-alternating-bits
+@@ APPROACH:
+In an alternating number such as 10101, every bit differs from the bit above it. So n ^ (n >> 1) turns it into all 1s (11111). Any two equal neighbours leave a 0 below the top bit instead. A run of 1s plus one is a power of two, so x & (x + 1) == 0 tests for all 1s.
+@@ COMPLEXITY: O(1) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def hasAlternatingBits(self, n: int) -> bool:
+        x = n ^ (n >> 1)           # XOR with itself shifted: alternating bits become all 1s
+        return x & (x + 1) == 0    # AND with x + 1 is 0 only when x is 1...1
+@@ TEST:
+s = Solution()
+assert s.hasAlternatingBits(5) == True
+assert s.hasAlternatingBits(7) == False
+assert s.hasAlternatingBits(11) == False
+assert s.hasAlternatingBits(1) == True
+assert s.hasAlternatingBits(2) == True
+assert s.hasAlternatingBits(3) == False
+assert s.hasAlternatingBits(10) == True
+assert s.hasAlternatingBits(2 ** 31 - 1) == False
+@@ PROBLEM: bitwise-and-of-numbers-range
+@@ APPROACH:
+A bit in the AND of a range is 0 as soon as it changes anywhere in the range. The bits that change are the ones below the point where left and right first differ. Shift both numbers right until they are equal; what is left is the shared prefix. Shifting it back with left << shift puts the zeros back in the low bits.
+@@ COMPLEXITY: O(log right) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def rangeBitwiseAnd(self, left: int, right: int) -> int:
+        shift = 0
+        while left < right:      # differing low bits would AND to 0, so drop them
+            left >>= 1
+            right >>= 1
+            shift += 1
+        return left << shift     # shared prefix, low bits restored as zeros
+@@ TEST:
+s = Solution()
+assert s.rangeBitwiseAnd(5, 7) == 4
+assert s.rangeBitwiseAnd(0, 0) == 0
+assert s.rangeBitwiseAnd(1, 2147483647) == 0
+assert s.rangeBitwiseAnd(7, 7) == 7
+assert s.rangeBitwiseAnd(12, 15) == 12
+assert s.rangeBitwiseAnd(3, 4) == 0
+assert s.rangeBitwiseAnd(10, 11) == 10
+assert s.rangeBitwiseAnd(2147483646, 2147483647) == 2147483646
+@@ PROBLEM: sum-of-two-integers
+@@ APPROACH:
+XOR adds two numbers bit by bit while ignoring carries. AND shows where both bits are 1, and shifting that left by one puts each carry in its column. Repeat until no carry is left. Python ints have no fixed width, so & mask keeps 32 bits, and the last line turns a pattern with the sign bit set back into a negative number.
+@@ COMPLEXITY: O(1) time (at most 32 rounds), O(1) extra space
+@@ CODE:
+class Solution:
+    def getSum(self, a: int, b: int) -> int:
+        mask = 0xFFFFFFFF                # Python never overflows, so cut to 32 bits ourselves
+        while b:
+            carry = (a & b) << 1         # AND finds columns where both bits are 1; carry moves left
+            a = (a ^ b) & mask           # XOR is the sum without carries
+            b = carry & mask
+        return a if a <= 0x7FFFFFFF else ~(a ^ mask)   # sign bit set: rebuild the negative number
+@@ TEST:
+s = Solution()
+assert s.getSum(1, 2) == 3
+assert s.getSum(2, 3) == 5
+assert s.getSum(0, 0) == 0
+assert s.getSum(-1, 1) == 0
+assert s.getSum(-2, 3) == 1
+assert s.getSum(-5, -7) == -12
+assert s.getSum(1000, -1000) == 0
+assert s.getSum(-1000, -1) == -1001
+assert s.getSum(1000, 999) == 1999
+@@ PATTERN: Odd/Even
+@@ SPOT: Use this when the next step depends on whether a number is odd or even: x & 1 tests it and x >> 1 halves it.
+@@ PROBLEM: number-of-steps-to-reduce-a-number-to-zero
+@@ APPROACH:
+The last bit tells odd from even: num & 1. An odd number loses 1, which clears that last bit. An even number is halved with num >>= 1. Each pass is one step, so the loop runs at most about twice the number of bits.
+@@ COMPLEXITY: O(log num) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def numberOfSteps(self, num: int) -> int:
+        steps = 0
+        while num:
+            if num & 1:        # odd: last bit is 1, subtract 1
+                num -= 1
+            else:              # even: shifting right halves it
+                num >>= 1
+            steps += 1
+        return steps
+@@ TEST:
+s = Solution()
+assert s.numberOfSteps(14) == 6
+assert s.numberOfSteps(8) == 4
+assert s.numberOfSteps(123) == 12
+assert s.numberOfSteps(0) == 0
+assert s.numberOfSteps(1) == 1
+assert s.numberOfSteps(2) == 2
+@@ PROBLEM: powx-n
+@@ APPROACH:
+Write the exponent in binary. Every 1 bit means one power of x (x, x squared, x to the 4th, ...) goes into the answer, and n & 1 tests the lowest bit. Squaring x and halving n with n >>= 1 moves to the next bit. This takes about log n multiplications instead of n. A negative exponent becomes 1 / x with a positive exponent.
+@@ COMPLEXITY: O(log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def myPow(self, x: float, n: int) -> float:
+        if n < 0:
+            x, n = 1 / x, -n
+        result = 1.0
+        while n:
+            if n & 1:        # odd exponent: this bit contributes the current x
+                result *= x
+            x *= x           # next bit stands for x squared
+            n >>= 1          # halve the exponent
+        return result
+@@ TEST:
+s = Solution()
+assert abs(s.myPow(2.0, 10) - 1024.0) < 1e-9
+assert abs(s.myPow(2.1, 3) - 9.261) < 1e-9
+assert abs(s.myPow(2.0, -2) - 0.25) < 1e-9
+assert s.myPow(5.0, 0) == 1.0
+assert s.myPow(1.0, -2147483648) == 1.0
+assert s.myPow(2.0, -2147483648) == 0.0
+assert s.myPow(-1.0, 3) == -1.0
+assert abs(s.myPow(2.0, 30) - 1073741824.0) < 1e-3
+@@ PROBLEM: integer-replacement
+@@ APPROACH:
+An even number is always halved. For an odd number, look at its last two bits with n & 3. If they are 01, subtract 1 so a 0 is left behind. If they are 11, add 1: the carry clears the whole run of trailing 1s at once. The number 3 is the exception, because 3 -> 2 -> 1 is shorter than 3 -> 4 -> 2 -> 1.
+@@ COMPLEXITY: O(log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def integerReplacement(self, n: int) -> int:
+        steps = 0
+        while n > 1:
+            if n & 1 == 0:                  # even: halve
+                n >>= 1
+            elif n == 3 or n & 3 == 1:      # odd ending in 01: subtract 1
+                n -= 1
+            else:                           # odd ending in 11: add 1 to carry through the 1s
+                n += 1
+            steps += 1
+        return steps
+@@ TEST:
+s = Solution()
+assert s.integerReplacement(8) == 3
+assert s.integerReplacement(7) == 4
+assert s.integerReplacement(4) == 2
+assert s.integerReplacement(1) == 0
+assert s.integerReplacement(2) == 1
+assert s.integerReplacement(3) == 2
+assert s.integerReplacement(5) == 3
+assert s.integerReplacement(15) == 5
+assert s.integerReplacement(25) == 6
+assert s.integerReplacement(100) == 8
+assert s.integerReplacement(65535) == 17
+assert s.integerReplacement(2147483647) == 32
+@@ PATTERN: Set/Unset Bit
+@@ SPOT: Use this when you must read, set, clear or flip single bits: build a mask with 1 << i, then use & to read, | to set, & ~ to clear and ^ to flip.
+@@ PROBLEM: number-complement
+@@ APPROACH:
+A mask of 1s exactly as wide as the number is (1 << num.bit_length()) - 1. XOR with that mask flips every bit of num and leaves the bits above it alone. For 5 (101) the mask is 111, and 101 ^ 111 = 010, which is 2.
+@@ COMPLEXITY: O(1) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def findComplement(self, num: int) -> int:
+        mask = (1 << num.bit_length()) - 1   # 1s over every bit of num, e.g. 101 -> 111
+        return num ^ mask                    # XOR toggles each of those bits
+@@ TEST:
+s = Solution()
+assert s.findComplement(5) == 2
+assert s.findComplement(1) == 0
+assert s.findComplement(2) == 1
+assert s.findComplement(10) == 5
+assert s.findComplement(7) == 0
+assert s.findComplement(2147483647) == 0
+@@ PROBLEM: reverse-bits
+@@ APPROACH:
+Read bit i of n with (n >> i) & 1. Set the mirrored position 31 - i in the result with |=. After 32 rounds the bit order is reversed. Bits that are 0 need no work, because result starts at 0.
+@@ COMPLEXITY: O(1) time (32 rounds), O(1) extra space
+@@ CODE:
+class Solution:
+    def reverseBits(self, n: int) -> int:
+        result = 0
+        for i in range(32):
+            bit = (n >> i) & 1            # read bit i
+            result |= bit << (31 - i)     # set the mirrored bit in the result
+        return result
+@@ TEST:
+s = Solution()
+assert s.reverseBits(43261596) == 964176192
+assert s.reverseBits(4294967293) == 3221225471
+assert s.reverseBits(0) == 0
+assert s.reverseBits(1) == 2147483648
+assert s.reverseBits(2147483648) == 1
+assert s.reverseBits(4294967295) == 4294967295
+@@ PROBLEM: minimum-flips-to-make-a-or-b-equal-to-c
+@@ APPROACH:
+Handle each bit position on its own. Read bit i of a, b and c with (x >> i) & 1. If c has a 1, at least one of a and b must have a 1, which costs one flip when both are 0. If c has a 0, both a and b must be 0, so every 1 among them costs one flip. Add up the flips for all 31 positions.
+@@ COMPLEXITY: O(1) time (31 positions), O(1) extra space
+@@ CODE:
+class Solution:
+    def minFlips(self, a: int, b: int, c: int) -> int:
+        flips = 0
+        for i in range(31):
+            bit_a = (a >> i) & 1          # read bit i of each number
+            bit_b = (b >> i) & 1
+            bit_c = (c >> i) & 1
+            if bit_c == 1:
+                if bit_a == 0 and bit_b == 0:
+                    flips += 1            # set one of them
+            else:
+                flips += bit_a + bit_b    # clear every 1
+        return flips
+@@ TEST:
+s = Solution()
+assert s.minFlips(2, 6, 5) == 3
+assert s.minFlips(4, 2, 7) == 1
+assert s.minFlips(1, 2, 3) == 0
+assert s.minFlips(1, 1, 0) == 2
+assert s.minFlips(0, 0, 1) == 1
+assert s.minFlips(8, 3, 5) == 3
+assert s.minFlips(0, 0, 0) == 0
+@@ PROBLEM: minimum-one-bit-operations-to-make-integers-zero
+@@ APPROACH:
+The two moves can be undone, so going from n to 0 costs the same as going from 0 to n. The shortest route from 0 to the single top bit 100...0 (value 2^k) takes 2^(k+1) - 1 moves and passes through every number with that many bits, including n. The part of the route after n is the same problem for n with its top bit cleared, which is n ^ top. So the answer is 2 * top - 1 minus the answer for n ^ top.
+@@ COMPLEXITY: O(log n) time, O(log n) stack space
+@@ CODE:
+class Solution:
+    def minimumOneBitOperations(self, n: int) -> int:
+        if n == 0:
+            return 0
+        top = 1 << (n.bit_length() - 1)     # highest set bit
+        # 0 -> top takes 2*top - 1 moves and passes through n; the rest is the cost of n without its top bit
+        return 2 * top - 1 - self.minimumOneBitOperations(n ^ top)    # n ^ top clears the top bit
+@@ TEST:
+s = Solution()
+assert s.minimumOneBitOperations(0) == 0
+assert s.minimumOneBitOperations(3) == 2
+assert s.minimumOneBitOperations(6) == 4
+assert s.minimumOneBitOperations(9) == 14
+assert s.minimumOneBitOperations(333) == 393
+assert s.minimumOneBitOperations(1) == 1
+assert s.minimumOneBitOperations(2) == 3
+assert s.minimumOneBitOperations(4) == 7
+assert s.minimumOneBitOperations(100) == 71
+@@ PATTERN: Count Set Bits
+@@ SPOT: Use this when you must count the 1 bits of a number, or how many bits differ between numbers: n & (n - 1) removes the lowest set bit.
+@@ PROBLEM: number-of-1-bits
+@@ APPROACH:
+n & (n - 1) clears the lowest set bit of n. Repeat until n is 0, and the loop runs once per 1 bit. The number of loops is the answer. This is Brian Kernighan's method, and it skips the 0 bits entirely.
+@@ COMPLEXITY: O(k) time where k is the number of set bits, O(1) extra space
+@@ CODE:
+class Solution:
+    def hammingWeight(self, n: int) -> int:
+        count = 0
+        while n:
+            n &= n - 1       # drop the lowest set bit
+            count += 1       # one loop per set bit
+        return count
+@@ TEST:
+s = Solution()
+assert s.hammingWeight(11) == 3
+assert s.hammingWeight(128) == 1
+assert s.hammingWeight(2147483645) == 30
+assert s.hammingWeight(1) == 1
+assert s.hammingWeight(2147483647) == 31
+assert s.hammingWeight(0) == 0
+@@ PROBLEM: counting-bits
+@@ APPROACH:
+Dropping the last bit of i gives i >> 1, a smaller number whose count is already stored. The count for i is that count plus the dropped bit (i & 1). Fill the array from small to large, so each answer is one lookup and one addition.
+@@ COMPLEXITY: O(n) time, O(n) space for the answer
+@@ CODE:
+class Solution:
+    def countBits(self, n: int) -> List[int]:
+        dp = [0] * (n + 1)
+        for i in range(1, n + 1):
+            dp[i] = dp[i >> 1] + (i & 1)    # bits of i = bits of i // 2, plus its last bit
+        return dp
+@@ TEST:
+s = Solution()
+assert s.countBits(2) == [0, 1, 1]
+assert s.countBits(5) == [0, 1, 1, 2, 1, 2]
+assert s.countBits(0) == [0]
+assert s.countBits(1) == [0, 1]
+assert s.countBits(8) == [0, 1, 1, 2, 1, 2, 2, 3, 1]
+assert s.countBits(15)[15] == 4
+@@ PROBLEM: total-hamming-distance
+@@ APPROACH:
+Hamming distance counts the bits that differ, so count them per bit position instead of per pair. At bit i, if ones numbers have a 1 and n - ones have a 0, then ones * (n - ones) pairs differ at that position. Summing over the 30 bit positions avoids checking every pair.
+@@ COMPLEXITY: O(30 * n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def totalHammingDistance(self, nums: List[int]) -> int:
+        n, total = len(nums), 0
+        for i in range(30):                            # values are below 2^30
+            ones = sum((x >> i) & 1 for x in nums)     # how many numbers have bit i set
+            total += ones * (n - ones)                 # each (1, 0) pair differs at bit i
+        return total
+@@ TEST:
+s = Solution()
+assert s.totalHammingDistance([4, 14, 2]) == 6
+assert s.totalHammingDistance([4, 14, 4]) == 4
+assert s.totalHammingDistance([1]) == 0
+assert s.totalHammingDistance([0, 0]) == 0
+assert s.totalHammingDistance([1, 2, 3]) == 4
+assert s.totalHammingDistance([0, 1000000000]) == 13
+@@ PATTERN: Power of 2
+@@ SPOT: Use this when you must test for a power of 2 (or 4), or hit sums that are powers of 2: a power of 2 has exactly one set bit, so n & (n - 1) == 0.
+@@ PROBLEM: power-of-two
+@@ APPROACH:
+A power of two has exactly one set bit. n & (n - 1) removes that bit and leaves 0. The check n > 0 rules out 0 and negative numbers, which would otherwise pass or confuse the test.
+@@ COMPLEXITY: O(1) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def isPowerOfTwo(self, n: int) -> bool:
+        return n > 0 and n & (n - 1) == 0    # one set bit: clearing it leaves 0
+@@ TEST:
+s = Solution()
+assert s.isPowerOfTwo(1) == True
+assert s.isPowerOfTwo(16) == True
+assert s.isPowerOfTwo(3) == False
+assert s.isPowerOfTwo(0) == False
+assert s.isPowerOfTwo(-16) == False
+assert s.isPowerOfTwo(-2147483648) == False
+assert s.isPowerOfTwo(2 ** 30) == True
+assert s.isPowerOfTwo(6) == False
+@@ PROBLEM: power-of-four
+@@ APPROACH:
+A power of four is a power of two whose single bit sits at an even position (0, 2, 4, ...). First check for one set bit with n & (n - 1) == 0. Then AND with 0x55555555, which has a 1 at every even position, and require a non-zero result.
+@@ COMPLEXITY: O(1) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def isPowerOfFour(self, n: int) -> bool:
+        # one set bit (power of 2) that also lies on an even position (0x5555... mask)
+        return n > 0 and n & (n - 1) == 0 and n & 0x55555555 != 0
+@@ TEST:
+s = Solution()
+assert s.isPowerOfFour(16) == True
+assert s.isPowerOfFour(5) == False
+assert s.isPowerOfFour(1) == True
+assert s.isPowerOfFour(2) == False
+assert s.isPowerOfFour(8) == False
+assert s.isPowerOfFour(64) == True
+assert s.isPowerOfFour(0) == False
+assert s.isPowerOfFour(-4) == False
+assert s.isPowerOfFour(2 ** 30) == True
+assert s.isPowerOfFour(2 ** 29) == False
+@@ PROBLEM: count-good-meals
+@@ APPROACH:
+A sum of two items is at most 2^21, so only 22 powers of two matter: 1 << k for k from 0 to 21. For each item x and each power, look up how many earlier items equal (1 << k) - x in a Counter. Counting only earlier items counts each pair once. The result is taken modulo 10^9 + 7 as the problem asks.
+@@ COMPLEXITY: O(22 * n) time, O(n) space
+@@ CODE:
+class Solution:
+    def countPairs(self, deliciousness: List[int]) -> int:
+        seen = Counter()
+        pairs = 0
+        for x in deliciousness:
+            for k in range(22):                  # powers of two up to 2^21
+                pairs += seen[(1 << k) - x]      # earlier items that complete x to a power of 2
+            seen[x] += 1
+        return pairs % (10 ** 9 + 7)
+@@ TEST:
+s = Solution()
+assert s.countPairs([1, 3, 5, 7, 9]) == 4
+assert s.countPairs([1, 1, 1, 3, 3, 3, 7]) == 15
+assert s.countPairs([1, 1]) == 1
+assert s.countPairs([0, 1]) == 1
+assert s.countPairs([0, 0, 0]) == 0
+assert s.countPairs([2 ** 20, 2 ** 20]) == 1
+assert s.countPairs([5]) == 0
+@@ PATTERN: XOR Patterns
+@@ SPOT: Use this when pairs or repeats should cancel out (a single number, a missing number, parity): XOR everything, because x ^ x = 0 and x ^ 0 = x.
+@@ PROBLEM: single-number
+@@ APPROACH:
+XOR does not depend on order, and x ^ x = 0, so every pair cancels itself. After result ^= x runs over the whole array, only the number that appears once is left. No set or hash map is needed.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def singleNumber(self, nums: List[int]) -> int:
+        result = 0
+        for x in nums:
+            result ^= x      # equal pairs cancel to 0, and x ^ 0 = x
+        return result
+@@ TEST:
+s = Solution()
+assert s.singleNumber([2, 2, 1]) == 1
+assert s.singleNumber([4, 1, 2, 1, 2]) == 4
+assert s.singleNumber([1]) == 1
+assert s.singleNumber([-1, -1, -3]) == -3
+assert s.singleNumber([0, 5, 0]) == 5
+@@ PROBLEM: missing-number
+@@ APPROACH:
+Start result at n = len(nums), then XOR in every index i and every value x. Each number from 0 to n shows up once as an index (n as the start value) and once as a value, except the missing one, which shows up only as an index. All matching pairs cancel and the missing number is left.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def missingNumber(self, nums: List[int]) -> int:
+        result = len(nums)            # n has no index of its own
+        for i, x in enumerate(nums):
+            result ^= i ^ x           # index and value cancel unless one is missing
+        return result
+@@ TEST:
+s = Solution()
+assert s.missingNumber([3, 0, 1]) == 2
+assert s.missingNumber([0, 1]) == 2
+assert s.missingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1]) == 8
+assert s.missingNumber([0]) == 1
+assert s.missingNumber([1]) == 0
+@@ PROBLEM: single-number-iii
+@@ APPROACH:
+XOR of everything gives a ^ b, where a and b are the two numbers that appear once. They differ at every set bit of a ^ b, so xor_all & -xor_all picks one such bit. Splitting the numbers by that bit puts a and b in different groups, and each pair stays together in one group. XOR-ing one group gives a, and xor_all ^ a gives b.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def singleNumber(self, nums: List[int]) -> List[int]:
+        xor_all = 0
+        for x in nums:
+            xor_all ^= x                  # pairs cancel, leaving a ^ b
+        low_bit = xor_all & -xor_all      # lowest set bit: a and b differ here
+        a = 0
+        for x in nums:
+            if x & low_bit:               # one group: numbers that have this bit
+                a ^= x                    # pairs cancel inside the group, leaving a
+        return [a, xor_all ^ a]
+@@ TEST:
+s = Solution()
+assert sorted(s.singleNumber([1, 2, 1, 3, 2, 5])) == [3, 5]
+assert sorted(s.singleNumber([-1, 0])) == [-1, 0]
+assert sorted(s.singleNumber([0, 1])) == [0, 1]
+assert sorted(s.singleNumber([-5, 7, 3, 3, 4, 4])) == [-5, 7]
+assert sorted(s.singleNumber([6, 6, 10, 20, 10, 30, 30, 8])) == [8, 20]
+@@ PROBLEM: find-the-longest-substring-containing-vowels-in-even-counts
+@@ APPROACH:
+A vowel count is even exactly when its parity bit is 0. Keep a 5-bit mask and flip a vowel's bit with mask ^= bit[ch] each time it appears. Two prefixes with the same mask have an even number of every vowel between them. Store the first index of each mask; the best answer is the largest i - first_seen[mask].
+@@ COMPLEXITY: O(n) time, O(1) extra space (at most 32 masks)
+@@ CODE:
+class Solution:
+    def findTheLongestSubstring(self, s: str) -> int:
+        bit = {'a': 1, 'e': 2, 'i': 4, 'o': 8, 'u': 16}
+        first_seen = {0: -1}               # mask -> earliest index; the empty prefix has mask 0
+        mask, best = 0, 0
+        for i, ch in enumerate(s):
+            if ch in bit:
+                mask ^= bit[ch]            # flip the parity of this vowel
+            if mask in first_seen:
+                best = max(best, i - first_seen[mask])   # same mask: every vowel between is even
+            else:
+                first_seen[mask] = i
+        return best
+@@ TEST:
+s = Solution()
+assert s.findTheLongestSubstring("eleetminicoworoep") == 13
+assert s.findTheLongestSubstring("leetcodeisgreat") == 5
+assert s.findTheLongestSubstring("bcbcbc") == 6
+assert s.findTheLongestSubstring("a") == 0
+assert s.findTheLongestSubstring("aa") == 2
+assert s.findTheLongestSubstring("ab") == 1
+assert s.findTheLongestSubstring("b") == 1
+@@ PATTERN: Bit Masking
+@@ SPOT: Use this when a small set (letters, skills, flags) can be packed into one integer with one bit per member, so union, overlap and subset tests become a single | or &.
+@@ PROBLEM: check-if-the-sentence-is-pangram
+@@ APPROACH:
+Give each letter its own bit and set it with seen |= 1 << (ord(ch) - ord('a')). Repeated letters do no harm, because setting a bit twice changes nothing. The sentence is a pangram when all 26 low bits are set, which is the value (1 << 26) - 1.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def checkIfPangram(self, sentence: str) -> bool:
+        seen = 0
+        for ch in sentence:
+            seen |= 1 << (ord(ch) - ord('a'))    # set this letter's bit
+        return seen == (1 << 26) - 1             # all 26 bits set
+@@ TEST:
+s = Solution()
+assert s.checkIfPangram("thequickbrownfoxjumpsoverthelazydog") == True
+assert s.checkIfPangram("leetcode") == False
+assert s.checkIfPangram("abcdefghijklmnopqrstuvwxyz") == True
+assert s.checkIfPangram("abcdefghijklmnopqrstuvwxy") == False
+assert s.checkIfPangram("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") == False
+@@ PROBLEM: maximum-product-of-word-lengths
+@@ APPROACH:
+Turn each word into a 26-bit mask of its letters. Two words share no letter exactly when the AND of their masks is 0, which replaces a letter-by-letter comparison with one operation. Try every pair and keep the best product of lengths.
+@@ COMPLEXITY: O(L + n^2) time where L is the total number of letters, O(n) space
+@@ CODE:
+class Solution:
+    def maxProduct(self, words: List[str]) -> int:
+        masks = []
+        for word in words:
+            mask = 0
+            for ch in word:
+                mask |= 1 << (ord(ch) - ord('a'))    # the word's letters as one mask
+            masks.append(mask)
+        best = 0
+        for i in range(len(words)):
+            for j in range(i + 1, len(words)):
+                if masks[i] & masks[j] == 0:         # no common letter
+                    best = max(best, len(words[i]) * len(words[j]))
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxProduct(["abcw", "baz", "foo", "bar", "xtfn", "abcdef"]) == 16
+assert s.maxProduct(["a", "ab", "abc", "d", "cd", "bcd", "abcd"]) == 4
+assert s.maxProduct(["a", "aa", "aaa", "aaaa"]) == 0
+assert s.maxProduct(["a"]) == 0
+assert s.maxProduct(["a", "b"]) == 1
+assert s.maxProduct(["abc", "abc"]) == 0
+@@ PROBLEM: smallest-sufficient-team
+@@ APPROACH:
+Give each required skill a bit, and turn each person into a mask of their skills. The dictionary best maps a skill mask to the smallest team found for it. For each person, OR their mask into every existing entry and keep the shorter team for the merged mask. The answer is the entry whose mask has every skill bit set.
+@@ COMPLEXITY: O(people * 2^skills) time, O(2^skills) space
+@@ CODE:
+class Solution:
+    def smallestSufficientTeam(self, req_skills: List[str], people: List[List[str]]) -> List[int]:
+        index = {skill: i for i, skill in enumerate(req_skills)}
+        full = (1 << len(req_skills)) - 1
+        best = {0: []}                             # skill mask -> smallest team with exactly these skills
+        for i, skills in enumerate(people):
+            person = 0
+            for skill in skills:
+                person |= 1 << index[skill]        # the person's skills as a mask
+            for mask, team in list(best.items()):
+                merged = mask | person             # OR joins the two skill sets
+                if merged not in best or len(best[merged]) > len(team) + 1:
+                    best[merged] = team + [i]
+        return best[full]
+@@ TEST:
+s = Solution()
+assert sorted(s.smallestSufficientTeam(["java", "nodejs", "reactjs"], [["java"], ["nodejs"], ["nodejs", "reactjs"]])) == [0, 2]
+assert sorted(s.smallestSufficientTeam(["algorithms", "math", "java", "reactjs", "csharp", "aws"], [["algorithms", "math", "java"], ["algorithms", "math", "reactjs"], ["java", "csharp", "aws"], ["reactjs", "csharp"], ["csharp", "math"], ["aws", "java"]])) == [1, 2]
+assert s.smallestSufficientTeam(["a"], [["a"], ["a"]]) == [0]
+assert s.smallestSufficientTeam(["a", "b"], [[], ["a"], ["b"], ["a", "b"]]) == [3]
+req = ["a", "b", "c", "d", "e"]
+people = [["a", "b"], ["c", "d"], ["e"], ["a", "c", "e"]]
+team = s.smallestSufficientTeam(req, people)
+assert len(team) == 3
+assert set().union(*[set(people[i]) for i in team]) == set(req)
+@@ PATTERN: Subsets using Bits
+@@ SPOT: Use this when n is small (about 20 or less) and you must visit every subset: count a mask from 0 to 2^n - 1, where bit i says whether item i is in.
+@@ PROBLEM: sum-of-all-subset-xor-totals
+@@ APPROACH:
+Each mask from 0 to 2^n - 1 is one subset: bit i set means nums[i] is in it. For every mask, XOR the chosen items together and add the result to the total. There are 2^n masks and n bits to test in each, so no recursion is needed.
+@@ COMPLEXITY: O(n * 2^n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def subsetXORSum(self, nums: List[int]) -> int:
+        n, total = len(nums), 0
+        for mask in range(1 << n):               # every mask is one subset
+            xor = 0
+            for i in range(n):
+                if (mask >> i) & 1:              # bit i set: nums[i] is in this subset
+                    xor ^= nums[i]
+            total += xor
+        return total
+@@ TEST:
+s = Solution()
+assert s.subsetXORSum([1, 3]) == 6
+assert s.subsetXORSum([5, 1, 6]) == 28
+assert s.subsetXORSum([3, 4, 5, 6, 7, 8]) == 480
+assert s.subsetXORSum([1]) == 1
+assert s.subsetXORSum([0, 0]) == 0
+@@ PROBLEM: subsets
+@@ APPROACH:
+The same loop builds the subsets themselves. For each mask from 0 to 2^n - 1, collect nums[i] for every bit i that is set. Mask 0 gives the empty subset and the all-ones mask gives the full set. All 2^n subsets come out with no recursion.
+@@ COMPLEXITY: O(n * 2^n) time, O(n * 2^n) space for the output
+@@ CODE:
+class Solution:
+    def subsets(self, nums: List[int]) -> List[List[int]]:
+        n, result = len(nums), []
+        for mask in range(1 << n):                                         # 0 .. 2^n - 1
+            result.append([nums[i] for i in range(n) if (mask >> i) & 1])  # bit i set: take nums[i]
+        return result
+@@ TEST:
+s = Solution()
+assert sorted(s.subsets([1, 2, 3])) == sorted([[], [1], [2], [1, 2], [3], [1, 3], [2, 3], [1, 2, 3]])
+assert sorted(s.subsets([0])) == [[], [0]]
+assert sorted(s.subsets([1, 2])) == [[], [1], [1, 2], [2]]
+assert len(s.subsets([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])) == 1024
+assert sorted(s.subsets([-1, 5])) == [[], [-1], [-1, 5], [5]]
+@@ PROBLEM: find-minimum-time-to-finish-all-jobs
+@@ APPROACH:
+A mask is a set of jobs. work[mask] is the total time of those jobs, and best[mask] is the smallest possible largest workload using the workers added so far. A new worker takes some submask of mask; submasks are visited with sub = (sub - 1) & mask. The cost of that split is the larger of the new worker's load and the best result for the remaining jobs. Visiting every submask of every mask costs 3^n per worker.
+@@ COMPLEXITY: O(k * 3^n) time, O(2^n) space
+@@ CODE:
+class Solution:
+    def minimumTimeRequired(self, jobs: List[int], k: int) -> int:
+        n = len(jobs)
+        work = [0] * (1 << n)                          # work[mask] = total time of the jobs in mask
+        for mask in range(1, 1 << n):
+            low = (mask & -mask).bit_length() - 1      # index of the lowest set bit
+            work[mask] = work[mask & (mask - 1)] + jobs[low]
+        best = work[:]                                 # one worker does every job in mask
+        for _ in range(min(k, n) - 1):                 # add one more worker per round
+            nxt = best[:]
+            for mask in range(1, 1 << n):
+                sub = mask
+                while sub:                             # every non-empty submask of mask
+                    cost = max(best[mask ^ sub], work[sub])    # new worker takes sub
+                    if cost < nxt[mask]:
+                        nxt[mask] = cost
+                    sub = (sub - 1) & mask             # next smaller submask
+            best = nxt
+        return best[(1 << n) - 1]
+@@ TEST:
+s = Solution()
+assert s.minimumTimeRequired([3, 2, 3], 3) == 3
+assert s.minimumTimeRequired([1, 2, 4, 7, 8], 2) == 11
+assert s.minimumTimeRequired([5], 1) == 5
+assert s.minimumTimeRequired([6, 6, 6], 1) == 18
+assert s.minimumTimeRequired([5, 5, 4, 4, 4], 2) == 12
+assert s.minimumTimeRequired([254, 256, 256, 254, 251, 256, 254, 253, 255, 251, 251, 255], 10) == 504
+assert s.minimumTimeRequired([9899456, 8291115, 9477657, 9288480, 5146275, 7697968, 8573153, 3582365, 3758448, 9881935, 2420271, 4542202], 9) == 9899456

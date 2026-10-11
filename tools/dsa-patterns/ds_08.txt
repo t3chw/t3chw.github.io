@@ -1,0 +1,1029 @@
+@@ PATTERN: DFS
+@@ SPOT: Use this when the answer for a node depends on its two subtrees (or on what you met on the way down), so you recurse left and right and combine the results.
+@@ PROBLEM: invert-binary-tree
+@@ APPROACH:
+Inverting a tree means every node swaps its two children. DFS handles that one node at a time: recurse into both children first, then swap the two results. The line `root.left, root.right = right, left` is the whole trick. Every node is touched once.
+@@ COMPLEXITY: O(n) time, O(h) extra space (recursion stack, h = tree height)
+@@ CODE:
+class Solution:
+    def invertTree(self, root: Optional[TreeNode]) -> Optional[TreeNode]:
+        if not root:                         # base case: empty subtree
+            return None
+        left = self.invertTree(root.left)    # DFS into both children
+        right = self.invertTree(root.right)
+        root.left, root.right = right, left  # swap the two inverted subtrees
+        return root
+@@ TEST:
+s = Solution()
+assert tree_to_list(s.invertTree(tree([4, 2, 7, 1, 3, 6, 9]))) == [4, 7, 2, 9, 6, 3, 1]
+assert tree_to_list(s.invertTree(tree([2, 1, 3]))) == [2, 3, 1]
+assert s.invertTree(tree([])) is None
+assert tree_to_list(s.invertTree(tree([1]))) == [1]
+assert tree_to_list(s.invertTree(tree([1, 2]))) == [1, None, 2]
+assert tree_to_list(s.invertTree(tree([1, None, 2, 3]))) == [1, 2, None, None, 3]
+@@ PROBLEM: symmetric-tree
+@@ APPROACH:
+A tree is symmetric when its left and right subtrees are mirror images. Run DFS on two nodes at the same time: `a` walks the left side and `b` walks the right side. The outer children must match each other, and the inner children must match each other. Any mismatch in value or shape returns False immediately.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def isSymmetric(self, root: Optional[TreeNode]) -> bool:
+        def mirror(a, b):                    # DFS on a pair of nodes
+            if not a and not b:
+                return True
+            if not a or not b:
+                return False
+            return (a.val == b.val and
+                    mirror(a.left, b.right) and    # outer pair
+                    mirror(a.right, b.left))       # inner pair
+        return not root or mirror(root.left, root.right)
+@@ TEST:
+s = Solution()
+assert s.isSymmetric(tree([1, 2, 2, 3, 4, 4, 3])) is True
+assert s.isSymmetric(tree([1, 2, 2, None, 3, None, 3])) is False
+assert s.isSymmetric(tree([1])) is True
+assert s.isSymmetric(tree([1, 2, 2])) is True
+assert s.isSymmetric(tree([1, 2, 3])) is False
+assert s.isSymmetric(tree([1, 2, 2, 2, None, 2])) is False
+@@ PROBLEM: count-good-nodes-in-binary-tree
+@@ APPROACH:
+Some answers depend on the path from the root, not only on the subtree. Pass the largest value seen so far down as a parameter: `best`. A node is good when its value is at least `best`. Update `best` before recursing into the children, so each branch carries its own maximum.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def goodNodes(self, root: TreeNode) -> int:
+        def dfs(node, best):                 # best = max value on the path so far
+            if not node:
+                return 0
+            good = 1 if node.val >= best else 0
+            best = max(best, node.val)       # carry the new maximum down
+            return good + dfs(node.left, best) + dfs(node.right, best)
+        return dfs(root, -inf)
+@@ TEST:
+s = Solution()
+assert s.goodNodes(tree([3, 1, 4, 3, None, 1, 5])) == 4
+assert s.goodNodes(tree([3, 3, None, 4, 2])) == 3
+assert s.goodNodes(tree([1])) == 1
+assert s.goodNodes(tree([2, None, 4, 10, 8, None, None, 4])) == 4
+assert s.goodNodes(tree([-1, -2, -3])) == 1
+assert s.goodNodes(tree([5, 4, None, 3, None, 2])) == 1
+@@ PATTERN: BFS / Level Order
+@@ SPOT: Use this when the question talks about levels, rows or the nearest-to-the-root node, so you process the tree one level at a time with a queue.
+@@ PROBLEM: average-of-levels-in-binary-tree
+@@ APPROACH:
+Put the root in a queue and read `len(q)` before the inner loop. That freezes the size of the current level. Add up exactly that many nodes, pushing their children for the next round. Divide the level total by `size` and append it.
+@@ COMPLEXITY: O(n) time, O(w) extra space (w = widest level)
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def averageOfLevels(self, root: Optional[TreeNode]) -> List[float]:
+        if not root:
+            return []
+        out, q = [], deque([root])
+        while q:
+            size = len(q)                    # freeze: exactly this level
+            total = 0
+            for _ in range(size):
+                n = q.popleft()
+                total += n.val
+                if n.left:  q.append(n.left)
+                if n.right: q.append(n.right)
+            out.append(total / size)
+        return out
+@@ TEST:
+s = Solution()
+assert s.averageOfLevels(tree([3, 9, 20, None, None, 15, 7])) == [3.0, 14.5, 11.0]
+assert s.averageOfLevels(tree([3, 9, 20, 15, 7])) == [3.0, 14.5, 11.0]
+assert s.averageOfLevels(tree([1])) == [1.0]
+assert s.averageOfLevels(tree([-1, -3, 5])) == [-1.0, 1.0]
+assert s.averageOfLevels(tree([2147483647, 2147483647, 2147483647])) == [2147483647.0, 2147483647.0]
+@@ PROBLEM: binary-tree-level-order-traversal
+@@ APPROACH:
+This is the template itself. Take `len(q)`, pop that many nodes into a `level` list, and push their children. After the inner loop, the list holds one full level, so append it to the answer. An empty tree returns an empty list.
+@@ COMPLEXITY: O(n) time, O(w) extra space (w = widest level)
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def levelOrder(self, root: Optional[TreeNode]) -> List[List[int]]:
+        if not root:
+            return []
+        out, q = [], deque([root])
+        while q:
+            level = []
+            for _ in range(len(q)):          # exactly this level
+                n = q.popleft()
+                level.append(n.val)
+                if n.left:  q.append(n.left)
+                if n.right: q.append(n.right)
+            out.append(level)
+        return out
+@@ TEST:
+s = Solution()
+assert s.levelOrder(tree([3, 9, 20, None, None, 15, 7])) == [[3], [9, 20], [15, 7]]
+assert s.levelOrder(tree([1])) == [[1]]
+assert s.levelOrder(tree([])) == []
+assert s.levelOrder(tree([1, None, 2, None, 3])) == [[1], [2], [3]]
+assert s.levelOrder(tree([1, 2, 3, 4, 5, 6, 7])) == [[1], [2, 3], [4, 5, 6, 7]]
+@@ PROBLEM: binary-tree-zigzag-level-order-traversal
+@@ APPROACH:
+The traversal is the same level-by-level BFS. The one extra idea is a flag `left_to_right` that flips after every level. When the flag is False, store the level reversed: `level[::-1]`. The queue itself always runs left to right, so the children are pushed the normal way.
+@@ COMPLEXITY: O(n) time, O(w) extra space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def zigzagLevelOrder(self, root: Optional[TreeNode]) -> List[List[int]]:
+        if not root:
+            return []
+        out, q, left_to_right = [], deque([root]), True
+        while q:
+            level = []
+            for _ in range(len(q)):          # exactly this level
+                n = q.popleft()
+                level.append(n.val)
+                if n.left:  q.append(n.left)
+                if n.right: q.append(n.right)
+            out.append(level if left_to_right else level[::-1])
+            left_to_right = not left_to_right    # flip direction for the next level
+        return out
+@@ TEST:
+s = Solution()
+assert s.zigzagLevelOrder(tree([3, 9, 20, None, None, 15, 7])) == [[3], [20, 9], [15, 7]]
+assert s.zigzagLevelOrder(tree([1])) == [[1]]
+assert s.zigzagLevelOrder(tree([])) == []
+assert s.zigzagLevelOrder(tree([1, 2, 3, 4, None, None, 5])) == [[1], [3, 2], [4, 5]]
+assert s.zigzagLevelOrder(tree([1, 2, 3, 4, 5, 6, 7])) == [[1], [3, 2], [4, 5, 6, 7]]
+@@ PATTERN: Preorder
+@@ SPOT: Use this when you must handle a node before its children, for example when copying a tree, rebuilding one from a traversal, or writing it out.
+@@ PROBLEM: binary-tree-preorder-traversal
+@@ APPROACH:
+Preorder means node, left, right. In the DFS template, put the `out.append` before the two recursive calls. Nothing else changes between the three orders.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def preorderTraversal(self, root: Optional[TreeNode]) -> List[int]:
+        out = []
+        def dfs(n):
+            if not n:
+                return
+            out.append(n.val)                # PRE: visit the node first
+            dfs(n.left)
+            dfs(n.right)
+        dfs(root)
+        return out
+@@ TEST:
+s = Solution()
+assert s.preorderTraversal(tree([1, None, 2, 3])) == [1, 2, 3]
+assert s.preorderTraversal(tree([])) == []
+assert s.preorderTraversal(tree([1])) == [1]
+assert s.preorderTraversal(tree([1, 2, 3, 4, 5, None, 8, None, None, 6, 7, 9])) == [1, 2, 4, 5, 6, 7, 3, 8, 9]
+@@ PROBLEM: construct-binary-tree-from-preorder-and-inorder-traversal
+@@ APPROACH:
+In a preorder list the next unused value is always the root of the subtree being built. Find that value in the inorder list (a hash map gives its index) to learn where the left side ends. Build the left subtree first, then the right, because preorder lists the left subtree before the right one. The iterator `pre` hands out roots in exactly that order.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def buildTree(self, preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:
+        index_of = {v: i for i, v in enumerate(inorder)}
+        pre = iter(preorder)                 # preorder yields roots one by one
+        def build(lo, hi):                   # builds from inorder[lo..hi]
+            if lo > hi:
+                return None
+            root = TreeNode(next(pre))       # PRE: next value is this subtree's root
+            mid = index_of[root.val]
+            root.left = build(lo, mid - 1)   # left first, matching preorder
+            root.right = build(mid + 1, hi)
+            return root
+        return build(0, len(inorder) - 1)
+@@ TEST:
+s = Solution()
+assert tree_to_list(s.buildTree([3, 9, 20, 15, 7], [9, 3, 15, 20, 7])) == [3, 9, 20, None, None, 15, 7]
+assert tree_to_list(s.buildTree([-1], [-1])) == [-1]
+assert tree_to_list(s.buildTree([1, 2], [2, 1])) == [1, 2]
+assert tree_to_list(s.buildTree([1, 2], [1, 2])) == [1, None, 2]
+assert tree_to_list(s.buildTree([1, 2, 4, 5, 3, 6, 7], [4, 2, 5, 1, 6, 3, 7])) == [1, 2, 3, 4, 5, 6, 7]
+@@ PROBLEM: serialize-and-deserialize-binary-tree
+@@ APPROACH:
+Serialize in preorder: write the node, then its left subtree, then its right subtree. Write `#` for every missing child, so the reader knows exactly where each subtree ends. Deserialize reads the tokens in the same preorder using an iterator, so each call to `build` consumes precisely the tokens of one subtree.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Codec:
+    def serialize(self, root: Optional[TreeNode]) -> str:
+        out = []
+        def dfs(n):
+            if not n:
+                out.append('#')              # marker for an empty child
+                return
+            out.append(str(n.val))           # PRE: write the node before its children
+            dfs(n.left)
+            dfs(n.right)
+        dfs(root)
+        return ','.join(out)
+
+    def deserialize(self, data: str) -> Optional[TreeNode]:
+        tokens = iter(data.split(','))
+        def build():
+            t = next(tokens)                 # read in the same preorder
+            if t == '#':
+                return None
+            node = TreeNode(int(t))
+            node.left = build()
+            node.right = build()
+            return node
+        return build()
+@@ TEST:
+codec = Codec()
+data = codec.serialize(tree([1, 2, 3, None, None, 4, 5]))
+assert isinstance(data, str)
+assert tree_to_list(codec.deserialize(data)) == [1, 2, 3, None, None, 4, 5]
+assert codec.deserialize(codec.serialize(tree([]))) is None
+assert tree_to_list(codec.deserialize(codec.serialize(tree([1])))) == [1]
+assert tree_to_list(codec.deserialize(codec.serialize(tree([-1, 0, 1])))) == [-1, 0, 1]
+assert tree_to_list(codec.deserialize(codec.serialize(tree([1, None, 2, None, 3])))) == [1, None, 2, None, 3]
+assert tree_to_list(codec.deserialize(codec.serialize(tree([5, 4, 7, 3, None, 2, None, -1, None, 9])))) == [5, 4, 7, 3, None, 2, None, -1, None, 9]
+@@ PATTERN: Inorder
+@@ SPOT: Use this when the tree is a BST and you need its values in sorted order, the k-th value, or the place where the order breaks.
+@@ PROBLEM: binary-tree-inorder-traversal
+@@ APPROACH:
+Inorder means left, node, right. In the DFS template, put the `out.append` between the two recursive calls. On a BST this visits values in sorted order.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:
+        out = []
+        def dfs(n):
+            if not n:
+                return
+            dfs(n.left)
+            out.append(n.val)                # IN: visit between the children
+            dfs(n.right)
+        dfs(root)
+        return out
+@@ TEST:
+s = Solution()
+assert s.inorderTraversal(tree([1, None, 2, 3])) == [1, 3, 2]
+assert s.inorderTraversal(tree([])) == []
+assert s.inorderTraversal(tree([1])) == [1]
+assert s.inorderTraversal(tree([1, 2, 3, 4, 5, None, 8, None, None, 6, 7, 9])) == [4, 2, 6, 5, 7, 1, 3, 9, 8]
+assert s.inorderTraversal(tree([2, 1, 3])) == [1, 2, 3]
+@@ PROBLEM: kth-smallest-element-in-a-bst
+@@ APPROACH:
+Inorder on a BST gives sorted values, so the k-th smallest is the k-th node visited. Use the same left, node, right order with an explicit stack, so you can stop as soon as the count reaches zero. The line `k -= 1` sits at the visit step. You never walk the part of the tree after the answer.
+@@ COMPLEXITY: O(h + k) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def kthSmallest(self, root: Optional[TreeNode], k: int) -> int:
+        stack, node = [], root
+        while stack or node:
+            while node:                      # go left as far as possible
+                stack.append(node)
+                node = node.left
+            node = stack.pop()               # IN: visit after the left side is done
+            k -= 1
+            if k == 0:
+                return node.val              # stop early at the k-th visit
+            node = node.right
+@@ TEST:
+s = Solution()
+assert s.kthSmallest(tree([3, 1, 4, None, 2]), 1) == 1
+assert s.kthSmallest(tree([5, 3, 6, 2, 4, None, None, 1]), 3) == 3
+assert s.kthSmallest(tree([1]), 1) == 1
+assert s.kthSmallest(tree([2, 1, 3]), 3) == 3
+assert s.kthSmallest(tree([5, 3, 6, 2, 4, None, None, 1]), 2) == 2
+assert s.kthSmallest(tree([5, 3, 6, 2, 4, None, None, 1]), 6) == 6
+@@ PROBLEM: recover-binary-search-tree
+@@ APPROACH:
+A valid BST read inorder is sorted. Two swapped values create one or two places where a value is smaller than the one before it. Walk inorder and keep `prev`. The first time `prev.val > node.val`, remember `prev` as `first`. On every such break, set `second = node`, so the last break wins. Swap the two values at the end.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def recoverTree(self, root: Optional[TreeNode]) -> None:
+        first = second = prev = None
+        stack, node = [], root
+        while stack or node:
+            while node:
+                stack.append(node)
+                node = node.left
+            node = stack.pop()               # IN: nodes arrive in inorder
+            if prev and prev.val > node.val: # sorted order broke here
+                if not first:
+                    first = prev             # the larger value, too early
+                second = node                # the smaller value, too late
+            prev = node
+            node = node.right
+        first.val, second.val = second.val, first.val
+@@ TEST:
+s = Solution()
+root = tree([1, 3, None, None, 2])
+s.recoverTree(root)
+assert tree_to_list(root) == [3, 1, None, None, 2]
+root = tree([3, 1, 4, None, None, 2])
+s.recoverTree(root)
+assert tree_to_list(root) == [2, 1, 4, None, None, 3]
+root = tree([2, 3, 1])
+s.recoverTree(root)
+assert tree_to_list(root) == [2, 1, 3]
+root = tree([5, 3, 8, 2, 4, 7, 9])
+root.left.val, root.right.right.val = 9, 3
+s.recoverTree(root)
+assert tree_to_list(root) == [5, 3, 8, 2, 4, 7, 9]
+@@ PATTERN: Postorder
+@@ SPOT: Use this when a node can only be decided after both children are done, such as deleting, pruning, or combining answers from below.
+@@ PROBLEM: binary-tree-postorder-traversal
+@@ APPROACH:
+Postorder means left, right, node. In the DFS template, put the `out.append` after both recursive calls. Every node is recorded only after its whole subtree.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def postorderTraversal(self, root: Optional[TreeNode]) -> List[int]:
+        out = []
+        def dfs(n):
+            if not n:
+                return
+            dfs(n.left)
+            dfs(n.right)
+            out.append(n.val)                # POST: visit after both children
+        dfs(root)
+        return out
+@@ TEST:
+s = Solution()
+assert s.postorderTraversal(tree([1, None, 2, 3])) == [3, 2, 1]
+assert s.postorderTraversal(tree([])) == []
+assert s.postorderTraversal(tree([1])) == [1]
+assert s.postorderTraversal(tree([1, 2, 3, 4, 5, None, 8, None, None, 6, 7, 9])) == [4, 6, 7, 5, 2, 9, 8, 3, 1]
+@@ PROBLEM: binary-tree-pruning
+@@ APPROACH:
+A subtree should be removed when it contains no 1. You cannot know that for a node until its children have been pruned. So recurse into both children first and reassign them. Then, after the recursive calls (the postorder spot), a node that has no children left and a value of 0 returns None.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def pruneTree(self, root: Optional[TreeNode]) -> Optional[TreeNode]:
+        if not root:
+            return None
+        root.left = self.pruneTree(root.left)     # children first
+        root.right = self.pruneTree(root.right)
+        if not root.left and not root.right and root.val == 0:
+            return None                      # POST: now a useless leaf, cut it off
+        return root
+@@ TEST:
+s = Solution()
+assert tree_to_list(s.pruneTree(tree([1, None, 0, 0, 1]))) == [1, None, 0, None, 1]
+assert tree_to_list(s.pruneTree(tree([1, 0, 1, 0, 0, 0, 1]))) == [1, None, 1, None, 1]
+assert tree_to_list(s.pruneTree(tree([1, 1, 0, 1, 1, 0, 1, 0]))) == [1, 1, 0, 1, 1, None, 1]
+assert s.pruneTree(tree([0])) is None
+assert s.pruneTree(tree([0, None, 0])) is None
+assert tree_to_list(s.pruneTree(tree([1]))) == [1]
+@@ PROBLEM: binary-tree-cameras
+@@ APPROACH:
+Greedy works from the bottom, so it needs postorder. Each node reports a state to its parent: 0 = not covered, 1 = has a camera, 2 = covered without one. If any child is not covered, this node must hold a camera. If a child has a camera, this node is covered. Otherwise this node is not covered yet and the parent will deal with it. A root that comes back as 0 needs one more camera.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def minCameraCover(self, root: Optional[TreeNode]) -> int:
+        NOT_COVERED, HAS_CAMERA, COVERED = 0, 1, 2
+        cameras = 0
+        def dfs(n):
+            nonlocal cameras
+            if not n:
+                return COVERED               # an empty child needs nothing
+            l, r = dfs(n.left), dfs(n.right) # POST: children report first
+            if l == NOT_COVERED or r == NOT_COVERED:
+                cameras += 1                 # a child is exposed: camera here
+                return HAS_CAMERA
+            if l == HAS_CAMERA or r == HAS_CAMERA:
+                return COVERED
+            return NOT_COVERED               # leave it to the parent
+        if dfs(root) == NOT_COVERED:
+            cameras += 1
+        return cameras
+@@ TEST:
+s = Solution()
+assert s.minCameraCover(tree([0, 0, None, 0, 0])) == 1
+assert s.minCameraCover(tree([0, 0, None, 0, None, 0, None, None, 0])) == 2
+assert s.minCameraCover(tree([0])) == 1
+assert s.minCameraCover(tree([0, 0, 0])) == 1
+assert s.minCameraCover(tree([0, 0, None, 0])) == 1
+assert s.minCameraCover(tree([0, 0, None, 0, None, 0])) == 2
+assert s.minCameraCover(tree([0, 0, 0, 0, 0, 0, 0])) == 2
+@@ PATTERN: Height / Depth
+@@ SPOT: Use this when the answer is a number of levels, or when a decision depends on how deep a subtree goes.
+@@ PROBLEM: maximum-depth-of-binary-tree
+@@ APPROACH:
+The height of a node is one more than the taller of its two children, and an empty tree has height 0. That sentence is the code. Each call returns the height of its subtree to its parent, so the root ends up with the answer.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def maxDepth(self, root: Optional[TreeNode]) -> int:
+        if not root:
+            return 0                         # empty tree has height 0
+        return 1 + max(self.maxDepth(root.left), self.maxDepth(root.right))
+@@ TEST:
+s = Solution()
+assert s.maxDepth(tree([3, 9, 20, None, None, 15, 7])) == 3
+assert s.maxDepth(tree([1, None, 2])) == 2
+assert s.maxDepth(tree([])) == 0
+assert s.maxDepth(tree([1])) == 1
+assert s.maxDepth(tree([1, 2, None, 3, None, 4])) == 4
+@@ PROBLEM: minimum-depth-of-binary-tree
+@@ APPROACH:
+The tempting `1 + min(left, right)` is wrong when a node has only one child, because the empty side would count as depth 0. A path must end at a leaf. So when one child is missing, follow the other one. The line `return 1 + l + r` works because the missing side contributes 0.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def minDepth(self, root: Optional[TreeNode]) -> int:
+        if not root:
+            return 0
+        l, r = self.minDepth(root.left), self.minDepth(root.right)
+        if not root.left or not root.right:  # only one child: must follow it
+            return 1 + l + r                 # one of l, r is 0
+        return 1 + min(l, r)
+@@ TEST:
+s = Solution()
+assert s.minDepth(tree([3, 9, 20, None, None, 15, 7])) == 2
+assert s.minDepth(tree([2, None, 3, None, 4, None, 5, None, 6])) == 5
+assert s.minDepth(tree([])) == 0
+assert s.minDepth(tree([1])) == 1
+assert s.minDepth(tree([1, 2])) == 2
+assert s.minDepth(tree([1, 2, 3, 4, 5])) == 2
+@@ PROBLEM: count-complete-tree-nodes
+@@ APPROACH:
+In a complete tree, at least one side of every node is a perfect tree. Measure the height down the leftmost edge and down the rightmost edge. If they are equal, the whole tree is perfect and has `2 ** h - 1` nodes, with no further recursion. Otherwise recurse into both children. One of them is perfect and returns at once, so only one path goes deep.
+@@ COMPLEXITY: O(log^2 n) time, O(log n) extra space
+@@ CODE:
+class Solution:
+    def countNodes(self, root: Optional[TreeNode]) -> int:
+        if not root:
+            return 0
+        left_h, node = 0, root
+        while node:                          # height along the leftmost edge
+            left_h += 1
+            node = node.left
+        right_h, node = 0, root
+        while node:                          # height along the rightmost edge
+            right_h += 1
+            node = node.right
+        if left_h == right_h:                # perfect tree: count by formula
+            return 2 ** left_h - 1
+        return 1 + self.countNodes(root.left) + self.countNodes(root.right)
+@@ TEST:
+s = Solution()
+assert s.countNodes(tree([1, 2, 3, 4, 5, 6])) == 6
+assert s.countNodes(tree([])) == 0
+assert s.countNodes(tree([1])) == 1
+assert s.countNodes(tree([1, 2])) == 2
+assert s.countNodes(tree([1, 2, 3])) == 3
+assert s.countNodes(tree([1, 2, 3, 4, 5])) == 5
+assert s.countNodes(tree([1, 2, 3, 4, 5, 6, 7])) == 7
+assert s.countNodes(tree(list(range(1, 101)))) == 100
+assert s.countNodes(tree(list(range(1, 1001)))) == 1000
+@@ PATTERN: Diameter
+@@ SPOT: Use this when the best answer is a path that can bend at any node (left arm plus right arm), so each node returns one arm upward and updates a global best.
+@@ PROBLEM: diameter-of-binary-tree
+@@ APPROACH:
+This is the template. The recursive function returns a height, but at every node it also updates `best` with `l + r`, the longest path that bends at that node. Returning only the taller arm upward keeps the heights correct. One postorder pass gives O(n) instead of recomputing heights at every node.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def diameterOfBinaryTree(self, root: Optional[TreeNode]) -> int:
+        best = 0
+        def h(n):
+            nonlocal best
+            if not n:
+                return 0
+            l, r = h(n.left), h(n.right)
+            best = max(best, l + r)          # path THROUGH this node
+            return 1 + max(l, r)             # height to return up
+        h(root)
+        return best
+@@ TEST:
+s = Solution()
+assert s.diameterOfBinaryTree(tree([1, 2, 3, 4, 5])) == 3
+assert s.diameterOfBinaryTree(tree([1, 2])) == 1
+assert s.diameterOfBinaryTree(tree([1])) == 0
+assert s.diameterOfBinaryTree(tree([1, 2, 3, 4, None, None, 5, 6, None, None, 7])) == 6
+assert s.diameterOfBinaryTree(tree([1, 2, None, 3, 4, 5, None, None, 6])) == 4
+@@ PROBLEM: longest-univalue-path
+@@ APPROACH:
+Same shape as the diameter, with one extra rule: an arm only extends when the child has the same value as the node. Each call returns the longest same-value arm going down from `n`. If a child's value differs, that arm is reset to 0. The path bending at `n` has length `l + r`, which updates `best`.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def longestUnivaluePath(self, root: Optional[TreeNode]) -> int:
+        best = 0
+        def arm(n):                          # longest same-value arm down from n
+            nonlocal best
+            if not n:
+                return 0
+            l, r = arm(n.left), arm(n.right)
+            l = l + 1 if n.left and n.left.val == n.val else 0
+            r = r + 1 if n.right and n.right.val == n.val else 0
+            best = max(best, l + r)          # path through this node
+            return max(l, r)                 # one arm goes up
+        arm(root)
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestUnivaluePath(tree([5, 4, 5, 1, 1, None, 5])) == 2
+assert s.longestUnivaluePath(tree([1, 4, 5, 4, 4, None, 5])) == 2
+assert s.longestUnivaluePath(tree([])) == 0
+assert s.longestUnivaluePath(tree([1])) == 0
+assert s.longestUnivaluePath(tree([1, 1, 1, 1, 1, 1, 1])) == 4
+assert s.longestUnivaluePath(tree([1, 1, 1, None, 1])) == 3
+assert s.longestUnivaluePath(tree([1, 2, 3])) == 0
+@@ PROBLEM: binary-tree-maximum-path-sum
+@@ APPROACH:
+This is the diameter with sums instead of edge counts, and with negative values to handle. Each call returns the best one-armed sum going down from the node, and `max(..., 0)` drops an arm that would lower the total. The path that bends at the node is `n.val + l + r`, which updates `best`. Only `n.val + max(l, r)` can go up to the parent.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def maxPathSum(self, root: Optional[TreeNode]) -> int:
+        best = -inf
+        def gain(n):
+            nonlocal best
+            if not n:
+                return 0
+            l = max(gain(n.left), 0)         # ignore an arm that hurts
+            r = max(gain(n.right), 0)
+            best = max(best, n.val + l + r)  # path through this node
+            return n.val + max(l, r)         # one arm goes up
+        gain(root)
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxPathSum(tree([1, 2, 3])) == 6
+assert s.maxPathSum(tree([-10, 9, 20, None, None, 15, 7])) == 42
+assert s.maxPathSum(tree([-3])) == -3
+assert s.maxPathSum(tree([-2, -1])) == -1
+assert s.maxPathSum(tree([2, -1])) == 2
+assert s.maxPathSum(tree([5, 4, 8, 11, None, 13, 4, 7, 2, None, None, None, 1])) == 48
+@@ PATTERN: Balanced Tree
+@@ SPOT: Use this when you must check or build a tree whose two subtrees never differ in height by more than one.
+@@ PROBLEM: balanced-binary-tree
+@@ APPROACH:
+Checking balance node by node would recompute heights again and again. Instead, compute the height in one postorder pass and return -1 as a sentinel for "unbalanced somewhere below". A node is unbalanced if a child already returned -1 or the two heights differ by more than 1. The sentinel passes up to the root.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def isBalanced(self, root: Optional[TreeNode]) -> bool:
+        def h(n):                            # -1 means "unbalanced"
+            if not n:
+                return 0
+            l, r = h(n.left), h(n.right)
+            if l < 0 or r < 0 or abs(l - r) > 1:
+                return -1                    # pass the sentinel upward
+            return 1 + max(l, r)
+        return h(root) >= 0
+@@ TEST:
+s = Solution()
+assert s.isBalanced(tree([3, 9, 20, None, None, 15, 7])) is True
+assert s.isBalanced(tree([1, 2, 2, 3, 3, None, None, 4, 4])) is False
+assert s.isBalanced(tree([])) is True
+assert s.isBalanced(tree([1, 2, 2, 3, None, None, 3, 4, None, None, 4])) is False
+assert s.isBalanced(tree([1])) is True
+assert s.isBalanced(tree([1, 2, None, 3])) is False
+assert s.isBalanced(tree([1, 2, 3])) is True
+@@ PROBLEM: convert-sorted-array-to-binary-search-tree
+@@ APPROACH:
+To build a tree whose two sides stay equal in size, make the middle element the root. The left half becomes the left subtree and the right half becomes the right subtree, recursively. Sizes of the two sides differ by at most one at every node, so the heights do too. Because the array is sorted, the result is also a valid BST.
+@@ COMPLEXITY: O(n) time, O(log n) extra space (recursion stack)
+@@ CODE:
+class Solution:
+    def sortedArrayToBST(self, nums: List[int]) -> Optional[TreeNode]:
+        def build(lo, hi):                   # builds from nums[lo:hi]
+            if lo >= hi:
+                return None
+            mid = (lo + hi) // 2             # middle as root keeps both sides balanced
+            root = TreeNode(nums[mid])
+            root.left = build(lo, mid)
+            root.right = build(mid + 1, hi)
+            return root
+        return build(0, len(nums))
+@@ TEST:
+def inorder_vals(n):
+    return inorder_vals(n.left) + [n.val] + inorder_vals(n.right) if n else []
+def height(n):
+    return 1 + max(height(n.left), height(n.right)) if n else 0
+def is_balanced(n):
+    if not n: return True
+    return abs(height(n.left) - height(n.right)) <= 1 and is_balanced(n.left) and is_balanced(n.right)
+s = Solution()
+for nums in ([-10, -3, 0, 5, 9], [1, 3], [1], [1, 2, 3, 4, 5, 6, 7], list(range(100))):
+    root = s.sortedArrayToBST(nums)
+    assert inorder_vals(root) == nums
+    assert is_balanced(root)
+assert tree_to_list(s.sortedArrayToBST([-10, -3, 0, 5, 9])) == [0, -3, 9, -10, None, 5]
+assert s.sortedArrayToBST([]) is None
+@@ PROBLEM: balance-a-binary-search-tree
+@@ APPROACH:
+Two steps. First, an inorder walk of the BST collects its values in sorted order. Second, rebuild a tree from that sorted list by always taking the middle as the root, which keeps both sides equal in size. The result holds the same values and is height-balanced.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def balanceBST(self, root: TreeNode) -> TreeNode:
+        values = []
+        def inorder(n):                      # BST inorder = sorted values
+            if not n:
+                return
+            inorder(n.left)
+            values.append(n.val)
+            inorder(n.right)
+        inorder(root)
+        def build(lo, hi):                   # builds from values[lo:hi]
+            if lo >= hi:
+                return None
+            mid = (lo + hi) // 2             # middle as root keeps it balanced
+            node = TreeNode(values[mid])
+            node.left = build(lo, mid)
+            node.right = build(mid + 1, hi)
+            return node
+        return build(0, len(values))
+@@ TEST:
+def inorder_vals(n):
+    return inorder_vals(n.left) + [n.val] + inorder_vals(n.right) if n else []
+def height(n):
+    return 1 + max(height(n.left), height(n.right)) if n else 0
+def is_balanced(n):
+    if not n: return True
+    return abs(height(n.left) - height(n.right)) <= 1 and is_balanced(n.left) and is_balanced(n.right)
+s = Solution()
+for arr, vals in (([1, None, 2, None, 3, None, 4, None, None], [1, 2, 3, 4]),
+                  ([2, 1, 3], [1, 2, 3]),
+                  ([1], [1]),
+                  ([1, None, 2], [1, 2]),
+                  ([5, 4, None, 3, None, 2, None, 1], [1, 2, 3, 4, 5])):
+    root = s.balanceBST(tree(arr))
+    assert inorder_vals(root) == vals
+    assert is_balanced(root)
+@@ PATTERN: Path Sum
+@@ SPOT: Use this when the question is about root-to-leaf (or downward) paths and a running total, so you pass the remaining target down as you go.
+@@ PROBLEM: path-sum
+@@ APPROACH:
+Carry the remaining target as a parameter: at each node subtract `n.val` before going to the children. At a leaf, the path works when the leaf value equals what is left. A node with only one child is not a leaf, so an empty side must return False, not True.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def hasPathSum(self, root: Optional[TreeNode], targetSum: int) -> bool:
+        if not root:
+            return False
+        if not root.left and not root.right:         # leaf: path ends here
+            return root.val == targetSum
+        remaining = targetSum - root.val             # subtract as you go down
+        return (self.hasPathSum(root.left, remaining) or
+                self.hasPathSum(root.right, remaining))
+@@ TEST:
+s = Solution()
+assert s.hasPathSum(tree([5, 4, 8, 11, None, 13, 4, 7, 2, None, None, None, 1]), 22) is True
+assert s.hasPathSum(tree([1, 2, 3]), 5) is False
+assert s.hasPathSum(tree([]), 0) is False
+assert s.hasPathSum(tree([1, 2]), 1) is False
+assert s.hasPathSum(tree([1, 2]), 3) is True
+assert s.hasPathSum(tree([-2, None, -3]), -5) is True
+@@ PROBLEM: path-sum-ii
+@@ APPROACH:
+Now every valid path must be listed, so use backtracking on top of the top-down walk. Keep one shared `path` list: append the node on the way down and `pop()` it on the way back. At a leaf with nothing left to subtract, copy the path with `path[:]`. Without the copy, later changes would alter the saved answer.
+@@ COMPLEXITY: O(n^2) time in the worst case (copying paths), O(h) extra space besides the output
+@@ CODE:
+class Solution:
+    def pathSum(self, root: Optional[TreeNode], targetSum: int) -> List[List[int]]:
+        out, path = [], []
+        def dfs(n, remaining):
+            if not n:
+                return
+            path.append(n.val)               # choose this node
+            remaining -= n.val               # subtract as you go down
+            if not n.left and not n.right and remaining == 0:
+                out.append(path[:])          # copy, the list keeps changing
+            dfs(n.left, remaining)
+            dfs(n.right, remaining)
+            path.pop()                       # undo the choice
+        dfs(root, targetSum)
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.pathSum(tree([5, 4, 8, 11, None, 13, 4, 7, 2, None, None, 5, 1]), 22)) == [[5, 4, 11, 2], [5, 8, 4, 5]]
+assert s.pathSum(tree([1, 2, 3]), 5) == []
+assert s.pathSum(tree([1, 2]), 0) == []
+assert s.pathSum(tree([]), 0) == []
+assert s.pathSum(tree([1, -2, -3, 1, 3, -2, None, -1]), -1) == [[1, -2, 1, -1]]
+assert s.pathSum(tree([0, 1, 1]), 1) == [[0, 1], [0, 1]]
+@@ PROBLEM: path-sum-iii
+@@ APPROACH:
+Paths may start and end anywhere, as long as they go downward. Keep the running sum from the root, `prefix`. A path ending at this node with sum `targetSum` exists once for each earlier prefix equal to `prefix - targetSum`, so look that up in the counter. Add the current prefix before recursing and remove it on the way back, so only ancestors are counted.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def pathSum(self, root: Optional[TreeNode], targetSum: int) -> int:
+        seen = Counter({0: 1})               # prefix sums on the current root path
+        def dfs(n, prefix):
+            if not n:
+                return 0
+            prefix += n.val
+            count = seen[prefix - targetSum] # paths ending at this node
+            seen[prefix] += 1
+            count += dfs(n.left, prefix) + dfs(n.right, prefix)
+            seen[prefix] -= 1                # leaving this node
+            return count
+        return dfs(root, 0)
+@@ TEST:
+s = Solution()
+assert s.pathSum(tree([10, 5, -3, 3, 2, None, 11, 3, -2, None, 1]), 8) == 3
+assert s.pathSum(tree([5, 4, 8, 11, None, 13, 4, 7, 2, None, None, 5, 1]), 22) == 3
+assert s.pathSum(tree([]), 0) == 0
+assert s.pathSum(tree([1]), 1) == 1
+assert s.pathSum(tree([0, 1, 1]), 1) == 4
+assert s.pathSum(tree([1, -2, -3]), -1) == 1
+assert s.pathSum(tree([0, 0, 0]), 0) == 5
+assert s.pathSum(tree([1000000000, 1000000000, None, 294967296, None, 1000000000, None, 1000000000, None, 1000000000]), 0) == 0
+@@ PATTERN: Lowest Common Ancestor
+@@ SPOT: Use this when the answer hangs on the lowest node where two things (given nodes, or pairs of leaves) sit on different sides, so you search both sides and see where they split.
+@@ PROBLEM: lowest-common-ancestor-of-a-binary-tree
+@@ APPROACH:
+Search both subtrees for `p` and `q`. A call returns the node itself if it is `p` or `q`, otherwise whatever the sides found. If both sides return something, `p` and `q` are on different sides, so this node is the split and the answer. If only one side found something, pass it up unchanged.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':
+        if not root or root is p or root is q:   # found a target (or fell off)
+            return root
+        left = self.lowestCommonAncestor(root.left, p, q)
+        right = self.lowestCommonAncestor(root.right, p, q)
+        if left and right:                   # p and q are on different sides: split here
+            return root
+        return left or right                 # otherwise pass up what was found
+@@ TEST:
+def find(n, v):
+    if not n: return None
+    if n.val == v: return n
+    return find(n.left, v) or find(n.right, v)
+s = Solution()
+root = tree([3, 5, 1, 6, 2, 0, 8, None, None, 7, 4])
+assert s.lowestCommonAncestor(root, find(root, 5), find(root, 1)).val == 3
+assert s.lowestCommonAncestor(root, find(root, 5), find(root, 4)).val == 5
+assert s.lowestCommonAncestor(root, find(root, 7), find(root, 4)).val == 2
+assert s.lowestCommonAncestor(root, find(root, 6), find(root, 4)).val == 5
+assert s.lowestCommonAncestor(root, find(root, 0), find(root, 8)).val == 1
+assert s.lowestCommonAncestor(root, find(root, 6), find(root, 8)).val == 3
+root = tree([1, 2])
+assert s.lowestCommonAncestor(root, find(root, 1), find(root, 2)).val == 1
+root = tree([1])
+assert s.lowestCommonAncestor(root, root, root) is root
+@@ PROBLEM: step-by-step-directions-from-a-binary-tree-node-to-another
+@@ APPROACH:
+The shortest route between two nodes always climbs to their lowest common ancestor and then walks down. Find that ancestor with the same idiom: return the node if it matches, ask both children, and the node that gets answers from both sides is the split. Then find the downward path from it to each value. The path to `startValue` becomes one `U` per step, and the path to `destValue` is kept as `L` and `R`.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def getDirections(self, root: Optional[TreeNode], startValue: int, destValue: int) -> str:
+        def lca(node):
+            if not node or node.val == startValue or node.val == destValue:
+                return node                  # found a target (or fell off)
+            left, right = lca(node.left), lca(node.right)
+            if left and right:               # the two values are on different sides: split here
+                return node
+            return left or right             # otherwise pass up what was found
+
+        def find_path(node, target, moves):  # fills moves with L/R steps from node down to target
+            if not node:
+                return False
+            if node.val == target:
+                return True
+            for child, step in ((node.left, 'L'), (node.right, 'R')):
+                moves.append(step)
+                if find_path(child, target, moves):
+                    return True
+                moves.pop()                  # undo the step when the target is not below
+            return False
+
+        top = lca(root)
+        to_start, to_dest = [], []
+        find_path(top, startValue, to_start)
+        find_path(top, destValue, to_dest)
+        return 'U' * len(to_start) + ''.join(to_dest)   # climb to the split, then walk down
+@@ TEST:
+s = Solution()
+assert s.getDirections(tree([5, 1, 2, 3, None, 6, 4]), 3, 6) == "UURL"
+assert s.getDirections(tree([2, 1]), 2, 1) == "L"
+assert s.getDirections(tree([1, 2, 3, 4]), 1, 4) == "LL"
+assert s.getDirections(tree([1, 2, 3, 4]), 4, 1) == "UU"
+assert s.getDirections(tree([1, 2, 3, None, 4, 5]), 4, 5) == "UURL"
+assert s.getDirections(tree([1, 2, 3, None, 4, 5]), 4, 3) == "UUR"
+assert s.getDirections(tree([1, 2, None, 3]), 3, 2) == "U"
+assert s.getDirections(tree([1, 2, 3]), 3, 2) == "UL"
+@@ PROBLEM: number-of-good-leaf-nodes-pairs
+@@ APPROACH:
+Every pair of leaves has exactly one lowest common ancestor, the node where the two leaves are on different sides. So each call returns an array `counts`, where `counts[d]` is the number of leaves exactly `d` steps below that node. At a node, every leaf on the left pairs with every leaf on the right, and the path between them is one step to each side plus their depths. Add `left[i] * right[j]` to the answer when that length is at most `distance`, then pass the merged counts up shifted by one.
+@@ COMPLEXITY: O(n * distance^2) time, O(h * distance) extra space
+@@ CODE:
+class Solution:
+    def countPairs(self, root: TreeNode, distance: int) -> int:
+        pairs = 0
+
+        def dfs(node):                       # counts[d] = leaves exactly d steps below node
+            nonlocal pairs
+            counts = [0] * (distance + 1)
+            if not node:
+                return counts
+            if not node.left and not node.right:
+                counts[0] = 1
+                return counts
+            left, right = dfs(node.left), dfs(node.right)
+            for i in range(distance + 1):
+                for j in range(distance + 1):
+                    if i + j + 2 <= distance:         # path = (i + 1) + (j + 1) steps through this node
+                        pairs += left[i] * right[j]   # this node is the split for these pairs
+            for d in range(distance):                 # deeper leaves can never be part of a good pair
+                counts[d + 1] = left[d] + right[d]
+            return counts
+
+        dfs(root)
+        return pairs
+@@ TEST:
+s = Solution()
+assert s.countPairs(tree([1, 2, 3, None, 4]), 3) == 1
+assert s.countPairs(tree([1, 2, 3, 4, 5, 6, 7]), 3) == 2
+assert s.countPairs(tree([7, 1, 4, 6, None, 5, 3, None, None, None, None, None, 2]), 3) == 1
+assert s.countPairs(tree([100]), 1) == 0
+assert s.countPairs(tree([1, 1, 1]), 2) == 1
+assert s.countPairs(tree([1, 1, 1]), 1) == 0
+assert s.countPairs(tree([1, 2, 3, 4, 5, 6, 7]), 4) == 6
+assert s.countPairs(tree([1, 2, 3, None, None, 4, 5]), 2) == 1
+assert s.countPairs(tree([1, 2, 3, None, None, 4, 5]), 3) == 3
+@@ PATTERN: Boundary Traversal
+@@ SPOT: Use this when the question is about the outer edge of the tree (its leaves, its left side or its right side), as in a boundary walk.
+@@ PROBLEM: leaf-similar-trees
+@@ APPROACH:
+A boundary walk has three parts: the left edge, the leaves, and the right edge. This question is the leaves part. Visit left before right, and record a node only when it has no children. That gives the bottom edge in left-to-right order, so two trees match when their leaf lists are equal.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def leafSimilar(self, root1: Optional[TreeNode], root2: Optional[TreeNode]) -> bool:
+        def leaves(n, out):
+            if not n:
+                return out
+            if not n.left and not n.right:   # a leaf belongs to the bottom edge
+                out.append(n.val)
+            leaves(n.left, out)              # left before right keeps left-to-right order
+            leaves(n.right, out)
+            return out
+        return leaves(root1, []) == leaves(root2, [])
+@@ TEST:
+s = Solution()
+assert s.leafSimilar(tree([3, 5, 1, 6, 2, 9, 8, None, None, 7, 4]),
+                     tree([3, 5, 1, 6, 7, 4, 2, None, None, None, None, None, None, 9, 8])) is True
+assert s.leafSimilar(tree([1, 2, 3]), tree([1, 3, 2])) is False
+assert s.leafSimilar(tree([1]), tree([1])) is True
+assert s.leafSimilar(tree([1]), tree([2])) is False
+assert s.leafSimilar(tree([1, 2]), tree([1, None, 2])) is True
+@@ PROBLEM: sum-of-left-leaves
+@@ APPROACH:
+This is the left-edge part of a boundary walk: a leaf that hangs off the left side of its parent. Pass a flag `is_left` down with every call. A node with no children counts only when its flag is True. The root has no parent, so it starts with False.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def sumOfLeftLeaves(self, root: Optional[TreeNode]) -> int:
+        def dfs(n, is_left):                 # is_left: n hangs off its parent's left
+            if not n:
+                return 0
+            if not n.left and not n.right:   # a leaf: count it only on the left edge
+                return n.val if is_left else 0
+            return dfs(n.left, True) + dfs(n.right, False)
+        return dfs(root, False)
+@@ TEST:
+s = Solution()
+assert s.sumOfLeftLeaves(tree([3, 9, 20, None, None, 15, 7])) == 24
+assert s.sumOfLeftLeaves(tree([1])) == 0
+assert s.sumOfLeftLeaves(tree([1, 2, 3, 4, 5])) == 4
+assert s.sumOfLeftLeaves(tree([1, 2])) == 2
+assert s.sumOfLeftLeaves(tree([1, None, 2])) == 0
+assert s.sumOfLeftLeaves(tree([-1, -2, -3])) == -2
+@@ PROBLEM: binary-tree-right-side-view
+@@ APPROACH:
+This is the right-edge part of a boundary walk: the nodes you would see from the right. Walk down depth by depth, trying the right child before the left child. The first node reached at a new depth is the rightmost one there, so record it when `depth == len(edge)`. If the right side runs out, the walk falls back to the left child.
+@@ COMPLEXITY: O(n) time, O(h) extra space
+@@ CODE:
+class Solution:
+    def rightSideView(self, root: Optional[TreeNode]) -> List[int]:
+        edge = []
+        def walk(n, depth):
+            if not n:
+                return
+            if depth == len(edge):           # first node seen at this depth = rightmost
+                edge.append(n.val)
+            walk(n.right, depth + 1)         # right first, so the edge wins
+            walk(n.left, depth + 1)
+        walk(root, 0)
+        return edge
+@@ TEST:
+s = Solution()
+assert s.rightSideView(tree([1, 2, 3, None, 5, None, 4])) == [1, 3, 4]
+assert s.rightSideView(tree([1, 2, 3, 4, None, None, None, 5])) == [1, 3, 4, 5]
+assert s.rightSideView(tree([1, None, 3])) == [1, 3]
+assert s.rightSideView(tree([])) == []
+assert s.rightSideView(tree([1, 2])) == [1, 2]
+assert s.rightSideView(tree([1])) == [1]
+@@ PATTERN: Vertical Order
+@@ SPOT: Use this when you must group or report nodes by column, so you tag each node with a column number while walking the tree.
+@@ PROBLEM: cousins-in-binary-tree
+@@ APPROACH:
+This introduces the key move of the pattern: each queue entry carries a tag next to the node. Here the tag is the parent. Process the tree level by level and record the parent of `x` and of `y` if they appear on this level. Cousins are on the same level with different parents. If only one of them shows up on a level, their depths differ and the answer is False.
+@@ COMPLEXITY: O(n) time, O(w) extra space (w = widest level)
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def isCousins(self, root: Optional[TreeNode], x: int, y: int) -> bool:
+        q = deque([(root, None)])            # each node carries a tag: its parent
+        while q:
+            found = {}                       # value -> parent, for this level only
+            for _ in range(len(q)):
+                node, parent = q.popleft()
+                if node.val == x or node.val == y:
+                    found[node.val] = parent
+                if node.left:  q.append((node.left, node))
+                if node.right: q.append((node.right, node))
+            if len(found) == 2:              # both on this level
+                return found[x] is not found[y]
+            if found:                        # only one here: different depths
+                return False
+        return False
+@@ TEST:
+s = Solution()
+assert s.isCousins(tree([1, 2, 3, 4]), 4, 3) is False
+assert s.isCousins(tree([1, 2, 3, None, 4, None, 5]), 5, 4) is True
+assert s.isCousins(tree([1, 2, 3, None, 4]), 2, 3) is False
+assert s.isCousins(tree([1, 2, 3, 4, 5, 6, 7]), 4, 6) is True
+assert s.isCousins(tree([1, 2, 3, 4, 5, 6, 7]), 4, 5) is False
+assert s.isCousins(tree([1, 2, 3, 4, 5, 6, 7]), 2, 7) is False
+@@ PROBLEM: print-binary-tree
+@@ APPROACH:
+Every node has a fixed cell in the grid, so tag each queue entry with `(node, row, col)`. The root sits in the middle column of row 0. A child is one row lower and moves left or right by an offset that halves each row. Walk the tree breadth first and write each value into `grid[row][col]`.
+@@ COMPLEXITY: O(h * 2^h) time and space (the size of the grid)
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def printTree(self, root: Optional[TreeNode]) -> List[List[str]]:
+        def height(n):                       # number of levels
+            return 1 + max(height(n.left), height(n.right)) if n else 0
+        rows = height(root)
+        cols = 2 ** rows - 1
+        grid = [[""] * cols for _ in range(rows)]
+        q = deque([(root, 0, (cols - 1) // 2)])      # tag: (node, row, col)
+        while q:
+            node, row, col = q.popleft()
+            grid[row][col] = str(node.val)
+            step = (cols + 1) >> (row + 2)           # column offset halves each row
+            if node.left:  q.append((node.left,  row + 1, col - step))
+            if node.right: q.append((node.right, row + 1, col + step))
+        return grid
+@@ TEST:
+def row(width, cells):
+    r = [""] * width
+    for c, v in cells.items():
+        r[c] = v
+    return r
+s = Solution()
+assert s.printTree(tree([1, 2])) == [["", "1", ""], ["2", "", ""]]
+assert s.printTree(tree([1, 2, 3, None, 4])) == [["", "", "", "1", "", "", ""],
+                                                 ["", "2", "", "", "", "3", ""],
+                                                 ["", "", "4", "", "", "", ""]]
+assert s.printTree(tree([1, 2, 5, 3, None, None, None, 4])) == [row(15, {7: "1"}), row(15, {3: "2", 11: "5"}),
+                                                                row(15, {1: "3"}), row(15, {0: "4"})]
+assert s.printTree(tree([1])) == [["1"]]
+assert s.printTree(tree([-5, 7, 8])) == [["", "-5", ""], ["7", "", "8"]]
+@@ PROBLEM: vertical-order-traversal-of-a-binary-tree
+@@ APPROACH:
+Walk the tree breadth first with `(node, row, col)`. The root is column 0, a left child is `col - 1`, a right child is `col + 1`. Collect `(row, value)` pairs in a dict keyed by column. Sorting each column's pairs puts shallower nodes first and breaks ties at the same row by value. Output the columns from left to right.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+from collections import deque, defaultdict
+
+class Solution:
+    def verticalTraversal(self, root: Optional[TreeNode]) -> List[List[int]]:
+        if not root:
+            return []
+        cols = defaultdict(list)
+        q = deque([(root, 0, 0)])            # tag: (node, row, col)
+        while q:
+            node, row, col = q.popleft()
+            cols[col].append((row, node.val))    # keep the row for tie-breaking
+            if node.left:  q.append((node.left,  row + 1, col - 1))
+            if node.right: q.append((node.right, row + 1, col + 1))
+        return [[v for _, v in sorted(cols[c])] for c in sorted(cols)]
+@@ TEST:
+s = Solution()
+assert s.verticalTraversal(tree([3, 9, 20, None, None, 15, 7])) == [[9], [3, 15], [20], [7]]
+assert s.verticalTraversal(tree([1, 2, 3, 4, 5, 6, 7])) == [[4], [2], [1, 5, 6], [3], [7]]
+assert s.verticalTraversal(tree([1, 2, 3, 4, 6, 5, 7])) == [[4], [2], [1, 5, 6], [3], [7]]
+assert s.verticalTraversal(tree([1])) == [[1]]
+assert s.verticalTraversal(tree([1, 2, None, 3])) == [[3], [2], [1]]
+assert s.verticalTraversal(tree([5, 3, 4, None, 1])) == [[3], [5, 1], [4]]
+assert s.verticalTraversal(tree([])) == []

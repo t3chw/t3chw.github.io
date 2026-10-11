@@ -1,0 +1,886 @@
+@@ PATTERN: Character Frequency
+@@ SPOT: Use this when the answer depends on how many times each character appears, not on where it appears.
+@@ PROBLEM: first-unique-character-in-a-string
+@@ APPROACH:
+Count every letter once with Counter. Then walk the string a second time and return the first index whose count is 1. The counting pass turns "is this letter unique?" into a dictionary lookup, so the whole thing is two passes.
+@@ COMPLEXITY: O(n) time, O(1) extra space (at most 26 letters)
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def firstUniqChar(self, s: str) -> int:
+        count = Counter(s)                # pass 1: how many times each letter appears
+        for i, ch in enumerate(s):        # pass 2: first letter whose count is exactly 1
+            if count[ch] == 1:
+                return i
+        return -1
+@@ TEST:
+s = Solution()
+assert s.firstUniqChar("leetcode") == 0
+assert s.firstUniqChar("loveleetcode") == 2
+assert s.firstUniqChar("aabb") == -1
+assert s.firstUniqChar("z") == 0
+assert s.firstUniqChar("aadadaad") == -1
+assert s.firstUniqChar("dddccdbba") == 8
+@@ PROBLEM: sort-characters-by-frequency
+@@ APPROACH:
+Build the frequency table with Counter. most_common() lists the letters from the highest count to the lowest. Repeat each letter by its count and join the pieces. The order of the original string does not matter here, only the counts do.
+@@ COMPLEXITY: O(n + k log k) time, O(n) space (k = number of distinct characters)
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def frequencySort(self, s: str) -> str:
+        count = Counter(s)                                        # character frequency
+        return "".join(ch * n for ch, n in count.most_common())   # highest count first
+@@ TEST:
+s = Solution()
+assert s.frequencySort("tree") in ("eetr", "eert")
+assert s.frequencySort("cccaaa") in ("cccaaa", "aaaccc")
+assert s.frequencySort("Aabb") in ("bbAa", "bbaA")
+assert s.frequencySort("a") == "a"
+assert s.frequencySort("") == ""
+assert s.frequencySort("abbccc") == "cccbba"
+@@ PROBLEM: reorganize-string
+@@ APPROACH:
+Count the letters. If one letter appears more than (n + 1) // 2 times, no arrangement works, so return "". Otherwise write the letters from most frequent to least frequent into positions 0, 2, 4, ... and then 1, 3, 5, ... The most frequent letter takes the even slots first, which keeps equal letters apart.
+@@ COMPLEXITY: O(n + k log k) time, O(n) space (k = number of distinct characters)
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def reorganizeString(self, s: str) -> str:
+        count = Counter(s)
+        if max(count.values()) > (len(s) + 1) // 2:   # too frequent to ever be separated
+            return ""
+        res = [""] * len(s)
+        idx = 0
+        for ch, n in count.most_common():             # most frequent letter first
+            for _ in range(n):
+                res[idx] = ch
+                idx += 2                              # fill the even slots, then the odd slots
+                if idx >= len(s):
+                    idx = 1
+        return "".join(res)
+@@ TEST:
+def good(res, src):
+    return sorted(res) == sorted(src) and all(a != b for a, b in zip(res, res[1:]))
+s = Solution()
+assert good(s.reorganizeString("aab"), "aab")
+assert s.reorganizeString("aaab") == ""
+assert s.reorganizeString("a") == "a"
+assert good(s.reorganizeString("aabbcc"), "aabbcc")
+assert good(s.reorganizeString("vvvlo"), "vvvlo")
+assert good(s.reorganizeString("aaabc"), "aaabc")
+assert s.reorganizeString("aaabb") != "" and good(s.reorganizeString("aaabb"), "aaabb")
+assert s.reorganizeString("aaaabb") == ""
+@@ PATTERN: Two Pointers
+@@ SPOT: Use this when you can walk a string from both ends, or with a read pointer and a write pointer, and every step settles one position.
+@@ PROBLEM: reverse-string
+@@ APPROACH:
+Put one pointer at each end. Swap the two characters, then move both pointers toward the middle until they meet. Each character is touched once and no extra array is needed, because the swap happens in place.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def reverseString(self, s: List[str]) -> None:
+        l, r = 0, len(s) - 1
+        while l < r:                       # pointers walk toward each other
+            s[l], s[r] = s[r], s[l]
+            l += 1
+            r -= 1
+@@ TEST:
+s = Solution()
+a = ["h", "e", "l", "l", "o"]
+s.reverseString(a)
+assert a == ["o", "l", "l", "e", "h"]
+b = ["H", "a", "n", "n", "a", "h"]
+s.reverseString(b)
+assert b == ["h", "a", "n", "n", "a", "H"]
+c = ["a"]
+s.reverseString(c)
+assert c == ["a"]
+d = ["a", "b"]
+s.reverseString(d)
+assert d == ["b", "a"]
+@@ PROBLEM: backspace-string-compare
+@@ APPROACH:
+Building both final strings costs O(n) extra space. Instead, put one pointer at the end of each string and move it left past every character that a "#" erases. The helper keeps a skip counter: "#" adds one, and a letter with skip above zero is erased. Then compare the two surviving characters and step both pointers left.
+@@ COMPLEXITY: O(n + m) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def backspaceCompare(self, s: str, t: str) -> bool:
+        def next_valid(string: str, i: int) -> int:
+            skip = 0
+            while i >= 0:                  # walk left past erased characters
+                if string[i] == "#":
+                    skip += 1
+                elif skip:
+                    skip -= 1
+                else:
+                    break
+                i -= 1
+            return i
+
+        i, j = len(s) - 1, len(t) - 1      # one pointer per string, starting at the ends
+        while i >= 0 or j >= 0:
+            i, j = next_valid(s, i), next_valid(t, j)
+            if i >= 0 and j >= 0:
+                if s[i] != t[j]:
+                    return False
+            elif i >= 0 or j >= 0:         # one string ran out of letters first
+                return False
+            i -= 1
+            j -= 1
+        return True
+@@ TEST:
+s = Solution()
+assert s.backspaceCompare("ab#c", "ad#c") is True
+assert s.backspaceCompare("ab##", "c#d#") is True
+assert s.backspaceCompare("a#c", "b") is False
+assert s.backspaceCompare("a##c", "#a#c") is True
+assert s.backspaceCompare("y#fo##f", "y#f#o##f") is True
+assert s.backspaceCompare("bxj##tw", "bxo#j##tw") is True
+assert s.backspaceCompare("bbbextm", "bbb#extm") is False
+assert s.backspaceCompare("###", "") is True
+assert s.backspaceCompare("a", "a#") is False
+@@ PROBLEM: string-compression
+@@ APPROACH:
+Use a read pointer to scan each group of equal characters and a write pointer to build the answer in the same array. The write pointer never gets ahead of the read pointer, so nothing unread is overwritten. After each group, write the character, and if the group is longer than 1, write the digits of its length one by one. Return the write pointer as the new length.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def compress(self, chars: List[str]) -> int:
+        write = read = 0
+        while read < len(chars):
+            ch, start = chars[read], read
+            while read < len(chars) and chars[read] == ch:   # read pointer scans the whole group
+                read += 1
+            chars[write] = ch                                # write pointer records the result
+            write += 1
+            if read - start > 1:
+                for digit in str(read - start):
+                    chars[write] = digit
+                    write += 1
+        return write
+@@ TEST:
+s = Solution()
+a = ["a", "a", "b", "b", "c", "c", "c"]
+n = s.compress(a)
+assert n == 6 and a[:n] == ["a", "2", "b", "2", "c", "3"]
+b = ["a"]
+n = s.compress(b)
+assert n == 1 and b[:n] == ["a"]
+c = ["a"] + ["b"] * 12
+n = s.compress(c)
+assert n == 4 and c[:n] == ["a", "b", "1", "2"]
+d = ["a", "b", "c"]
+n = s.compress(d)
+assert n == 3 and d[:n] == ["a", "b", "c"]
+e = ["a", "a"]
+n = s.compress(e)
+assert n == 2 and e[:n] == ["a", "2"]
+@@ PATTERN: Fixed Sliding Window
+@@ SPOT: Use this when the question looks at every substring of one fixed length, so you can slide by one step: add the new character and drop the old one.
+@@ PROBLEM: minimum-recolors-to-get-k-consecutive-black-blocks
+@@ APPROACH:
+Every window of length k needs as many recolors as it has white blocks. Count the whites in the first window. Then slide right: add one if the new block is white and subtract one if the block that left was white. The answer is the smallest white count seen.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def minimumRecolors(self, blocks: str, k: int) -> int:
+        whites = blocks[:k].count("W")        # whites in the first window
+        best = whites
+        for i in range(k, len(blocks)):
+            if blocks[i] == "W":              # new block enters on the right
+                whites += 1
+            if blocks[i - k] == "W":          # old block leaves on the left
+                whites -= 1
+            best = min(best, whites)
+        return best
+@@ TEST:
+s = Solution()
+assert s.minimumRecolors("WBBWWBBWBW", 7) == 3
+assert s.minimumRecolors("WBWBBBW", 2) == 0
+assert s.minimumRecolors("W", 1) == 1
+assert s.minimumRecolors("B", 1) == 0
+assert s.minimumRecolors("WWWW", 4) == 4
+assert s.minimumRecolors("WWBWW", 2) == 1
+@@ PROBLEM: find-all-anagrams-in-a-string
+@@ APPROACH:
+An anagram of p is any substring of s with length len(p) and the same letter counts. Keep a Counter for the current window. For each new character, add it on the right, and once the window is longer than len(p), remove the character on the left. When the window Counter equals the Counter of p, record the start index.
+@@ COMPLEXITY: O(n) time (comparing two Counters costs at most 26), O(1) extra space
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def findAnagrams(self, s: str, p: str) -> List[int]:
+        need, win, out = Counter(p), Counter(), []
+        k = len(p)                             # fixed window length
+        for i, ch in enumerate(s):
+            win[ch] += 1                       # character enters on the right
+            if i >= k:
+                old = s[i - k]                 # character leaves on the left
+                win[old] -= 1
+                if win[old] == 0:
+                    del win[old]
+            if win == need:
+                out.append(i - k + 1)
+        return out
+@@ TEST:
+s = Solution()
+assert s.findAnagrams("cbaebabacd", "abc") == [0, 6]
+assert s.findAnagrams("abab", "ab") == [0, 1, 2]
+assert s.findAnagrams("a", "ab") == []
+assert s.findAnagrams("aa", "a") == [0, 1]
+assert s.findAnagrams("baa", "aa") == [1]
+assert s.findAnagrams("abc", "d") == []
+@@ PROBLEM: substring-with-concatenation-of-all-words
+@@ APPROACH:
+All words have the same length wl, so a valid substring is exactly k words long (k = number of words). Split s into wl-letter chunks for each of the wl possible starting offsets. On each chunk list, slide a window of exactly k chunks: add the new chunk, drop the oldest, and compare the window Counter with the Counter of words. A match at chunk j means the substring starts at offset + (j - k + 1) * wl.
+@@ COMPLEXITY: O(n * (wl + d)) time (d = distinct words), O(n / wl + k) extra space
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def findSubstring(self, s: str, words: List[str]) -> List[int]:
+        k, wl = len(words), len(words[0])
+        need, out = Counter(words), []
+        for offset in range(wl):                     # words may start at any of wl alignments
+            win = Counter()
+            chunks = [s[i:i + wl] for i in range(offset, len(s) - wl + 1, wl)]
+            for j, w in enumerate(chunks):
+                win[w] += 1                          # new word enters on the right
+                if j >= k:                           # window is fixed at k words
+                    old = chunks[j - k]
+                    win[old] -= 1                    # oldest word leaves on the left
+                    if win[old] == 0:
+                        del win[old]
+                if win == need:
+                    out.append(offset + (j - k + 1) * wl)
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.findSubstring("barfoothefoobarman", ["foo", "bar"])) == [0, 9]
+assert s.findSubstring("wordgoodgoodgoodbestword", ["word", "good", "best", "word"]) == []
+assert sorted(s.findSubstring("barfoofoobarthefoobarman", ["bar", "foo", "the"])) == [6, 9, 12]
+assert s.findSubstring("a", ["a"]) == [0]
+assert sorted(s.findSubstring("aaa", ["a", "a"])) == [0, 1]
+assert s.findSubstring("lingmindraboofooowingdingbarrwingmonkeypoundcake", ["fooo", "barr", "wing", "ding", "wing"]) == [13]
+assert s.findSubstring("ab", ["abc"]) == []
+@@ PATTERN: Variable Sliding Window
+@@ SPOT: Use this when you need the longest or shortest substring that stays valid, so you grow the right end and shrink the left end while the window is broken.
+@@ PROBLEM: longest-substring-without-repeating-characters
+@@ APPROACH:
+Walk the right end r over the string. Store the last index of every character in a dictionary. If the current character was last seen inside the window, move the left end l to one past that index. The window s[l..r] never holds a repeat, so its length is a candidate for the answer.
+@@ COMPLEXITY: O(n) time, O(min(n, alphabet)) extra space
+@@ CODE:
+class Solution:
+    def lengthOfLongestSubstring(self, s: str) -> int:
+        last, l, best = {}, 0, 0
+        for r, ch in enumerate(s):             # r grows the window
+            if ch in last and last[ch] >= l:   # repeat inside the window
+                l = last[ch] + 1               # jump past the previous copy
+            last[ch] = r
+            best = max(best, r - l + 1)
+        return best
+@@ TEST:
+s = Solution()
+assert s.lengthOfLongestSubstring("abcabcbb") == 3
+assert s.lengthOfLongestSubstring("bbbbb") == 1
+assert s.lengthOfLongestSubstring("pwwkew") == 3
+assert s.lengthOfLongestSubstring("") == 0
+assert s.lengthOfLongestSubstring(" ") == 1
+assert s.lengthOfLongestSubstring("abba") == 2
+assert s.lengthOfLongestSubstring("dvdf") == 3
+@@ PROBLEM: longest-repeating-character-replacement
+@@ APPROACH:
+A window can be turned into one repeated letter if its length minus the count of its most common letter is at most k. Grow the window on the right and update the count map. While the window needs more than k replacements, remove the leftmost character and move l right. The longest window that stays valid is the answer.
+@@ COMPLEXITY: O(26 * n) time, O(1) extra space
+@@ CODE:
+from collections import defaultdict
+
+class Solution:
+    def characterReplacement(self, s: str, k: int) -> int:
+        count, l, best = defaultdict(int), 0, 0
+        for r, ch in enumerate(s):
+            count[ch] += 1
+            while (r - l + 1) - max(count.values()) > k:   # too many letters to replace: shrink
+                count[s[l]] -= 1
+                l += 1
+            best = max(best, r - l + 1)
+        return best
+@@ TEST:
+s = Solution()
+assert s.characterReplacement("ABAB", 2) == 4
+assert s.characterReplacement("AABABBA", 1) == 4
+assert s.characterReplacement("A", 0) == 1
+assert s.characterReplacement("ABC", 0) == 1
+assert s.characterReplacement("AAAA", 2) == 4
+assert s.characterReplacement("ABBB", 2) == 4
+assert s.characterReplacement("ABCDE", 2) == 3
+@@ PROBLEM: minimum-window-substring
+@@ APPROACH:
+need counts the letters of t, and missing counts how many letters of t the window still lacks. Grow r and decrease the counts; a negative count means the window has a spare copy. When missing reaches 0 the window is valid, so move l right while the letter at l is spare, and record the length. Then drop s[l] to break the window and keep searching.
+@@ COMPLEXITY: O(n + m) time, O(1) extra space (alphabet size)
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def minWindow(self, s: str, t: str) -> str:
+        need = Counter(t)
+        missing = len(t)                       # letters of t not yet covered by the window
+        l, best_len, best_start = 0, len(s) + 1, 0
+        for r, ch in enumerate(s):
+            if need[ch] > 0:
+                missing -= 1
+            need[ch] -= 1                      # negative means a spare copy inside the window
+            if missing == 0:                   # window is valid: shrink from the left
+                while need[s[l]] < 0:
+                    need[s[l]] += 1
+                    l += 1
+                if r - l + 1 < best_len:
+                    best_len, best_start = r - l + 1, l
+                need[s[l]] += 1                # drop s[l] to break the window
+                missing += 1
+                l += 1
+        return s[best_start:best_start + best_len] if best_len <= len(s) else ""
+@@ TEST:
+s = Solution()
+assert s.minWindow("ADOBECODEBANC", "ABC") == "BANC"
+assert s.minWindow("a", "a") == "a"
+assert s.minWindow("a", "aa") == ""
+assert s.minWindow("ab", "b") == "b"
+assert s.minWindow("aa", "aa") == "aa"
+assert s.minWindow("cabwefgewcwaefgcf", "cae") == "cwae"
+assert s.minWindow("abc", "d") == ""
+@@ PATTERN: HashMap / HashSet
+@@ SPOT: Use this when you keep asking "have I seen this character, substring or word before, and where?" and a dictionary or set can answer in O(1).
+@@ PROBLEM: isomorphic-strings
+@@ APPROACH:
+Two strings are isomorphic if the letters pair up one to one. Keep one dictionary from s to t and one from t to s. For each position, if either dictionary already holds a different partner, return False. Otherwise store the pair in both.
+@@ COMPLEXITY: O(n) time, O(1) extra space (bounded by the alphabet)
+@@ CODE:
+class Solution:
+    def isIsomorphic(self, s: str, t: str) -> bool:
+        s_to_t, t_to_s = {}, {}
+        for a, b in zip(s, t):
+            if s_to_t.get(a, b) != b or t_to_s.get(b, a) != a:   # a clash in either direction
+                return False
+            s_to_t[a] = b
+            t_to_s[b] = a
+        return True
+@@ TEST:
+s = Solution()
+assert s.isIsomorphic("egg", "add") is True
+assert s.isIsomorphic("foo", "bar") is False
+assert s.isIsomorphic("paper", "title") is True
+assert s.isIsomorphic("badc", "baba") is False
+assert s.isIsomorphic("a", "a") is True
+assert s.isIsomorphic("ab", "aa") is False
+@@ PROBLEM: repeated-dna-sequences
+@@ APPROACH:
+Slide over every substring of length 10. A set called seen remembers each one. If a substring is already in seen, it has now appeared twice, so put it in the answer set. Using a second set keeps each repeated sequence in the output only once.
+@@ COMPLEXITY: O(10 * n) time, O(10 * n) space
+@@ CODE:
+class Solution:
+    def findRepeatedDnaSequences(self, s: str) -> List[str]:
+        seen, repeated = set(), set()
+        for i in range(len(s) - 9):
+            chunk = s[i:i + 10]
+            if chunk in seen:              # second time we meet this 10-letter substring
+                repeated.add(chunk)
+            seen.add(chunk)
+        return list(repeated)
+@@ TEST:
+s = Solution()
+assert sorted(s.findRepeatedDnaSequences("AAAAACCCCCAAAAACCCCCCAAAAAGGGTTT")) == ["AAAAACCCCC", "CCCCCAAAAA"]
+assert s.findRepeatedDnaSequences("AAAAAAAAAAAAA") == ["AAAAAAAAAA"]
+assert s.findRepeatedDnaSequences("AAAAAAAAAA") == []
+assert s.findRepeatedDnaSequences("ACGT") == []
+assert s.findRepeatedDnaSequences("") == []
+@@ PROBLEM: palindrome-pairs
+@@ APPROACH:
+Store every word with its index in a dictionary. For each word w, try every cut into left and right. If left is a palindrome, the reverse of right placed in front of w makes a palindrome, so look up the reverse of right in the dictionary. If right is a palindrome, the reverse of left placed after w works the same way. The dictionary lookup replaces checking every other word.
+@@ COMPLEXITY: O(n * L^2) time, O(n * L) space (L = longest word)
+@@ CODE:
+class Solution:
+    def palindromePairs(self, words: List[str]) -> List[List[int]]:
+        index = {w: i for i, w in enumerate(words)}      # word -> position, for O(1) lookup
+        def is_pal(x: str) -> bool:
+            return x == x[::-1]
+
+        out = []
+        for i, w in enumerate(words):
+            for cut in range(len(w) + 1):
+                left, right = w[:cut], w[cut:]
+                if is_pal(left):                         # words[j] + w, with words[j] = reverse(right)
+                    j = index.get(right[::-1])
+                    if j is not None and j != i:
+                        out.append([j, i])
+                if cut < len(w) and is_pal(right):       # w + words[j], with words[j] = reverse(left)
+                    j = index.get(left[::-1])
+                    if j is not None and j != i:
+                        out.append([i, j])
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.palindromePairs(["abcd", "dcba", "lls", "s", "sssll"])) == [[0, 1], [1, 0], [2, 4], [3, 2]]
+assert sorted(s.palindromePairs(["bat", "tab", "cat"])) == [[0, 1], [1, 0]]
+assert sorted(s.palindromePairs(["a", ""])) == [[0, 1], [1, 0]]
+assert s.palindromePairs(["a"]) == []
+assert s.palindromePairs(["a", "b", "c"]) == []
+assert sorted(s.palindromePairs(["ab", "ba", "abc", "cba"])) == [[0, 1], [0, 3], [1, 0], [2, 1], [2, 3], [3, 2]]
+@@ PATTERN: Anagram Pattern
+@@ SPOT: Use this when two strings must match letter for letter in any order, so equal letter counts (or an equal sorted form) is the test.
+@@ PROBLEM: valid-anagram
+@@ APPROACH:
+Two strings are anagrams when every letter has the same count in both. Use a 26-slot array: add one for each letter of s and subtract one for each letter of t. If the lengths match and every slot ends at 0, the counts are equal.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def isAnagram(self, s: str, t: str) -> bool:
+        if len(s) != len(t):
+            return False
+        count = [0] * 26                       # one slot per lowercase letter
+        for a, b in zip(s, t):
+            count[ord(a) - ord("a")] += 1
+            count[ord(b) - ord("a")] -= 1
+        return not any(count)                  # all zeros means the same letters
+@@ TEST:
+s = Solution()
+assert s.isAnagram("anagram", "nagaram") is True
+assert s.isAnagram("rat", "car") is False
+assert s.isAnagram("a", "a") is True
+assert s.isAnagram("a", "b") is False
+assert s.isAnagram("ab", "a") is False
+assert s.isAnagram("aacc", "ccac") is False
+@@ PROBLEM: group-anagrams
+@@ APPROACH:
+Anagrams share the same letter counts, so the count tuple works as a dictionary key. For each word, build its 26-slot count, turn it into a tuple, and append the word to the list stored under that key. Each list in the dictionary is then one group, and no sorting of letters is needed.
+@@ COMPLEXITY: O(total characters) time, O(total characters) space
+@@ CODE:
+from collections import defaultdict
+
+class Solution:
+    def groupAnagrams(self, strs: List[str]) -> List[List[str]]:
+        groups = defaultdict(list)
+        for word in strs:
+            count = [0] * 26
+            for ch in word:
+                count[ord(ch) - ord("a")] += 1
+            groups[tuple(count)].append(word)  # same counts means same key
+        return list(groups.values())
+@@ TEST:
+s = Solution()
+def norm(groups):
+    return sorted(sorted(g) for g in groups)
+assert norm(s.groupAnagrams(["eat", "tea", "tan", "ate", "nat", "bat"])) == [["ate", "eat", "tea"], ["bat"], ["nat", "tan"]]
+assert norm(s.groupAnagrams([""])) == [[""]]
+assert norm(s.groupAnagrams(["a"])) == [["a"]]
+assert norm(s.groupAnagrams(["ab", "ba", "ab"])) == [["ab", "ab", "ba"]]
+assert norm(s.groupAnagrams(["abc", "abd"])) == [["abc"], ["abd"]]
+@@ PROBLEM: minimum-number-of-steps-to-make-two-strings-anagram
+@@ APPROACH:
+Count the letters of s, then subtract the letters of t. A positive number means s has that many copies that t lacks. Each missing copy costs one replacement in t, so the answer is the sum of the positive differences. Letters where t has extra copies are matched by those same replacements, so they are not counted twice.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def minSteps(self, s: str, t: str) -> int:
+        diff = Counter(s)
+        diff.subtract(t)                       # count(s) - count(t) per letter
+        return sum(v for v in diff.values() if v > 0)
+@@ TEST:
+s = Solution()
+assert s.minSteps("bab", "aba") == 1
+assert s.minSteps("leetcode", "practice") == 5
+assert s.minSteps("anagram", "mangaar") == 0
+assert s.minSteps("friend", "family") == 4
+assert s.minSteps("a", "b") == 1
+assert s.minSteps("aaaa", "bbbb") == 4
+@@ PATTERN: Palindrome Pattern
+@@ SPOT: Use this when the question is about a string that reads the same both ways: compare from the ends inward, or grow outward from every centre.
+@@ PROBLEM: valid-palindrome
+@@ APPROACH:
+Put one pointer at each end. Move each pointer past characters that are not letters or digits. Compare the two characters in lower case; any mismatch means False. Move both pointers inward until they cross.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def isPalindrome(self, s: str) -> bool:
+        l, r = 0, len(s) - 1
+        while l < r:
+            while l < r and not s[l].isalnum():   # skip non-alphanumerics
+                l += 1
+            while l < r and not s[r].isalnum():
+                r -= 1
+            if s[l].lower() != s[r].lower():      # compare from the ends inward
+                return False
+            l += 1
+            r -= 1
+        return True
+@@ TEST:
+s = Solution()
+assert s.isPalindrome("A man, a plan, a canal: Panama") is True
+assert s.isPalindrome("race a car") is False
+assert s.isPalindrome(" ") is True
+assert s.isPalindrome("0P") is False
+assert s.isPalindrome("ab_a") is True
+assert s.isPalindrome(".,") is True
+assert s.isPalindrome("a") is True
+@@ PROBLEM: longest-palindromic-substring
+@@ APPROACH:
+Every palindrome has a centre: a single character (odd length) or the gap between two characters (even length). For each index c, try both centres and expand outward while the two ends match. When the loop stops, s[l+1:r] is the palindrome for that centre; keep the longest. There are 2n - 1 centres and each expansion costs at most O(n).
+@@ COMPLEXITY: O(n^2) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def longestPalindrome(self, s: str) -> str:
+        best = ""
+        for c in range(len(s)):
+            for l, r in ((c, c), (c, c + 1)):                 # odd centre, even centre
+                while l >= 0 and r < len(s) and s[l] == s[r]:
+                    l -= 1                                    # grow outward
+                    r += 1
+                if r - l - 1 > len(best):
+                    best = s[l + 1:r]
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestPalindrome("babad") in ("bab", "aba")
+assert s.longestPalindrome("cbbd") == "bb"
+assert s.longestPalindrome("a") == "a"
+assert s.longestPalindrome("ac") in ("a", "c")
+assert s.longestPalindrome("forgeeksskeegfor") == "geeksskeeg"
+assert s.longestPalindrome("aaaa") == "aaaa"
+@@ PROBLEM: palindrome-partitioning-ii
+@@ APPROACH:
+Let cuts[i] be the fewest cuts for the first i characters, starting from the worst case of i - 1. Expand around every centre. Each time s[l..r] is a palindrome, the first r + 1 characters can be made from the first l characters plus one more piece, so cuts[r+1] = min(cuts[r+1], cuts[l] + 1). Setting cuts[0] = -1 makes a palindrome that starts at index 0 cost zero cuts.
+@@ COMPLEXITY: O(n^2) time, O(n) space
+@@ CODE:
+class Solution:
+    def minCut(self, s: str) -> int:
+        n = len(s)
+        cuts = list(range(-1, n))              # cuts[i] = fewest cuts for s[:i]; worst case i - 1
+        for c in range(n):
+            for l, r in ((c, c), (c, c + 1)):  # odd centre, even centre
+                while l >= 0 and r < n and s[l] == s[r]:
+                    cuts[r + 1] = min(cuts[r + 1], cuts[l] + 1)   # s[l..r] is one palindrome piece
+                    l -= 1
+                    r += 1
+        return cuts[n]
+@@ TEST:
+s = Solution()
+assert s.minCut("aab") == 1
+assert s.minCut("a") == 0
+assert s.minCut("ab") == 1
+assert s.minCut("aaaa") == 0
+assert s.minCut("abcba") == 0
+assert s.minCut("abcd") == 3
+assert s.minCut("ababbbabbababa") == 3
+assert s.minCut("a" * 1000) == 0
+@@ PATTERN: Substring Pattern
+@@ SPOT: Use this when you must count or measure substrings and can reason about where each one starts or ends, instead of listing all O(n^2) of them.
+@@ PROBLEM: count-binary-substrings
+@@ APPROACH:
+A valid substring is some 0s followed by the same number of 1s, or the other way round. So it sits on the border between two neighbouring runs of equal characters. Two touching runs of lengths a and b give min(a, b) valid substrings. Track the previous and current run lengths and add min(prev, cur) every time a run ends.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def countBinarySubstrings(self, s: str) -> int:
+        prev, cur, total = 0, 1, 0          # lengths of the previous run and the current run
+        for i in range(1, len(s)):
+            if s[i] == s[i - 1]:
+                cur += 1                    # the same run continues
+            else:
+                total += min(prev, cur)     # two touching runs give min(prev, cur) substrings
+                prev, cur = cur, 1
+        return total + min(prev, cur)       # close the last pair of runs
+@@ TEST:
+s = Solution()
+assert s.countBinarySubstrings("00110011") == 6
+assert s.countBinarySubstrings("10101") == 4
+assert s.countBinarySubstrings("0") == 0
+assert s.countBinarySubstrings("01") == 1
+assert s.countBinarySubstrings("0011") == 2
+assert s.countBinarySubstrings("000111") == 3
+assert s.countBinarySubstrings("00110") == 3
+@@ PROBLEM: number-of-substrings-containing-all-three-characters
+@@ APPROACH:
+Fix the end index r and ask how many start indices make a valid substring. The substring must reach back to the latest a, the latest b and the latest c, so every start up to the oldest of those three positions works. That count is min(last positions) + 1. Add it for every r, and nothing is added until all three letters have appeared.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def numberOfSubstrings(self, s: str) -> int:
+        last = {"a": -1, "b": -1, "c": -1}      # latest index of each letter
+        total = 0
+        for r, ch in enumerate(s):
+            last[ch] = r
+            # valid starts for the substring ending at r: 0 .. min(last)
+            total += min(last.values()) + 1
+        return total
+@@ TEST:
+s = Solution()
+assert s.numberOfSubstrings("abcabc") == 10
+assert s.numberOfSubstrings("aaacb") == 3
+assert s.numberOfSubstrings("abc") == 1
+assert s.numberOfSubstrings("a") == 0
+assert s.numberOfSubstrings("aabbcc") == 4
+assert s.numberOfSubstrings("aabb") == 0
+@@ PROBLEM: count-unique-characters-of-all-substrings-of-a-given-string
+@@ APPROACH:
+Instead of looking at each substring, ask how many substrings each character occurrence is the only copy of its letter in. For an occurrence at index k with previous copy at p and next copy at q, the substring may start in (p, k] and end in [k, q). That gives (k - p) * (q - k). Store the positions of every letter with sentinels -1 and len(s), then add this product for each occurrence.
+@@ COMPLEXITY: O(n) time, O(n) space
+@@ CODE:
+from collections import defaultdict
+
+class Solution:
+    def uniqueLetterString(self, s: str) -> int:
+        positions = defaultdict(lambda: [-1])    # indices of each letter, sentinel -1 in front
+        for i, ch in enumerate(s):
+            positions[ch].append(i)
+        total = 0
+        for idx in positions.values():
+            idx.append(len(s))                   # sentinel after the last copy
+            for k in range(1, len(idx) - 1):
+                # substrings where this copy is the only one of its letter
+                total += (idx[k] - idx[k - 1]) * (idx[k + 1] - idx[k])
+        return total
+@@ TEST:
+s = Solution()
+assert s.uniqueLetterString("ABC") == 10
+assert s.uniqueLetterString("ABA") == 8
+assert s.uniqueLetterString("LEETCODE") == 92
+assert s.uniqueLetterString("A") == 1
+assert s.uniqueLetterString("AA") == 2
+@@ PATTERN: String Matching
+@@ SPOT: Use this when you must find a pattern inside a text, or compare a string with its own prefixes, and the text pointer should never move backwards.
+@@ PROBLEM: find-the-index-of-the-first-occurrence-in-a-string
+@@ APPROACH:
+This is textbook KMP. First build the LPS table of the needle: lps[i] is the longest proper prefix of needle[:i+1] that is also a suffix. Then scan the haystack once, keeping k = how many needle characters match now. On a mismatch, fall back with k = lps[k-1] instead of moving the haystack pointer back. When k equals the needle length, the match started at i - k + 1.
+@@ COMPLEXITY: O(n + m) time, O(m) extra space
+@@ CODE:
+class Solution:
+    def strStr(self, haystack: str, needle: str) -> int:
+        lps, k = [0] * len(needle), 0               # KMP failure table of the needle
+        for i in range(1, len(needle)):
+            while k and needle[i] != needle[k]:
+                k = lps[k - 1]
+            if needle[i] == needle[k]:
+                k += 1
+            lps[i] = k
+        k = 0                                       # needle characters matched so far
+        for i, ch in enumerate(haystack):           # i never moves backwards
+            while k and ch != needle[k]:
+                k = lps[k - 1]                      # fall back inside the needle
+            if ch == needle[k]:
+                k += 1
+            if k == len(needle):
+                return i - k + 1
+        return -1
+@@ TEST:
+s = Solution()
+assert s.strStr("sadbutsad", "sad") == 0
+assert s.strStr("leetcode", "leeto") == -1
+assert s.strStr("a", "a") == 0
+assert s.strStr("aaa", "aaaa") == -1
+assert s.strStr("mississippi", "issip") == 4
+assert s.strStr("mississippi", "issipi") == -1
+assert s.strStr("abc", "c") == 2
+assert s.strStr("aabaaabaaac", "aabaaac") == 4
+@@ PROBLEM: repeated-substring-pattern
+@@ APPROACH:
+Build the LPS table of s itself. lps[-1] is the length of the longest proper prefix that is also a suffix. The smallest repeating block then has length n - lps[-1]. The string is made of repeated blocks only if lps[-1] is above 0 and that block length divides n.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def repeatedSubstringPattern(self, s: str) -> bool:
+        n = len(s)
+        lps, k = [0] * n, 0                       # prefix function of s itself
+        for i in range(1, n):
+            while k and s[i] != s[k]:
+                k = lps[k - 1]
+            if s[i] == s[k]:
+                k += 1
+            lps[i] = k
+        period = n - lps[-1]                      # length of the smallest repeating block
+        return lps[-1] > 0 and n % period == 0
+@@ TEST:
+s = Solution()
+assert s.repeatedSubstringPattern("abab") is True
+assert s.repeatedSubstringPattern("aba") is False
+assert s.repeatedSubstringPattern("abcabcabcabc") is True
+assert s.repeatedSubstringPattern("a") is False
+assert s.repeatedSubstringPattern("aa") is True
+assert s.repeatedSubstringPattern("abaababaab") is True
+assert s.repeatedSubstringPattern("aabaaba") is False
+@@ PROBLEM: shortest-palindrome
+@@ APPROACH:
+We may only add characters in front, so we need the longest prefix of s that is already a palindrome. Build s + "#" + reverse(s) and compute its LPS table. The last LPS value is exactly the length of the longest prefix of s that equals a suffix of reverse(s), which means a palindromic prefix. Reverse the rest of s and put it in front.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def shortestPalindrome(self, s: str) -> str:
+        combined = s + "#" + s[::-1]
+        lps, k = [0] * len(combined), 0           # KMP failure table
+        for i in range(1, len(combined)):
+            while k and combined[i] != combined[k]:
+                k = lps[k - 1]
+            if combined[i] == combined[k]:
+                k += 1
+            lps[i] = k
+        longest = lps[-1]                         # length of the longest palindromic prefix of s
+        return s[longest:][::-1] + s
+@@ TEST:
+s = Solution()
+assert s.shortestPalindrome("aacecaaa") == "aaacecaaa"
+assert s.shortestPalindrome("abcd") == "dcbabcd"
+assert s.shortestPalindrome("") == ""
+assert s.shortestPalindrome("a") == "a"
+assert s.shortestPalindrome("aba") == "aba"
+assert s.shortestPalindrome("ab") == "bab"
+assert s.shortestPalindrome("aaaa") == "aaaa"
+@@ PROBLEM: longest-duplicate-substring
+@@ APPROACH:
+This is Rabin-Karp inside a binary search on the length. If a duplicate of length L exists, one of length L - 1 exists too, so binary search the length. For one length, roll a polynomial hash across the string in O(1) per step and store hashes in a dictionary. When a hash repeats, compare the actual substrings to rule out a collision.
+@@ COMPLEXITY: O(n log n) expected time, O(n) space
+@@ CODE:
+class Solution:
+    def longestDupSubstring(self, s: str) -> str:
+        n, base, mod = len(s), 131, (1 << 61) - 1
+        nums = [ord(c) - 96 for c in s]
+        def find(length: int) -> int:                  # start of a duplicate of this length, or -1
+            power = pow(base, length, mod)
+            h = 0
+            for i in range(length):
+                h = (h * base + nums[i]) % mod
+            seen = {h: [0]}
+            for i in range(1, n - length + 1):
+                h = (h * base + nums[i + length - 1] - nums[i - 1] * power) % mod   # rolling hash
+                for j in seen.get(h, []):
+                    if s[j:j + length] == s[i:i + length]:   # verify on a hash match
+                        return i
+                seen.setdefault(h, []).append(i)
+            return -1
+
+        lo, hi, best = 1, n - 1, ""
+        while lo <= hi:                                # binary search on the length
+            mid = (lo + hi) // 2
+            i = find(mid)
+            if i != -1:
+                best, lo = s[i:i + mid], mid + 1
+            else:
+                hi = mid - 1
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestDupSubstring("banana") == "ana"
+assert s.longestDupSubstring("abcd") == ""
+assert s.longestDupSubstring("aa") == "a"
+assert s.longestDupSubstring("aaaaa") == "aaaa"
+assert s.longestDupSubstring("abcabc") == "abc"
+assert s.longestDupSubstring("a") == ""
+assert s.longestDupSubstring("a" * 1000) == "a" * 999
+@@ PATTERN: Stack-based String Problems
+@@ SPOT: Use this when the most recent unfinished piece must be closed or resolved first, as with brackets, nested encodings and expressions.
+@@ PROBLEM: valid-parentheses
+@@ APPROACH:
+Push every opening bracket on a stack. When a closing bracket arrives, the top of the stack must be its matching opener, so pop and compare. If the stack is empty at a closer or the pair does not match, return False. At the end the stack must be empty, otherwise some opener was never closed.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def isValid(self, s: str) -> bool:
+        pair, stack = {")": "(", "]": "[", "}": "{"}, []
+        for ch in s:
+            if ch in pair:                          # closer: top of stack must be its opener
+                if not stack or stack.pop() != pair[ch]:
+                    return False
+            else:
+                stack.append(ch)                    # opener: wait for its closer
+        return not stack
+@@ TEST:
+s = Solution()
+assert s.isValid("()") is True
+assert s.isValid("()[]{}") is True
+assert s.isValid("(]") is False
+assert s.isValid("([])") is True
+assert s.isValid("([)]") is False
+assert s.isValid("(") is False
+assert s.isValid(")") is False
+assert s.isValid("{[]}") is True
+@@ PROBLEM: decode-string
+@@ APPROACH:
+Keep the text built so far in cur and the repeat count being read in num. On "[", push (cur, num) on the stack and start fresh. On "]", pop the saved text and count, and set cur to saved text plus cur repeated count times. Letters are appended to cur and digits build num, so nested brackets resolve from the inside out.
+@@ COMPLEXITY: O(output length) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def decodeString(self, s: str) -> str:
+        stack, cur, num = [], "", 0
+        for ch in s:
+            if ch.isdigit():
+                num = num * 10 + int(ch)            # counts can have several digits
+            elif ch == "[":
+                stack.append((cur, num))            # save the outer state
+                cur, num = "", 0
+            elif ch == "]":
+                prev, k = stack.pop()               # restore it and expand
+                cur = prev + cur * k
+            else:
+                cur += ch
+        return cur
+@@ TEST:
+s = Solution()
+assert s.decodeString("3[a]2[bc]") == "aaabcbc"
+assert s.decodeString("3[a2[c]]") == "accaccacc"
+assert s.decodeString("2[abc]3[cd]ef") == "abcabccdcdcdef"
+assert s.decodeString("abc") == "abc"
+assert s.decodeString("10[a]") == "a" * 10
+assert s.decodeString("1[a]") == "a"
+assert s.decodeString("2[a2[b]]c") == "abbabbc"
+@@ PROBLEM: number-of-atoms
+@@ APPROACH:
+Keep a stack of Counters, one per open bracket. Read an atom name and its optional count, and add it to the Counter on top. On "(", push a new Counter. On ")", read the number after it, pop the Counter, multiply every count in it, and merge it into the Counter below. At the end, sort the atom names and write each count only when it is above 1.
+@@ COMPLEXITY: O(n^2) time in the worst case, O(n) space
+@@ CODE:
+from collections import Counter
+
+class Solution:
+    def countOfAtoms(self, formula: str) -> str:
+        stack = [Counter()]                         # one Counter per open bracket
+        i, n = 0, len(formula)
+        while i < n:
+            ch = formula[i]
+            if ch == "(":
+                stack.append(Counter())             # open: start a new level
+                i += 1
+            elif ch == ")":
+                i += 1
+                j = i
+                while j < n and formula[j].isdigit():
+                    j += 1
+                mult = int(formula[i:j] or 1)
+                i = j
+                top = stack.pop()                   # close: multiply and merge into the parent
+                for atom, c in top.items():
+                    stack[-1][atom] += c * mult
+            else:
+                j = i + 1
+                while j < n and formula[j].islower():
+                    j += 1
+                atom = formula[i:j]
+                i = j
+                while j < n and formula[j].isdigit():
+                    j += 1
+                stack[-1][atom] += int(formula[i:j] or 1)
+                i = j
+        total = stack[0]
+        return "".join(a + (str(total[a]) if total[a] > 1 else "") for a in sorted(total))
+@@ TEST:
+s = Solution()
+assert s.countOfAtoms("H2O") == "H2O"
+assert s.countOfAtoms("Mg(OH)2") == "H2MgO2"
+assert s.countOfAtoms("K4(ON(SO3)2)2") == "K4N2O14S4"
+assert s.countOfAtoms("Be32") == "Be32"
+assert s.countOfAtoms("H") == "H"
+assert s.countOfAtoms("((H2)2)3") == "H12"
+assert s.countOfAtoms("(H)") == "H"
+assert s.countOfAtoms("CaCl2") == "CaCl2"

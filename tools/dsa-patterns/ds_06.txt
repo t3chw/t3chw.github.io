@@ -1,0 +1,616 @@
+@@ PATTERN: Frequency Counting
+@@ SPOT: Use this when the question asks "how many times", the majority element or the top K most frequent items.
+@@ PROBLEM: majority-element
+@@ APPROACH:
+Count every value once with Counter. The majority element appears more than n/2 times, so it has the highest count.
+The key line is `max(counts, key=counts.get)`, which picks the value with the biggest count.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def majorityElement(self, nums: List[int]) -> int:
+        counts = Counter(nums)                  # frequency map built in one pass
+        return max(counts, key=counts.get)      # the value with the highest count
+@@ TEST:
+s = Solution()
+assert s.majorityElement([3, 2, 3]) == 3
+assert s.majorityElement([2, 2, 1, 1, 1, 2, 2]) == 2
+assert s.majorityElement([1]) == 1
+assert s.majorityElement([-1, -1, -1, 5, 5]) == -1
+assert s.majorityElement([7, 7, 5, 5, 5, 7, 7]) == 7
+@@ PROBLEM: top-k-frequent-elements
+@@ APPROACH:
+Build the frequency map first, then group values by how often they occur. `buckets[freq]` holds all values with that count.
+A count can never exceed n, so the buckets are an array of size n + 1. Reading it from the highest index down gives the most frequent values first, without sorting.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def topKFrequent(self, nums: List[int], k: int) -> List[int]:
+        counts = Counter(nums)                          # value -> frequency
+        buckets = [[] for _ in range(len(nums) + 1)]    # index = frequency
+        for value, freq in counts.items():
+            buckets[freq].append(value)
+        result = []
+        for freq in range(len(buckets) - 1, 0, -1):     # highest frequency first
+            for value in buckets[freq]:
+                result.append(value)
+                if len(result) == k:
+                    return result
+        return result
+@@ TEST:
+s = Solution()
+assert sorted(s.topKFrequent([1, 1, 1, 2, 2, 3], 2)) == [1, 2]
+assert s.topKFrequent([1], 1) == [1]
+assert sorted(s.topKFrequent([4, 4, 5, 5, 6], 2)) == [4, 5]
+assert s.topKFrequent([-1, -1, -2], 1) == [-1]
+assert sorted(s.topKFrequent([1, 2, 3], 3)) == [1, 2, 3]
+assert s.topKFrequent([5, 5, 5, 5, 6, 6, 7], 1) == [5]
+@@ PROBLEM: maximum-frequency-stack
+@@ APPROACH:
+Keep two maps. `freq[val]` counts how many copies of val are in the stack. `stacks[f]` is a stack of the values that reached frequency f, in push order.
+On push, bump the count and add the value to the stack for its new frequency. On pop, take from the stack at the highest frequency, so ties go to the most recent push.
+The key lines are `self.stacks[f].append(val)` and `self.stacks[self.max_freq].pop()`.
+@@ COMPLEXITY: O(1) time per operation, O(n) extra space
+@@ CODE:
+from collections import defaultdict
+
+class FreqStack:
+    def __init__(self):
+        self.freq = Counter()                # value -> how many copies are in the stack
+        self.stacks = defaultdict(list)      # frequency f -> values in the order they reached f
+        self.max_freq = 0
+
+    def push(self, val: int) -> None:
+        self.freq[val] += 1
+        f = self.freq[val]
+        self.max_freq = max(self.max_freq, f)
+        self.stacks[f].append(val)           # val now also lives at level f
+
+    def pop(self) -> int:
+        val = self.stacks[self.max_freq].pop()   # most frequent, most recent
+        self.freq[val] -= 1
+        if not self.stacks[self.max_freq]:
+            self.max_freq -= 1               # that level is empty, drop one level
+        return val
+@@ TEST:
+fs = FreqStack()
+for v in [5, 7, 5, 7, 4, 5]:
+    fs.push(v)
+assert fs.pop() == 5
+assert fs.pop() == 7
+assert fs.pop() == 5
+assert fs.pop() == 4
+fs2 = FreqStack()
+for v in [1, 1, 1]:
+    fs2.push(v)
+assert [fs2.pop(), fs2.pop(), fs2.pop()] == [1, 1, 1]
+fs3 = FreqStack()
+for v in [1, 2, 3]:
+    fs3.push(v)
+assert [fs3.pop(), fs3.pop(), fs3.pop()] == [3, 2, 1]
+fs3.push(9)
+fs3.push(9)
+fs3.push(8)
+assert [fs3.pop(), fs3.pop(), fs3.pop()] == [9, 8, 9]
+@@ PATTERN: Duplicate Detection
+@@ SPOT: Use this when the question asks "is there any repeat?" or "what is the first repeat?".
+@@ PROBLEM: contains-duplicate
+@@ APPROACH:
+Walk the array and keep a set of values already seen. If the current value is already in the set, a repeat exists, so return True.
+The key line is `if x in seen`. A set lookup is O(1), so one pass is enough.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def containsDuplicate(self, nums: List[int]) -> bool:
+        seen = set()
+        for x in nums:
+            if x in seen:             # seen before: found a duplicate
+                return True
+            seen.add(x)
+        return False
+@@ TEST:
+s = Solution()
+assert s.containsDuplicate([1, 2, 3, 1]) is True
+assert s.containsDuplicate([1, 2, 3, 4]) is False
+assert s.containsDuplicate([1, 1, 1, 3, 3, 4, 3, 2, 4, 2]) is True
+assert s.containsDuplicate([1]) is False
+assert s.containsDuplicate([-5, 5, -5]) is True
+@@ PROBLEM: contains-duplicate-ii
+@@ APPROACH:
+A set is not enough here because the two equal values must also be close. Use a dict from value to the last index where it appeared.
+When x shows up again, compare `i - last_index[x]` with k. Always overwrite the stored index with the latest one, because the latest copy is the closest to any later copy.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def containsNearbyDuplicate(self, nums: List[int], k: int) -> bool:
+        last_index = {}                                    # value -> latest index
+        for i, x in enumerate(nums):
+            if x in last_index and i - last_index[x] <= k:   # repeat that is close enough
+                return True
+            last_index[x] = i                              # keep only the newest position
+        return False
+@@ TEST:
+s = Solution()
+assert s.containsNearbyDuplicate([1, 2, 3, 1], 3) is True
+assert s.containsNearbyDuplicate([1, 0, 1, 1], 1) is True
+assert s.containsNearbyDuplicate([1, 2, 3, 1, 2, 3], 2) is False
+assert s.containsNearbyDuplicate([1], 1) is False
+assert s.containsNearbyDuplicate([99, 99], 2) is True
+assert s.containsNearbyDuplicate([1, 2, 1], 1) is False
+@@ PROBLEM: contains-duplicate-iii
+@@ APPROACH:
+Now "equal" becomes "within valueDiff", so a plain set fails. Split the number line into buckets of width valueDiff + 1. Two numbers in the same bucket are always close enough.
+A close pair can also sit in neighbouring buckets, so check bucket b - 1 and b + 1 by value. The dict holds only the last indexDiff numbers, so old buckets are deleted as the window slides.
+@@ COMPLEXITY: O(n) time, O(indexDiff) extra space
+@@ CODE:
+class Solution:
+    def containsNearbyAlmostDuplicate(self, nums: List[int], indexDiff: int, valueDiff: int) -> bool:
+        width = valueDiff + 1            # two numbers in one bucket differ by at most valueDiff
+        buckets = {}                     # bucket id -> the one value in the window
+        for i, x in enumerate(nums):
+            b = x // width               # floor division keeps negatives in the right bucket
+            if b in buckets:
+                return True
+            if b - 1 in buckets and x - buckets[b - 1] <= valueDiff:
+                return True
+            if b + 1 in buckets and buckets[b + 1] - x <= valueDiff:
+                return True
+            buckets[b] = x
+            if i >= indexDiff:           # slide the window: forget nums[i - indexDiff]
+                del buckets[nums[i - indexDiff] // width]
+        return False
+@@ TEST:
+s = Solution()
+assert s.containsNearbyAlmostDuplicate([1, 2, 3, 1], 3, 0) is True
+assert s.containsNearbyAlmostDuplicate([1, 5, 9, 1, 5, 9], 2, 3) is False
+assert s.containsNearbyAlmostDuplicate([-3, 3], 2, 4) is False
+assert s.containsNearbyAlmostDuplicate([-3, 3], 2, 6) is True
+assert s.containsNearbyAlmostDuplicate([8, 7, 15, 1, 6, 1, 9, 15], 1, 3) is True
+assert s.containsNearbyAlmostDuplicate([1], 1, 1) is False
+assert s.containsNearbyAlmostDuplicate([10, 100, 11, 9, 100, 10], 1, 1) is False
+assert s.containsNearbyAlmostDuplicate([10, 100, 11, 9, 100, 10], 2, 1) is True
+@@ PATTERN: Two Sum
+@@ SPOT: Use this when you need two items that combine to a target, and the input is unsorted.
+@@ PROBLEM: two-sum
+@@ APPROACH:
+For each x, ask whether target - x has already been seen. Store value to index in a dict as you scan.
+Insert x only AFTER the check, so an element can never pair with itself. This turns the O(n^2) pair search into one pass.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        idx = {}                                   # value -> index
+        for i, x in enumerate(nums):
+            if target - x in idx:                  # complement already seen
+                return [idx[target - x], i]
+            idx[x] = i                             # insert AFTER checking: no self-pairing
+        return []
+@@ TEST:
+s = Solution()
+assert sorted(s.twoSum([2, 7, 11, 15], 9)) == [0, 1]
+assert sorted(s.twoSum([3, 2, 4], 6)) == [1, 2]
+assert sorted(s.twoSum([3, 3], 6)) == [0, 1]
+assert sorted(s.twoSum([-1, -2, -3, -4, -5], -8)) == [2, 4]
+assert sorted(s.twoSum([0, 4, 3, 0], 0)) == [0, 3]
+@@ PROBLEM: k-diff-pairs-in-an-array
+@@ APPROACH:
+This is two sum with a difference. For each distinct x, the partner is x + k, so look it up in a Counter instead of a set.
+Count each pair once by only looking upward (x + k, never x - k). When k is 0 the partner is x itself, so the value must appear at least twice.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def findPairs(self, nums: List[int], k: int) -> int:
+        counts = Counter(nums)
+        pairs = 0
+        for x in counts:                       # each distinct value once
+            if k == 0:
+                if counts[x] > 1:              # needs a second copy of itself
+                    pairs += 1
+            elif x + k in counts:              # look up the complement x + k
+                pairs += 1
+        return pairs
+@@ TEST:
+s = Solution()
+assert s.findPairs([3, 1, 4, 1, 5], 2) == 2
+assert s.findPairs([1, 2, 3, 4, 5], 1) == 4
+assert s.findPairs([1, 3, 1, 5, 4], 0) == 1
+assert s.findPairs([1, 1, 1, 1], 0) == 1
+assert s.findPairs([1], 1) == 0
+assert s.findPairs([1, 2, 4, 4, 3, 3, 0, 9, 2, 3], 3) == 2
+assert s.findPairs([-1, -2, -3], 1) == 2
+@@ PROBLEM: 4sum-ii
+@@ APPROACH:
+Four arrays are too many to search at once, so split them into two halves. Count every a + b from the first two arrays in a Counter.
+Then for every c + d from the last two arrays, add the count of -(c + d). Each lookup is the two-sum complement idea, applied to pair sums.
+@@ COMPLEXITY: O(n^2) time, O(n^2) extra space
+@@ CODE:
+class Solution:
+    def fourSumCount(self, nums1: List[int], nums2: List[int], nums3: List[int], nums4: List[int]) -> int:
+        pair_sums = Counter(a + b for a in nums1 for b in nums2)   # every a + b and how often it occurs
+        count = 0
+        for c in nums3:
+            for d in nums4:
+                count += pair_sums[-(c + d)]       # complement lookup: a + b = -(c + d)
+        return count
+@@ TEST:
+s = Solution()
+assert s.fourSumCount([1, 2], [-2, -1], [-1, 2], [0, 2]) == 2
+assert s.fourSumCount([0], [0], [0], [0]) == 1
+assert s.fourSumCount([1], [1], [1], [1]) == 0
+assert s.fourSumCount([-1, -1], [-1, 1], [-1, 1], [1, -1]) == 6
+assert s.fourSumCount([1, -1], [1, -1], [0], [0]) == 2
+@@ PATTERN: Prefix Sum + HashMap
+@@ SPOT: Use this when you must count sub-arrays whose sum meets a condition and the numbers may be negative.
+@@ PROBLEM: subarray-sum-equals-k
+@@ APPROACH:
+A sub-array sum equals k when two prefix sums differ by k: P[j] - P[i] = k. So for each new prefix, count how many earlier prefixes equal total - k.
+The dict counts every prefix seen so far. Seed it with {0: 1} for the empty prefix so sub-arrays starting at index 0 are counted.
+Negatives are fine because only equal prefix values matter, not growth of the sum.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def subarraySum(self, nums: List[int], k: int) -> int:
+        count, total, seen = 0, 0, {0: 1}          # {0: 1} = the empty prefix
+        for x in nums:
+            total += x
+            count += seen.get(total - k, 0)        # earlier prefixes that end a sub-array summing to k
+            seen[total] = seen.get(total, 0) + 1
+        return count
+@@ TEST:
+s = Solution()
+assert s.subarraySum([1, 1, 1], 2) == 2
+assert s.subarraySum([1, 2, 3], 3) == 2
+assert s.subarraySum([1, -1, 0], 0) == 3
+assert s.subarraySum([1], 0) == 0
+assert s.subarraySum([1], 1) == 1
+assert s.subarraySum([-1, -1, 1], 0) == 1
+@@ PROBLEM: subarray-sums-divisible-by-k
+@@ APPROACH:
+Two prefixes give a sub-array divisible by k when they have the same remainder mod k. So store prefix remainders instead of raw prefix sums.
+For each new remainder, add how many earlier prefixes had the same one. Python's % never returns a negative number, so negative values need no special case.
+@@ COMPLEXITY: O(n) time, O(k) extra space
+@@ CODE:
+class Solution:
+    def subarraysDivByK(self, nums: List[int], k: int) -> int:
+        count, prefix, seen = 0, 0, {0: 1}         # empty prefix has remainder 0
+        for x in nums:
+            prefix = (prefix + x) % k              # store the prefix mod k, not the sum
+            count += seen.get(prefix, 0)           # same remainder earlier = divisible gap
+            seen[prefix] = seen.get(prefix, 0) + 1
+        return count
+@@ TEST:
+s = Solution()
+assert s.subarraysDivByK([4, 5, 0, -2, -3, 1], 5) == 7
+assert s.subarraysDivByK([5], 9) == 0
+assert s.subarraysDivByK([5], 5) == 1
+assert s.subarraysDivByK([-1, 2, 9], 2) == 2
+assert s.subarraysDivByK([0, 0], 3) == 3
+@@ PROBLEM: number-of-submatrices-that-sum-to-target
+@@ APPROACH:
+Fix a left column and a right column. Adding up each row between them turns the matrix slice into a 1D array, one number per row.
+Counting sub-arrays of that array that sum to target is exactly subarray-sum-equals-k, with the same {0: 1} map. Row prefix sums make each row total O(1).
+@@ COMPLEXITY: O(cols^2 * rows) time, O(rows * cols) extra space
+@@ CODE:
+from itertools import accumulate
+
+class Solution:
+    def numSubmatrixSumTarget(self, matrix: List[List[int]], target: int) -> int:
+        rows, cols = len(matrix), len(matrix[0])
+        row_prefix = [[0] + list(accumulate(row)) for row in matrix]   # sum of row[l..r] = p[r+1] - p[l]
+        count = 0
+        for left in range(cols):
+            for right in range(left, cols):        # fix the two columns
+                total, seen = 0, {0: 1}            # now run subarray-sum-equals-k down the rows
+                for r in range(rows):
+                    total += row_prefix[r][right + 1] - row_prefix[r][left]
+                    count += seen.get(total - target, 0)
+                    seen[total] = seen.get(total, 0) + 1
+        return count
+@@ TEST:
+s = Solution()
+assert s.numSubmatrixSumTarget([[0, 1, 0], [1, 1, 1], [0, 1, 0]], 0) == 4
+assert s.numSubmatrixSumTarget([[1, -1], [-1, 1]], 0) == 5
+assert s.numSubmatrixSumTarget([[904]], 0) == 0
+assert s.numSubmatrixSumTarget([[904]], 904) == 1
+assert s.numSubmatrixSumTarget([[1, 1], [1, 1]], 2) == 4
+assert s.numSubmatrixSumTarget([[1, 1], [1, 1]], 4) == 1
+assert s.numSubmatrixSumTarget([[1, 1], [1, 1]], 1) == 4
+@@ PATTERN: Subarray Sum
+@@ SPOT: Use this when you need the longest, shortest or any sub-array with a sum property, so the map stores an index per prefix value.
+@@ PROBLEM: contiguous-array
+@@ APPROACH:
+Map each 0 to -1 and each 1 to +1. A sub-array with equal 0s and 1s is then a sub-array with sum 0, so two equal running balances bound it.
+Store only the FIRST index of each balance, because the earliest index gives the longest span. Seed {0: -1} for the empty prefix.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def findMaxLength(self, nums: List[int]) -> int:
+        first_index = {0: -1}                      # balance 0 before the array starts
+        balance, best = 0, 0
+        for i, x in enumerate(nums):
+            balance += 1 if x == 1 else -1         # map 0 to -1
+            if balance in first_index:
+                best = max(best, i - first_index[balance])   # equal balance: equal 0s and 1s between
+            else:
+                first_index[balance] = i           # first index only: gives the longest span
+        return best
+@@ TEST:
+s = Solution()
+assert s.findMaxLength([0, 1]) == 2
+assert s.findMaxLength([0, 1, 0]) == 2
+assert s.findMaxLength([0, 0, 1, 0, 0, 0, 1, 1]) == 6
+assert s.findMaxLength([1]) == 0
+assert s.findMaxLength([0, 0, 0]) == 0
+assert s.findMaxLength([1, 1, 0, 0, 1, 1, 0, 0]) == 8
+@@ PROBLEM: continuous-subarray-sum
+@@ APPROACH:
+A sub-array sum is a multiple of k when two prefix sums have the same remainder mod k. Store the first index of each remainder, with {0: -1} for the empty prefix.
+When a remainder repeats, the gap `i - first_index[remainder]` must be at least 2 to meet the length rule. Do not overwrite the stored index when the gap is too short, so later matches still see the earliest one.
+@@ COMPLEXITY: O(n) time, O(min(n, k)) extra space
+@@ CODE:
+class Solution:
+    def checkSubarraySum(self, nums: List[int], k: int) -> bool:
+        first_index = {0: -1}                      # remainder 0 before the array
+        remainder = 0
+        for i, x in enumerate(nums):
+            remainder = (remainder + x) % k        # prefix sum mod k
+            if remainder in first_index:
+                if i - first_index[remainder] >= 2:    # same remainder, length at least 2
+                    return True
+            else:
+                first_index[remainder] = i         # keep the earliest index only
+        return False
+@@ TEST:
+s = Solution()
+assert s.checkSubarraySum([23, 2, 4, 6, 7], 6) is True
+assert s.checkSubarraySum([23, 2, 6, 4, 7], 6) is True
+assert s.checkSubarraySum([23, 2, 6, 4, 7], 13) is False
+assert s.checkSubarraySum([5, 0, 0, 0], 3) is True
+assert s.checkSubarraySum([0], 1) is False
+assert s.checkSubarraySum([1, 0], 2) is False
+assert s.checkSubarraySum([1, 2, 3], 5) is True
+@@ PROBLEM: make-sum-divisible-by-p
+@@ APPROACH:
+Let need = total % p. We must remove a sub-array whose sum leaves remainder need, and we want the shortest one. If need is 0, remove nothing.
+At index i, the start of that sub-array is an earlier prefix with remainder (prefix - need) % p. Store the LAST index of each remainder, because the latest start gives the shortest sub-array.
+Removing the whole array is not allowed, so a result equal to n becomes -1.
+@@ COMPLEXITY: O(n) time, O(min(n, p)) extra space
+@@ CODE:
+class Solution:
+    def minSubarray(self, nums: List[int], p: int) -> int:
+        need = sum(nums) % p                       # remainder the removed part must have
+        if need == 0:
+            return 0
+        last_index = {0: -1}                       # prefix remainder -> latest index
+        prefix, best = 0, len(nums)
+        for i, x in enumerate(nums):
+            prefix = (prefix + x) % p
+            want = (prefix - need) % p             # earlier prefix that leaves a gap of remainder `need`
+            if want in last_index:
+                best = min(best, i - last_index[want])
+            last_index[prefix] = i                 # latest index: shortest gap later
+        return best if best < len(nums) else -1
+@@ TEST:
+s = Solution()
+assert s.minSubarray([3, 1, 4, 2], 6) == 1
+assert s.minSubarray([6, 3, 5, 2], 9) == 2
+assert s.minSubarray([1, 2, 3], 3) == 0
+assert s.minSubarray([1, 2, 3], 7) == -1
+assert s.minSubarray([1000000000, 1000000000, 1000000000], 3) == 0
+assert s.minSubarray([4, 4, 2], 7) == -1
+assert s.minSubarray([5], 5) == 0
+@@ PATTERN: Longest Consecutive Sequence
+@@ SPOT: Use this when you need runs of consecutive values in an unsorted array, in O(n) without sorting.
+@@ PROBLEM: longest-consecutive-sequence
+@@ APPROACH:
+Put all numbers in a set. Only start counting at a number with no predecessor, meaning `x - 1` is not in the set.
+From that start, walk up with `y + 1 in s` and measure the run. Each number is walked over only by the one run that starts it, so total work is O(n).
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def longestConsecutive(self, nums: List[int]) -> int:
+        s, best = set(nums), 0
+        for x in s:
+            if x - 1 not in s:                 # x starts a run
+                y = x
+                while y + 1 in s:              # walk the run upward
+                    y += 1
+                best = max(best, y - x + 1)
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestConsecutive([100, 4, 200, 1, 3, 2]) == 4
+assert s.longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1]) == 9
+assert s.longestConsecutive([]) == 0
+assert s.longestConsecutive([5]) == 1
+assert s.longestConsecutive([1, 2, 0, 1]) == 3
+assert s.longestConsecutive([-1, -2, -3, 10]) == 3
+@@ PROBLEM: longest-square-streak-in-an-array
+@@ APPROACH:
+The run steps are squares instead of +1: x, x*x, x^4 and so on. Put the numbers in a set, and only start at a number that is not the square of another number in the set.
+From a start, keep squaring while the result is in the set. Values are at most 10^5, so a run is at most a few steps long and total work stays O(n).
+A streak needs length 2 or more, otherwise return -1.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+import math
+
+class Solution:
+    def longestSquareStreak(self, nums: List[int]) -> int:
+        values = set(nums)
+        best = 0
+        for x in values:
+            root = math.isqrt(x)
+            if root * root == x and root in values:   # x has a predecessor: not a run start
+                continue
+            length, y = 1, x
+            while y * y in values:                    # walk the run: x, x^2, x^4, ...
+                y *= y
+                length += 1
+            best = max(best, length)
+        return best if best >= 2 else -1
+@@ TEST:
+s = Solution()
+assert s.longestSquareStreak([4, 3, 6, 16, 8, 2]) == 3
+assert s.longestSquareStreak([2, 3, 5, 6, 7]) == -1
+assert s.longestSquareStreak([2, 4, 16, 256]) == 4
+assert s.longestSquareStreak([2, 4, 3, 9, 81]) == 3
+assert s.longestSquareStreak([2, 4]) == 2
+assert s.longestSquareStreak([2, 2, 2]) == -1
+@@ PROBLEM: hand-of-straights
+@@ APPROACH:
+Each group is a run of groupSize consecutive cards. Count the cards, then go through the values in increasing order.
+The smallest value left has no usable x - 1, so it must start a run, and it must start `counts[x]` runs. Take that many of each of x ... x + groupSize - 1, and fail if any of them has too few.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def isNStraightHand(self, hand: List[int], groupSize: int) -> bool:
+        if len(hand) % groupSize:
+            return False
+        counts = Counter(hand)
+        for x in sorted(counts):                   # smallest value first
+            if counts[x] == 0:
+                continue
+            need = counts[x]                       # x must start this many runs
+            for y in range(x, x + groupSize):
+                if counts[y] < need:               # a card in the run is missing
+                    return False
+                counts[y] -= need
+        return True
+@@ TEST:
+s = Solution()
+assert s.isNStraightHand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3) is True
+assert s.isNStraightHand([1, 2, 3, 4, 5], 4) is False
+assert s.isNStraightHand([1], 1) is True
+assert s.isNStraightHand([1, 1, 2, 2, 3, 3], 3) is True
+assert s.isNStraightHand([1, 2, 4, 5], 2) is True
+assert s.isNStraightHand([1, 2, 4, 5], 4) is False
+assert s.isNStraightHand([1, 3, 2, 2, 3, 4], 3) is True
+assert s.isNStraightHand([1, 2, 3, 3, 4, 5], 3) is True
+assert s.isNStraightHand([1, 2, 3, 4, 6, 7], 3) is False
+@@ PATTERN: Group Anagrams
+@@ SPOT: Use this when you must bucket items that are "the same" under some rule, by building a canonical key for each item.
+@@ PROBLEM: valid-anagram
+@@ APPROACH:
+Two words are anagrams when they have the same letter counts, so the count map is the canonical key of a word.
+Build the key for both words and compare. A different length rules the pair out early.
+@@ COMPLEXITY: O(n) time, O(1) extra space (at most 26 letters)
+@@ CODE:
+class Solution:
+    def isAnagram(self, s: str, t: str) -> bool:
+        if len(s) != len(t):
+            return False
+        return Counter(s) == Counter(t)            # same letter counts = same key
+@@ TEST:
+s = Solution()
+assert s.isAnagram("anagram", "nagaram") is True
+assert s.isAnagram("rat", "car") is False
+assert s.isAnagram("a", "a") is True
+assert s.isAnagram("ab", "a") is False
+assert s.isAnagram("aacc", "ccac") is False
+@@ PROBLEM: group-anagrams
+@@ APPROACH:
+Give every word a canonical key: a tuple of 26 letter counts. Anagrams have the same counts, so they get the same key.
+Use a defaultdict(list) keyed by that tuple and append each word to its bucket. The tuple is hashable, so it works as a dict key, and building it costs O(length) instead of the O(length log length) of sorting.
+@@ COMPLEXITY: O(n * L) time, O(n * L) extra space, where L is the longest word
+@@ CODE:
+from collections import defaultdict
+
+class Solution:
+    def groupAnagrams(self, strs: List[str]) -> List[List[str]]:
+        groups = defaultdict(list)
+        for word in strs:
+            counts = [0] * 26
+            for ch in word:
+                counts[ord(ch) - ord('a')] += 1
+            groups[tuple(counts)].append(word)     # same counts = same key = same group
+        return list(groups.values())
+@@ TEST:
+s = Solution()
+res = s.groupAnagrams(["eat", "tea", "tan", "ate", "nat", "bat"])
+assert sorted(sorted(g) for g in res) == [["ate", "eat", "tea"], ["bat"], ["nat", "tan"]]
+assert s.groupAnagrams([""]) == [[""]]
+assert s.groupAnagrams(["a"]) == [["a"]]
+res = s.groupAnagrams(["ab", "ba", "abc", "", ""])
+assert sorted(sorted(g) for g in res) == [["", ""], ["ab", "ba"], ["abc"]]
+@@ PROBLEM: groups-of-special-equivalent-strings
+@@ APPROACH:
+A move swaps two letters at positions with the same parity. So even-position letters can be reordered freely, and so can odd-position letters, but they never mix.
+The canonical key is the pair (sorted even letters, sorted odd letters). Strings in the same group share the key, so the answer is the number of distinct keys in a set.
+@@ COMPLEXITY: O(n * L log L) time, O(n * L) extra space
+@@ CODE:
+class Solution:
+    def numSpecialEquivGroups(self, words: List[str]) -> int:
+        keys = set()
+        for w in words:
+            even = ''.join(sorted(w[0::2]))        # even positions can be reordered freely
+            odd = ''.join(sorted(w[1::2]))         # odd positions can be reordered freely
+            keys.add((even, odd))                  # canonical key of the group
+        return len(keys)
+@@ TEST:
+s = Solution()
+assert s.numSpecialEquivGroups(["abcd", "cdab", "cbad", "xyzz", "zzxy", "zzyx"]) == 3
+assert s.numSpecialEquivGroups(["abc", "acb", "bac", "bca", "cab", "cba"]) == 3
+assert s.numSpecialEquivGroups(["a"]) == 1
+assert s.numSpecialEquivGroups(["a", "b"]) == 2
+assert s.numSpecialEquivGroups(["abcd", "abcd"]) == 1
+@@ PATTERN: Frequency-based Problems
+@@ SPOT: Use this when the answer depends on counts, such as "first non-repeating", "sort by frequency" or "isomorphic", so you count first and read the counts in a second pass.
+@@ PROBLEM: first-unique-character-in-a-string
+@@ APPROACH:
+Pass one counts every character with Counter. Pass two walks the string in order and returns the first index whose count is 1.
+Order comes from the second pass over the string, not from the dict. The key line is `if counts[ch] == 1`.
+@@ COMPLEXITY: O(n) time, O(1) extra space (at most 26 letters)
+@@ CODE:
+class Solution:
+    def firstUniqChar(self, s: str) -> int:
+        counts = Counter(s)                    # pass 1: count everything
+        for i, ch in enumerate(s):             # pass 2: read the counts in string order
+            if counts[ch] == 1:
+                return i
+        return -1
+@@ TEST:
+s = Solution()
+assert s.firstUniqChar("leetcode") == 0
+assert s.firstUniqChar("loveleetcode") == 2
+assert s.firstUniqChar("aabb") == -1
+assert s.firstUniqChar("z") == 0
+assert s.firstUniqChar("aadadaad") == -1
+@@ PROBLEM: isomorphic-strings
+@@ APPROACH:
+Each character in s must always map to the same character in t, and no two characters may share a target. Keep one dict per direction.
+Scan both strings together. If either dict already holds a different partner for the current pair, the strings are not isomorphic.
+@@ COMPLEXITY: O(n) time, O(1) extra space (bounded by the alphabet)
+@@ CODE:
+class Solution:
+    def isIsomorphic(self, s: str, t: str) -> bool:
+        s_to_t, t_to_s = {}, {}                    # both directions must stay consistent
+        for a, b in zip(s, t):
+            if s_to_t.get(a, b) != b or t_to_s.get(b, a) != a:   # a different partner was recorded
+                return False
+            s_to_t[a] = b
+            t_to_s[b] = a
+        return True
+@@ TEST:
+s = Solution()
+assert s.isIsomorphic("egg", "add") is True
+assert s.isIsomorphic("foo", "bar") is False
+assert s.isIsomorphic("paper", "title") is True
+assert s.isIsomorphic("badc", "baba") is False
+assert s.isIsomorphic("a", "a") is True
+assert s.isIsomorphic("ab", "aa") is False
+@@ PROBLEM: sort-characters-by-frequency
+@@ APPROACH:
+First count each character. The second step reads those counts: order the (character, count) pairs from the highest count down.
+Repeat each character `n` times and join. Counter.most_common() already returns the pairs sorted by count, and there are at most 62 distinct characters, so the sort is cheap.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def frequencySort(self, s: str) -> str:
+        counts = Counter(s)                                    # pass 1: count
+        return ''.join(ch * n for ch, n in counts.most_common())   # pass 2: highest count first
+@@ TEST:
+s = Solution()
+assert s.frequencySort("tree") in ("eert", "eetr")
+assert s.frequencySort("cccaaa") in ("cccaaa", "aaaccc")
+assert s.frequencySort("Aabb") in ("bbAa", "bbaA")
+assert s.frequencySort("a") == "a"
+assert s.frequencySort("abbccc") == "cccbba"

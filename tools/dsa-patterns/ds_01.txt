@@ -1,0 +1,1148 @@
+@@ PATTERN: Traversal
+@@ SPOT: Use this when the question says find the max, count, or check all elements, and one pass with a running answer is enough.
+@@ PROBLEM: best-time-to-buy-and-sell-stock
+@@ APPROACH:
+Walk the prices once. Keep the lowest price seen so far in `lowest`. At each day, the best profit if you sell today is `price - lowest`. The answer is the largest of those values, so no second loop over earlier days is needed.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        lowest = float("inf")
+        best = 0
+        for price in prices:                  # one pass, keep a running answer
+            lowest = min(lowest, price)       # cheapest day so far
+            best = max(best, price - lowest)  # profit if we sell today
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxProfit([7, 1, 5, 3, 6, 4]) == 5
+assert s.maxProfit([7, 6, 4, 3, 1]) == 0
+assert s.maxProfit([5]) == 0
+assert s.maxProfit([1, 2]) == 1
+assert s.maxProfit([2, 4, 1]) == 2
+@@ PROBLEM: gas-station
+@@ APPROACH:
+One pass keeps two running numbers: `tank` for the current attempt and `total` for the whole circle. When `tank` drops below zero, no station from the current start up to here can work as a start. So the next start must be `i + 1`, and `tank` resets. If `total` is never negative, the last start found is the answer.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def canCompleteCircuit(self, gas: List[int], cost: List[int]) -> int:
+        total = tank = start = 0
+        for i in range(len(gas)):             # single pass with running totals
+            gain = gas[i] - cost[i]
+            total += gain                     # balance of the whole circle
+            tank += gain                      # balance of the current attempt
+            if tank < 0:                      # this start failed: restart after i
+                start = i + 1
+                tank = 0
+        return start if total >= 0 else -1
+@@ TEST:
+s = Solution()
+assert s.canCompleteCircuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2]) == 3
+assert s.canCompleteCircuit([2, 3, 4], [3, 4, 3]) == -1
+assert s.canCompleteCircuit([5, 1, 2, 3, 4], [4, 4, 1, 5, 1]) == 4
+assert s.canCompleteCircuit([5], [4]) == 0
+assert s.canCompleteCircuit([2], [2]) == 0
+assert s.canCompleteCircuit([1], [2]) == -1
+@@ PROBLEM: candy
+@@ APPROACH:
+Every child needs at least one candy, so start with a list of ones. A left to right pass fixes the rule against the left neighbour: a higher rating gets one more than the left child. A right to left pass fixes the right neighbour and keeps the larger value with `max`. Each pass is a plain traversal, and the sum of the list is the answer.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def candy(self, ratings: List[int]) -> int:
+        n = len(ratings)
+        candies = [1] * n
+        for i in range(1, n):                         # pass 1: compare with the left neighbour
+            if ratings[i] > ratings[i - 1]:
+                candies[i] = candies[i - 1] + 1
+        for i in range(n - 2, -1, -1):                # pass 2: compare with the right neighbour
+            if ratings[i] > ratings[i + 1]:
+                candies[i] = max(candies[i], candies[i + 1] + 1)
+        return sum(candies)
+@@ TEST:
+s = Solution()
+assert s.candy([1, 0, 2]) == 5
+assert s.candy([1, 2, 2]) == 4
+assert s.candy([1]) == 1
+assert s.candy([1, 2, 3, 4, 5]) == 15
+assert s.candy([5, 4, 3, 2, 1]) == 15
+assert s.candy([2, 2, 2]) == 3
+assert s.candy([1, 3, 2, 2, 1]) == 7
+@@ PATTERN: Two Pointers
+@@ SPOT: Use this when the array is sorted (or the answer depends on the two ends) and you need a pair, a best pair, or a boundary walk.
+@@ PROBLEM: two-sum-ii-input-array-is-sorted
+@@ APPROACH:
+Put `l` at the start and `r` at the end. If the sum is too small, only moving `l` right can raise it. If the sum is too big, only moving `r` left can lower it. Every skipped pair is provably useless, so one pass finds the answer.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def twoSum(self, numbers: List[int], target: int) -> List[int]:
+        l, r = 0, len(numbers) - 1
+        while l < r:
+            s = numbers[l] + numbers[r]
+            if s == target:
+                return [l + 1, r + 1]    # the problem is 1-indexed
+            if s < target:               # too small: move l right
+                l += 1
+            else:                        # too big: move r left
+                r -= 1
+        return []
+@@ TEST:
+s = Solution()
+assert s.twoSum([2, 7, 11, 15], 9) == [1, 2]
+assert s.twoSum([2, 3, 4], 6) == [1, 3]
+assert s.twoSum([-1, 0], -1) == [1, 2]
+assert s.twoSum([-3, -1, 0, 2, 5], 4) == [2, 5]
+assert s.twoSum([5, 5], 10) == [1, 2]
+@@ PROBLEM: container-with-most-water
+@@ APPROACH:
+The array is not sorted, but the two ends give the widest container, so start there. The area is limited by the shorter wall. Moving the taller wall inward can only shrink the width and cannot raise the height limit. So always move the pointer at the shorter wall.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def maxArea(self, height: List[int]) -> int:
+        l, r = 0, len(height) - 1
+        best = 0
+        while l < r:
+            best = max(best, min(height[l], height[r]) * (r - l))
+            if height[l] < height[r]:    # the shorter wall limits the area, so move it
+                l += 1
+            else:
+                r -= 1
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7]) == 49
+assert s.maxArea([1, 1]) == 1
+assert s.maxArea([4, 3, 2, 1, 4]) == 16
+assert s.maxArea([1, 2, 1]) == 2
+assert s.maxArea([2, 3, 4, 5, 18, 17, 6]) == 17
+@@ PROBLEM: trapping-rain-water
+@@ APPROACH:
+Water above a bar depends on the lower of the tallest bars on its left and right. Keep `left_max` and `right_max` while the pointers walk inward. Always move the side with the lower bar, because that side's max is the one that limits its water. Add `max - height` for the bar you move past.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def trap(self, height: List[int]) -> int:
+        l, r = 0, len(height) - 1
+        left_max = right_max = water = 0
+        while l < r:
+            if height[l] < height[r]:             # the lower side decides the water level
+                left_max = max(left_max, height[l])
+                water += left_max - height[l]
+                l += 1
+            else:
+                right_max = max(right_max, height[r])
+                water += right_max - height[r]
+                r -= 1
+        return water
+@@ TEST:
+s = Solution()
+assert s.trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]) == 6
+assert s.trap([4, 2, 0, 3, 2, 5]) == 9
+assert s.trap([5]) == 0
+assert s.trap([1, 2, 3]) == 0
+assert s.trap([3, 0, 3]) == 3
+assert s.trap([2, 0, 2]) == 2
+assert s.trap([3, 2, 1]) == 0
+@@ PATTERN: Sliding Window: Fixed
+@@ SPOT: Use this when the question asks about every sub-array of exactly size k: max sum, average, or a count.
+@@ PROBLEM: maximum-average-subarray-i
+@@ APPROACH:
+Compute the sum of the first k numbers once. Then slide: add the new element `nums[i]` and subtract the one that left, `nums[i - k]`. Never re-add k numbers. Keep the best sum and divide by k at the end.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def findMaxAverage(self, nums: List[int], k: int) -> float:
+        window = sum(nums[:k])
+        best = window
+        for i in range(k, len(nums)):
+            window += nums[i] - nums[i - k]    # add the new element, drop the old one
+            best = max(best, window)
+        return best / k
+@@ TEST:
+s = Solution()
+assert s.findMaxAverage([1, 12, -5, -6, 50, 3], 4) == 12.75
+assert s.findMaxAverage([5], 1) == 5.0
+assert s.findMaxAverage([-1], 1) == -1.0
+assert s.findMaxAverage([0, 4, 0, 3, 2], 1) == 4.0
+assert s.findMaxAverage([-3, -1, -2], 2) == -1.5
+@@ PROBLEM: maximum-points-you-can-obtain-from-cards
+@@ APPROACH:
+Taking k cards from the two ends means the cards you leave form one block in the middle of size n - k. To maximise what you take, minimise what you leave. That block is a fixed-size window, so slide it and track the smallest sum. The answer is the total minus that smallest sum.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def maxScore(self, cardPoints: List[int], k: int) -> int:
+        n = len(cardPoints)
+        size = n - k                          # cards left behind form a fixed-size window
+        window = sum(cardPoints[:size])
+        smallest = window
+        for i in range(size, n):
+            window += cardPoints[i] - cardPoints[i - size]   # slide by one
+            smallest = min(smallest, window)
+        return sum(cardPoints) - smallest
+@@ TEST:
+s = Solution()
+assert s.maxScore([1, 2, 3, 4, 5, 6, 1], 3) == 12
+assert s.maxScore([2, 2, 2], 2) == 4
+assert s.maxScore([9, 7, 7, 9, 7, 7, 9], 7) == 55
+assert s.maxScore([1, 1000, 1], 1) == 1
+assert s.maxScore([1, 79, 80, 1, 1, 1, 200, 1], 3) == 202
+@@ PROBLEM: sliding-window-maximum
+@@ APPROACH:
+A fixed window of size k moves right, and we need its maximum each time. Keep a deque of indices whose values decrease from front to back. Before adding `nums[i]`, pop smaller values from the back, because they can never be a maximum again. The front is the maximum, and it is removed once its index leaves the window.
+@@ COMPLEXITY: O(n) time, O(k) extra space
+@@ CODE:
+from collections import deque
+
+class Solution:
+    def maxSlidingWindow(self, nums: List[int], k: int) -> List[int]:
+        dq = deque()                          # indices; values decrease front to back
+        out = []
+        for i, x in enumerate(nums):
+            while dq and nums[dq[-1]] <= x:   # smaller values can never be the max again
+                dq.pop()
+            dq.append(i)
+            if dq[0] <= i - k:                # front index slid out of the window
+                dq.popleft()
+            if i >= k - 1:                    # first full window reached
+                out.append(nums[dq[0]])
+        return out
+@@ TEST:
+s = Solution()
+assert s.maxSlidingWindow([1, 3, -1, -3, 5, 3, 6, 7], 3) == [3, 3, 5, 5, 6, 7]
+assert s.maxSlidingWindow([1], 1) == [1]
+assert s.maxSlidingWindow([1, -1], 1) == [1, -1]
+assert s.maxSlidingWindow([9, 11], 2) == [11]
+assert s.maxSlidingWindow([4, 3, 2, 1], 2) == [4, 3, 2]
+assert s.maxSlidingWindow([1, 2, 3, 4], 2) == [2, 3, 4]
+assert s.maxSlidingWindow([7, 2, 4], 2) == [7, 4]
+@@ PATTERN: Sliding Window: Variable
+@@ SPOT: Use this when the question asks for the longest or shortest contiguous sub-array (or the number of them) that satisfies a condition.
+@@ PROBLEM: minimum-size-subarray-sum
+@@ APPROACH:
+Grow the window by moving `r` and adding `nums[r]`. While the sum is at least the target, the window is valid, so record its length and shrink from the left. All numbers are positive, so shrinking always lowers the sum and the method is safe. Each index enters and leaves the window once.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def minSubArrayLen(self, target: int, nums: List[int]) -> int:
+        l = total = 0
+        best = inf
+        for r in range(len(nums)):
+            total += nums[r]                   # grow right
+            while total >= target:             # window valid: try to shrink
+                best = min(best, r - l + 1)
+                total -= nums[l]
+                l += 1
+        return 0 if best == inf else best
+@@ TEST:
+s = Solution()
+assert s.minSubArrayLen(7, [2, 3, 1, 2, 4, 3]) == 2
+assert s.minSubArrayLen(4, [1, 4, 4]) == 1
+assert s.minSubArrayLen(11, [1, 1, 1, 1, 1, 1, 1, 1]) == 0
+assert s.minSubArrayLen(3, [1, 1]) == 0
+assert s.minSubArrayLen(5, [5]) == 1
+assert s.minSubArrayLen(15, [1, 2, 3, 4, 5]) == 5
+@@ PROBLEM: max-consecutive-ones-iii
+@@ APPROACH:
+We want the longest window that holds at most k zeros. Move `r` right and count each zero added. While the window has more than k zeros, move `l` right, and lower the count when a zero leaves. After that the window is valid, so its length is a candidate for the answer.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def longestOnes(self, nums: List[int], k: int) -> int:
+        l = zeros = best = 0
+        for r, x in enumerate(nums):
+            if x == 0:
+                zeros += 1                     # grow right
+            while zeros > k:                   # window is bad: shrink left
+                if nums[l] == 0:
+                    zeros -= 1
+                l += 1
+            best = max(best, r - l + 1)        # window is valid here
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestOnes([1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0], 2) == 6
+assert s.longestOnes([0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1], 3) == 10
+assert s.longestOnes([0, 0, 0], 0) == 0
+assert s.longestOnes([1, 1], 0) == 2
+assert s.longestOnes([0], 1) == 1
+assert s.longestOnes([0, 0, 0], 5) == 3
+@@ PROBLEM: subarrays-with-k-different-integers
+@@ APPROACH:
+"Exactly k distinct" is not monotonic, but "at most k distinct" is, so a variable window works for it. Count the sub-arrays with at most k distinct values: for each `r`, every start from `l` to `r` is valid, which adds `r - l + 1`. The answer is `at_most(k) - at_most(k - 1)`. The `count` dict tracks the values inside the window.
+@@ COMPLEXITY: O(n) time, O(k) extra space
+@@ CODE:
+from collections import defaultdict
+
+class Solution:
+    def subarraysWithKDistinct(self, nums: List[int], k: int) -> int:
+        def at_most(limit):
+            count = defaultdict(int)
+            l = total = 0
+            for r, x in enumerate(nums):
+                count[x] += 1                         # grow right
+                while len(count) > limit:             # too many distinct values: shrink left
+                    count[nums[l]] -= 1
+                    if count[nums[l]] == 0:
+                        del count[nums[l]]
+                    l += 1
+                total += r - l + 1                    # all windows ending at r that start in [l, r]
+            return total
+        return at_most(k) - at_most(k - 1)
+@@ TEST:
+s = Solution()
+assert s.subarraysWithKDistinct([1, 2, 1, 2, 3], 2) == 7
+assert s.subarraysWithKDistinct([1, 2, 1, 3, 4], 3) == 3
+assert s.subarraysWithKDistinct([1, 1, 1], 1) == 6
+assert s.subarraysWithKDistinct([1, 2], 1) == 2
+assert s.subarraysWithKDistinct([1, 2], 2) == 1
+assert s.subarraysWithKDistinct([1, 2], 3) == 0
+@@ PATTERN: Prefix Sum
+@@ SPOT: Use this when you must answer many range-sum questions, or count sub-arrays by their sum (negatives allowed).
+@@ PROBLEM: range-sum-query-immutable
+@@ APPROACH:
+Build `prefix` once, where `prefix[i]` is the sum of the first i numbers and `prefix[0]` is 0. The sum of `nums[left..right]` is `prefix[right + 1] - prefix[left]`. The build costs O(n), and every query after that is O(1).
+@@ COMPLEXITY: O(n) build, O(1) per query, O(n) space
+@@ CODE:
+class NumArray:
+    def __init__(self, nums: List[int]):
+        self.prefix = [0]
+        for x in nums:
+            self.prefix.append(self.prefix[-1] + x)   # prefix[i] = sum of the first i numbers
+
+    def sumRange(self, left: int, right: int) -> int:
+        return self.prefix[right + 1] - self.prefix[left]   # whole prefix minus the part before left
+@@ TEST:
+obj = NumArray([-2, 0, 3, -5, 2, -1])
+assert obj.sumRange(0, 2) == 1
+assert obj.sumRange(2, 5) == -1
+assert obj.sumRange(0, 5) == -3
+assert obj.sumRange(3, 3) == -5
+single = NumArray([7])
+assert single.sumRange(0, 0) == 7
+@@ PROBLEM: subarray-sum-equals-k
+@@ APPROACH:
+The sum of a sub-array ending here equals k when an earlier prefix equals `prefix - k`. Keep a dict `seen` that counts how often each prefix sum has occurred. At each element, add `seen[prefix - k]` to the answer, then record the current prefix. This works with negatives, where a sliding window fails.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+from collections import defaultdict
+
+class Solution:
+    def subarraySum(self, nums: List[int], k: int) -> int:
+        seen = defaultdict(int)
+        seen[0] = 1                        # the empty prefix
+        prefix = count = 0
+        for x in nums:
+            prefix += x                    # running prefix sum
+            count += seen[prefix - k]      # earlier prefixes that leave a sub-array summing to k
+            seen[prefix] += 1
+        return count
+@@ TEST:
+s = Solution()
+assert s.subarraySum([1, 1, 1], 2) == 2
+assert s.subarraySum([1, 2, 3], 3) == 2
+assert s.subarraySum([1], 0) == 0
+assert s.subarraySum([0, 0, 0], 0) == 6
+assert s.subarraySum([-1, -1, 1], 0) == 1
+assert s.subarraySum([1, -1, 0], 0) == 3
+@@ PROBLEM: shortest-subarray-with-sum-at-least-k
+@@ APPROACH:
+Negatives rule out a plain sliding window, so build the prefix sums instead. A sub-array from i to j-1 has sum `prefix[j] - prefix[i]`. Keep a deque of start indices whose prefix values increase. When `prefix[j]` is at least k above the front, pop the front and record the length. A larger older prefix can never be a better start than a smaller newer one, so pop those from the back.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+from collections import deque
+from math import inf
+
+class Solution:
+    def shortestSubarray(self, nums: List[int], k: int) -> int:
+        prefix = [0]
+        for x in nums:
+            prefix.append(prefix[-1] + x)               # prefix sums handle negatives
+        dq = deque()                                    # start indices, prefix values increasing
+        best = inf
+        for j, p in enumerate(prefix):
+            while dq and p - prefix[dq[0]] >= k:        # sub-array sum is big enough
+                best = min(best, j - dq.popleft())
+            while dq and prefix[dq[-1]] >= p:           # a smaller, newer start beats these
+                dq.pop()
+            dq.append(j)
+        return -1 if best == inf else best
+@@ TEST:
+s = Solution()
+assert s.shortestSubarray([1], 1) == 1
+assert s.shortestSubarray([1, 2], 4) == -1
+assert s.shortestSubarray([2, -1, 2], 3) == 3
+assert s.shortestSubarray([84, -37, 32, 40, 95], 167) == 3
+assert s.shortestSubarray([-28, 81, -20, 28, -29], 89) == 3
+assert s.shortestSubarray([17, 85, 93, -45, -21], 150) == 2
+assert s.shortestSubarray([-1, -2], 1) == -1
+@@ PATTERN: Difference Array
+@@ SPOT: Use this when you apply many range updates (add v to a[l..r]) and read the final array only once.
+@@ PROBLEM: corporate-flight-bookings
+@@ APPROACH:
+Each booking adds `seats` to every flight from `first` to `last`. In `diff`, add `seats` at the start index and subtract it right after the end index. Each booking costs O(1). One running total over `diff` rebuilds the final seat count for every flight.
+@@ COMPLEXITY: O(n + m) time for m bookings, O(n) space
+@@ CODE:
+class Solution:
+    def corpFlightBookings(self, bookings: List[List[int]], n: int) -> List[int]:
+        diff = [0] * (n + 1)
+        for first, last, seats in bookings:
+            diff[first - 1] += seats      # start adding here (0-indexed)
+            diff[last] -= seats           # stop adding after the last flight
+        out, running = [], 0
+        for i in range(n):
+            running += diff[i]            # running total of diff rebuilds the array
+            out.append(running)
+        return out
+@@ TEST:
+s = Solution()
+assert s.corpFlightBookings([[1, 2, 10], [2, 3, 20], [2, 5, 25]], 5) == [10, 55, 45, 25, 25]
+assert s.corpFlightBookings([[1, 2, 10], [2, 2, 15]], 2) == [10, 25]
+assert s.corpFlightBookings([[1, 1, 5]], 1) == [5]
+assert s.corpFlightBookings([[1, 3, 2]], 3) == [2, 2, 2]
+assert s.corpFlightBookings([[2, 2, 7]], 3) == [0, 7, 0]
+@@ PROBLEM: car-pooling
+@@ APPROACH:
+Each trip adds passengers at the pickup point and removes them at the drop-off point. Record that in `diff`: plus at `start`, minus at `end`. A running total over the positions is the number of passengers in the car at each point. If it ever passes the capacity, the answer is False.
+@@ COMPLEXITY: O(n + L) time for n trips and L = 1001 positions, O(L) space
+@@ CODE:
+class Solution:
+    def carPooling(self, trips: List[List[int]], capacity: int) -> bool:
+        diff = [0] * 1002
+        for people, start, end in trips:
+            diff[start] += people          # passengers get in
+            diff[end] -= people            # and get out at end
+        load = 0
+        for change in diff:
+            load += change                 # running total = passengers in the car
+            if load > capacity:
+                return False
+        return True
+@@ TEST:
+s = Solution()
+assert s.carPooling([[2, 1, 5], [3, 3, 7]], 4) == False
+assert s.carPooling([[2, 1, 5], [3, 3, 7]], 5) == True
+assert s.carPooling([[2, 1, 5], [3, 5, 7]], 3) == True
+assert s.carPooling([[3, 2, 7], [3, 7, 9], [8, 3, 9]], 11) == True
+assert s.carPooling([[9, 3, 4], [9, 1, 7], [4, 2, 4], [7, 4, 5]], 22) == True
+assert s.carPooling([[9, 3, 4], [9, 1, 7], [4, 2, 4], [7, 4, 5]], 21) == False
+@@ PROBLEM: minimum-number-of-k-consecutive-bit-flips
+@@ APPROACH:
+Scan left to right and flip greedily: if the bit at i is 0 after earlier flips, a flip must start here. Do not touch the k bits. Mark the flip in a difference array: `active` counts flips covering index i, and `diff[i + k]` removes this flip when it ends. A bit is 0 after flips when `nums[i] + active` is even. If a flip would run past the end, the answer is -1.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def minKBitFlips(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        diff = [0] * (n + 1)                     # diff[i] = change in the number of active flips at i
+        flips = active = 0
+        for i in range(n):
+            active += diff[i]                    # flips covering index i
+            if (nums[i] + active) % 2 == 0:      # the bit is 0 now: a flip must start here
+                if i + k > n:
+                    return -1
+                flips += 1
+                active += 1                      # range add on [i, i + k - 1] ...
+                diff[i + k] -= 1                 # ... that ends before i + k
+        return flips
+@@ TEST:
+s = Solution()
+assert s.minKBitFlips([0, 1, 0], 1) == 2
+assert s.minKBitFlips([1, 1, 0], 2) == -1
+assert s.minKBitFlips([0, 0, 0, 1, 0, 1, 1, 0], 3) == 3
+assert s.minKBitFlips([1], 1) == 0
+assert s.minKBitFlips([0], 1) == 1
+assert s.minKBitFlips([0, 0], 2) == 1
+assert s.minKBitFlips([0, 1], 2) == -1
+@@ PATTERN: Kadane's Algorithm
+@@ SPOT: Use this when the question asks for the best contiguous sub-array (max sum, max product, circular) and the array can hold negatives.
+@@ PROBLEM: maximum-subarray
+@@ APPROACH:
+At each number there are two choices: extend the run so far, or start fresh at this number. `cur = max(x, cur + x)` picks the better one. If the running sum is negative, it can only hurt, so it is dropped. `best` keeps the largest `cur` seen, and an all-negative array still works.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def maxSubArray(self, nums: List[int]) -> int:
+        cur = best = nums[0]
+        for x in nums[1:]:
+            cur = max(x, cur + x)       # extend the run or restart here
+            best = max(best, cur)
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4]) == 6
+assert s.maxSubArray([1]) == 1
+assert s.maxSubArray([5, 4, -1, 7, 8]) == 23
+assert s.maxSubArray([-3, -2, -5]) == -2
+assert s.maxSubArray([-1]) == -1
+@@ PROBLEM: maximum-product-subarray
+@@ APPROACH:
+Same extend-or-restart choice, but a negative number can turn the smallest product into the largest. So keep both `cur_max` and `cur_min` ending at the current index. For each `x`, the new max and min come from `x`, `cur_max * x` and `cur_min * x`. `best` keeps the largest `cur_max`.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def maxProduct(self, nums: List[int]) -> int:
+        cur_max = cur_min = best = nums[0]
+        for x in nums[1:]:
+            candidates = (x, cur_max * x, cur_min * x)    # restart, or extend with max or min
+            cur_max, cur_min = max(candidates), min(candidates)
+            best = max(best, cur_max)
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxProduct([2, 3, -2, 4]) == 6
+assert s.maxProduct([-2, 0, -1]) == 0
+assert s.maxProduct([-2]) == -2
+assert s.maxProduct([-2, 3, -4]) == 24
+assert s.maxProduct([0, 2]) == 2
+assert s.maxProduct([2, -5, -2, -4, 3]) == 24
+@@ PROBLEM: maximum-sum-circular-subarray
+@@ APPROACH:
+The best sub-array is either a normal one, or it wraps around the ends. A wrapping one equals the total minus the smallest middle sub-array. Run Kadane twice in one pass: once for the max run and once for the min run. The answer is `max(best_max, total - best_min)`, except when all numbers are negative, where the answer is `best_max`.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def maxSubarraySumCircular(self, nums: List[int]) -> int:
+        cur_max = cur_min = best_max = best_min = nums[0]
+        for x in nums[1:]:
+            cur_max = max(x, cur_max + x)         # Kadane for the largest run
+            best_max = max(best_max, cur_max)
+            cur_min = min(x, cur_min + x)         # Kadane for the smallest run
+            best_min = min(best_min, cur_min)
+        if best_max < 0:                          # all negative: total - best_min would be an empty pick
+            return best_max
+        return max(best_max, sum(nums) - best_min)
+@@ TEST:
+s = Solution()
+assert s.maxSubarraySumCircular([1, -2, 3, -2]) == 3
+assert s.maxSubarraySumCircular([5, -3, 5]) == 10
+assert s.maxSubarraySumCircular([-3, -2, -3]) == -2
+assert s.maxSubarraySumCircular([2, -2, 2, 7, 8, 0]) == 19
+assert s.maxSubarraySumCircular([1]) == 1
+assert s.maxSubarraySumCircular([-1]) == -1
+@@ PATTERN: Hashing / Frequency Map
+@@ SPOT: Use this when the question asks have I seen this, how many times, or which pair, and a dict or set gives O(1) lookups.
+@@ PROBLEM: two-sum
+@@ APPROACH:
+For each number, the partner we need is `target - x`. Look it up in the dict `seen`, which maps value to index. If it is there, we are done. If not, store the current number and move on. One pass, because the partner always appears earlier or later and is found from the second of the two.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        seen = {}                          # value -> index
+        for i, x in enumerate(nums):
+            if target - x in seen:         # O(1) lookup of the partner
+                return [seen[target - x], i]
+            seen[x] = i
+        return []
+@@ TEST:
+s = Solution()
+assert sorted(s.twoSum([2, 7, 11, 15], 9)) == [0, 1]
+assert sorted(s.twoSum([3, 2, 4], 6)) == [1, 2]
+assert sorted(s.twoSum([3, 3], 6)) == [0, 1]
+assert sorted(s.twoSum([-1, -2, -3, -4, -5], -8)) == [2, 4]
+assert sorted(s.twoSum([0, 4, 3, 0], 0)) == [0, 3]
+@@ PROBLEM: longest-consecutive-sequence
+@@ APPROACH:
+Put all numbers in a set for O(1) membership tests. Only start counting at a number `x` where `x - 1` is not in the set, since that is the start of a run. From there, step up while `x + length` is in the set. Each number is visited by at most one run, so the total work is linear and no sort is needed.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def longestConsecutive(self, nums: List[int]) -> int:
+        values = set(nums)                  # O(1) membership
+        best = 0
+        for x in values:
+            if x - 1 not in values:         # x is the start of a run
+                length = 1
+                while x + length in values:
+                    length += 1
+                best = max(best, length)
+        return best
+@@ TEST:
+s = Solution()
+assert s.longestConsecutive([100, 4, 200, 1, 3, 2]) == 4
+assert s.longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1]) == 9
+assert s.longestConsecutive([]) == 0
+assert s.longestConsecutive([1, 2, 0, 1]) == 3
+assert s.longestConsecutive([5]) == 1
+assert s.longestConsecutive([-1, -2, -3, 10]) == 3
+@@ PROBLEM: max-points-on-a-line
+@@ APPROACH:
+Fix a point i and count, in a frequency map, how many other points share each direction from it. Two points are on one line through i exactly when their reduced direction `(dx, dy)` is the same. Reduce with `gcd` and fix the sign so equal slopes get equal keys, which avoids float errors. The biggest count plus point i itself is the best for i.
+@@ COMPLEXITY: O(n^2) time, O(n) extra space
+@@ CODE:
+from collections import defaultdict
+
+import math
+
+class Solution:
+    def maxPoints(self, points: List[List[int]]) -> int:
+        n = len(points)
+        if n <= 2:
+            return n
+        best = 0
+        for i in range(n):
+            slopes = defaultdict(int)                   # direction -> how many points
+            for j in range(i + 1, n):
+                dx = points[j][0] - points[i][0]
+                dy = points[j][1] - points[i][1]
+                g = math.gcd(dx, dy)
+                dx, dy = dx // g, dy // g               # reduced direction, no floats
+                if dx < 0 or (dx == 0 and dy < 0):      # one sign convention per line
+                    dx, dy = -dx, -dy
+                slopes[(dx, dy)] += 1
+            best = max(best, max(slopes.values(), default=0) + 1)
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxPoints([[1, 1], [2, 2], [3, 3]]) == 3
+assert s.maxPoints([[1, 1], [3, 2], [5, 3], [4, 1], [2, 3], [1, 4]]) == 4
+assert s.maxPoints([[0, 0]]) == 1
+assert s.maxPoints([[0, 0], [1, 1]]) == 2
+assert s.maxPoints([[1, 1], [1, 2], [1, 3], [2, 5]]) == 3
+assert s.maxPoints([[0, 0], [4, 5], [7, 8], [8, 9], [5, 6], [3, 4], [1, 1]]) == 5
+assert s.maxPoints([[0, 0], [1, 5], [2, 3], [3, 8]]) == 2
+@@ PATTERN: Sorting + Searching
+@@ SPOT: Use this when the order of the input does not matter for the answer, so sorting first puts equal values together and unlocks two pointers or binary search.
+@@ PROBLEM: intersection-of-two-arrays-ii
+@@ APPROACH:
+Sort both arrays, so equal values sit next to each other. Walk one pointer in each array. Move the pointer at the smaller value. When the values match, keep that value once and move both pointers, which matches duplicates one for one.
+@@ COMPLEXITY: O(n log n + m log m) time, O(1) extra space besides the output
+@@ CODE:
+class Solution:
+    def intersect(self, nums1: List[int], nums2: List[int]) -> List[int]:
+        nums1.sort()                        # sort first: equal values sit together
+        nums2.sort()
+        i = j = 0
+        out = []
+        while i < len(nums1) and j < len(nums2):
+            if nums1[i] < nums2[j]:         # move the pointer at the smaller value
+                i += 1
+            elif nums1[i] > nums2[j]:
+                j += 1
+            else:                           # match: use one copy from each side
+                out.append(nums1[i])
+                i += 1
+                j += 1
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.intersect([1, 2, 2, 1], [2, 2])) == [2, 2]
+assert sorted(s.intersect([4, 9, 5], [9, 4, 9, 8, 4])) == [4, 9]
+assert sorted(s.intersect([1], [2])) == []
+assert sorted(s.intersect([1, 1], [1])) == [1]
+assert sorted(s.intersect([3], [3])) == [3]
+assert sorted(s.intersect([1, 1, 2, 2, 2], [2, 2, 1, 1, 1])) == [1, 1, 2, 2]
+@@ PROBLEM: 3sum
+@@ APPROACH:
+Sort the array. Fix the first number `nums[i]`, then run two pointers on the rest to find pairs that sum to its negative. Because the array is sorted, equal values are adjacent, so skipping repeats removes duplicate triplets. Sorting costs O(n log n), and the loops cost O(n^2).
+@@ COMPLEXITY: O(n^2) time, O(1) extra space besides the output
+@@ CODE:
+class Solution:
+    def threeSum(self, nums: List[int]) -> List[List[int]]:
+        nums.sort()                                  # sorting unlocks two pointers and the dedupe skips
+        out = []
+        for i in range(len(nums) - 2):
+            if i > 0 and nums[i] == nums[i - 1]:     # skip repeated first values
+                continue
+            l, r = i + 1, len(nums) - 1
+            while l < r:
+                s = nums[i] + nums[l] + nums[r]
+                if s < 0:
+                    l += 1
+                elif s > 0:
+                    r -= 1
+                else:
+                    out.append([nums[i], nums[l], nums[r]])
+                    l += 1
+                    while l < r and nums[l] == nums[l - 1]:   # skip repeated second values
+                        l += 1
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.threeSum([-1, 0, 1, 2, -1, -4])) == [[-1, -1, 2], [-1, 0, 1]]
+assert s.threeSum([0, 1, 1]) == []
+assert s.threeSum([0, 0, 0]) == [[0, 0, 0]]
+assert s.threeSum([0, 0, 0, 0]) == [[0, 0, 0]]
+assert sorted(s.threeSum([-2, 0, 1, 1, 2])) == [[-2, 0, 2], [-2, 1, 1]]
+assert s.threeSum([1, 2, 3]) == []
+@@ PROBLEM: russian-doll-envelopes
+@@ APPROACH:
+Sort by width ascending, and for equal widths by height descending, so two envelopes of the same width can never both be in one increasing run. The question is now the longest strictly increasing sequence of heights. Keep `tails` and use binary search (`bisect_left`) to place each height, which is the search half of the pattern.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+from bisect import bisect_left
+
+class Solution:
+    def maxEnvelopes(self, envelopes: List[List[int]]) -> int:
+        envelopes.sort(key=lambda e: (e[0], -e[1]))   # width up; same width: height down
+        tails = []                                    # tails[i] = smallest end of a run of length i + 1
+        for _, h in envelopes:
+            i = bisect_left(tails, h)                 # binary search for where h fits
+            if i == len(tails):
+                tails.append(h)
+            else:
+                tails[i] = h
+        return len(tails)
+@@ TEST:
+s = Solution()
+assert s.maxEnvelopes([[5, 4], [6, 4], [6, 7], [2, 3]]) == 3
+assert s.maxEnvelopes([[1, 1], [1, 1], [1, 1]]) == 1
+assert s.maxEnvelopes([[1, 1]]) == 1
+assert s.maxEnvelopes([[4, 5], [4, 6], [6, 7], [2, 3], [1, 1]]) == 4
+assert s.maxEnvelopes([[1, 3], [3, 5], [6, 7], [6, 8], [8, 4], [9, 5]]) == 3
+assert s.maxEnvelopes([[1, 5], [2, 4], [3, 3]]) == 1
+@@ PATTERN: Binary Search
+@@ SPOT: Use this when the array is sorted (or sorted then rotated) and you want a position or a value in O(log n).
+@@ PROBLEM: search-insert-position
+@@ APPROACH:
+This is exactly the lower bound: the first index whose value is at least the target. Keep the search range `[lo, hi)` and look at `mid`. If `nums[mid] >= target`, the answer is at `mid` or before, so `hi = mid`. Otherwise it is after `mid`, so `lo = mid + 1`. The range halves each step.
+@@ COMPLEXITY: O(log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def searchInsert(self, nums: List[int], target: int) -> int:
+        lo, hi = 0, len(nums)            # the answer can be len(nums)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if nums[mid] >= target:      # first index with nums[i] >= target
+                hi = mid
+            else:
+                lo = mid + 1
+        return lo
+@@ TEST:
+s = Solution()
+assert s.searchInsert([1, 3, 5, 6], 5) == 2
+assert s.searchInsert([1, 3, 5, 6], 2) == 1
+assert s.searchInsert([1, 3, 5, 6], 7) == 4
+assert s.searchInsert([1, 3, 5, 6], 0) == 0
+assert s.searchInsert([1], 1) == 0
+assert s.searchInsert([1], 2) == 1
+@@ PROBLEM: search-in-rotated-sorted-array
+@@ APPROACH:
+After a rotation, at least one half around `mid` is still sorted. Check which half is sorted by comparing `nums[lo]` with `nums[mid]`. If the target lies inside the sorted half, search that half. Otherwise search the other half. That still discards half the array each step.
+@@ COMPLEXITY: O(log n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def search(self, nums: List[int], target: int) -> int:
+        lo, hi = 0, len(nums) - 1
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            if nums[mid] == target:
+                return mid
+            if nums[lo] <= nums[mid]:                   # left half is sorted
+                if nums[lo] <= target < nums[mid]:
+                    hi = mid - 1
+                else:
+                    lo = mid + 1
+            else:                                       # right half is sorted
+                if nums[mid] < target <= nums[hi]:
+                    lo = mid + 1
+                else:
+                    hi = mid - 1
+        return -1
+@@ TEST:
+s = Solution()
+assert s.search([4, 5, 6, 7, 0, 1, 2], 0) == 4
+assert s.search([4, 5, 6, 7, 0, 1, 2], 3) == -1
+assert s.search([1], 0) == -1
+assert s.search([1], 1) == 0
+assert s.search([3, 1], 1) == 1
+assert s.search([5, 1, 3], 5) == 0
+assert s.search([4, 5, 6, 7, 0, 1, 2], 7) == 3
+assert s.search([2, 3, 4, 5, 6, 7, 8, 9, 1], 9) == 7
+@@ PROBLEM: median-of-two-sorted-arrays
+@@ APPROACH:
+The median splits the merged data into a left half and a right half. Binary search how many elements `i` the left half takes from the shorter array, so `j = half - i` come from the other. The split is correct when each side's last left value is at most the other side's first right value. If not, move `i` by halving, which gives O(log(min(m, n))).
+@@ COMPLEXITY: O(log(min(m, n))) time, O(1) extra space
+@@ CODE:
+from math import inf
+
+class Solution:
+    def findMedianSortedArrays(self, nums1: List[int], nums2: List[int]) -> float:
+        if len(nums1) > len(nums2):
+            nums1, nums2 = nums2, nums1          # binary search on the shorter array
+        m, n = len(nums1), len(nums2)
+        half = (m + n + 1) // 2
+        lo, hi = 0, m
+        while lo <= hi:
+            i = (lo + hi) // 2                   # elements taken from nums1 for the left half
+            j = half - i                         # elements taken from nums2
+            left1 = nums1[i - 1] if i > 0 else -inf
+            right1 = nums1[i] if i < m else inf
+            left2 = nums2[j - 1] if j > 0 else -inf
+            right2 = nums2[j] if j < n else inf
+            if left1 > right2:                   # took too many from nums1
+                hi = i - 1
+            elif left2 > right1:                 # took too few from nums1
+                lo = i + 1
+            else:
+                if (m + n) % 2:
+                    return float(max(left1, left2))
+                return (max(left1, left2) + min(right1, right2)) / 2
+        return 0.0
+@@ TEST:
+s = Solution()
+assert s.findMedianSortedArrays([1, 3], [2]) == 2.0
+assert s.findMedianSortedArrays([1, 2], [3, 4]) == 2.5
+assert s.findMedianSortedArrays([], [1]) == 1.0
+assert s.findMedianSortedArrays([2], []) == 2.0
+assert s.findMedianSortedArrays([0, 0], [0, 0]) == 0.0
+assert s.findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6, 8, 10]) == 5.0
+assert s.findMedianSortedArrays([1, 2], [1, 2, 3]) == 2.0
+@@ PATTERN: Binary Search on Answer
+@@ SPOT: Use this when the question says minimise the maximum or find the smallest value that works, and a yes/no check flips from no to yes exactly once.
+@@ PROBLEM: sqrtx
+@@ APPROACH:
+We are not searching an array but the possible answers 0..x. The check `mid * mid <= x` is true for small values and false for large ones, so it flips once. Keep the largest value for which the check is true. Use the upper middle so `lo = mid` always makes progress.
+@@ COMPLEXITY: O(log x) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def mySqrt(self, x: int) -> int:
+        lo, hi = 0, x
+        while lo < hi:
+            mid = (lo + hi + 1) // 2      # upper middle so the loop always shrinks
+            if mid * mid <= x:            # ok(mid): mid is not too big
+                lo = mid
+            else:
+                hi = mid - 1
+        return lo
+@@ TEST:
+s = Solution()
+assert s.mySqrt(4) == 2
+assert s.mySqrt(8) == 2
+assert s.mySqrt(0) == 0
+assert s.mySqrt(1) == 1
+assert s.mySqrt(2147395599) == 46339
+assert s.mySqrt(2147483647) == 46340
+@@ PROBLEM: koko-eating-bananas
+@@ APPROACH:
+The answer is the eating speed. Write `ok(speed)`: total hours at that speed is the sum of `ceil(pile / speed)`, and it must be at most h. A faster speed never needs more hours, so `ok` is monotonic. Binary search speeds from 1 to the largest pile for the smallest speed where `ok` is true.
+@@ COMPLEXITY: O(n log max(piles)) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def minEatingSpeed(self, piles: List[int], h: int) -> int:
+        def ok(speed):                                     # monotonic: faster never needs more hours
+            return sum((p + speed - 1) // speed for p in piles) <= h
+        lo, hi = 1, max(piles)                             # the answer is in [1, max(piles)]
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ok(mid):                                    # works: try slower
+                hi = mid
+            else:
+                lo = mid + 1
+        return lo
+@@ TEST:
+s = Solution()
+assert s.minEatingSpeed([3, 6, 7, 11], 8) == 4
+assert s.minEatingSpeed([30, 11, 23, 4, 20], 5) == 30
+assert s.minEatingSpeed([30, 11, 23, 4, 20], 6) == 23
+assert s.minEatingSpeed([1], 1) == 1
+assert s.minEatingSpeed([10], 5) == 2
+assert s.minEatingSpeed([312884470], 312884469) == 2
+@@ PROBLEM: split-array-largest-sum
+@@ APPROACH:
+Minimise the largest sub-array sum is a "minimise the maximum" question, so search the answer. `ok(limit)` greedily cuts a new part whenever adding the next number would pass `limit`, and returns whether at most k parts are enough. A bigger limit never needs more parts, so the check is monotonic. The search range runs from `max(nums)` to `sum(nums)`.
+@@ COMPLEXITY: O(n log(sum(nums))) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def splitArray(self, nums: List[int], k: int) -> int:
+        def ok(limit):                       # can we cut into at most k parts, each sum <= limit?
+            parts, cur = 1, 0
+            for x in nums:
+                if cur + x > limit:
+                    parts += 1
+                    cur = 0
+                cur += x
+            return parts <= k
+        lo, hi = max(nums), sum(nums)        # the answer lies between these
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ok(mid):                      # works: try a smaller limit
+                hi = mid
+            else:
+                lo = mid + 1
+        return lo
+@@ TEST:
+s = Solution()
+assert s.splitArray([7, 2, 5, 10, 8], 2) == 18
+assert s.splitArray([1, 2, 3, 4, 5], 2) == 9
+assert s.splitArray([1, 4, 4], 3) == 4
+assert s.splitArray([10], 1) == 10
+assert s.splitArray([1, 2, 3], 1) == 6
+assert s.splitArray([2, 3, 1, 2, 4, 3], 5) == 4
+@@ PATTERN: Merge Intervals
+@@ SPOT: Use this when the question is about overlapping ranges: merge them, insert one, or keep a set of disjoint ranges.
+@@ PROBLEM: merge-intervals
+@@ APPROACH:
+Sort the intervals by start. After sorting, a new interval can only overlap the last merged one. If `start <= out[-1][1]`, extend the end with `max`. Otherwise push a new interval. One pass after the sort is enough.
+@@ COMPLEXITY: O(n log n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def merge(self, intervals: List[List[int]]) -> List[List[int]]:
+        intervals.sort()                              # sort by start
+        out = [intervals[0]]
+        for start, end in intervals[1:]:
+            if start <= out[-1][1]:                   # overlaps the last merged interval
+                out[-1][1] = max(out[-1][1], end)     # max keeps [1, 10] + [2, 3] as [1, 10]
+            else:
+                out.append([start, end])
+        return out
+@@ TEST:
+s = Solution()
+assert s.merge([[1, 3], [2, 6], [8, 10], [15, 18]]) == [[1, 6], [8, 10], [15, 18]]
+assert s.merge([[1, 4], [4, 5]]) == [[1, 5]]
+assert s.merge([[1, 4], [0, 4]]) == [[0, 4]]
+assert s.merge([[1, 10], [2, 3]]) == [[1, 10]]
+assert s.merge([[5, 6]]) == [[5, 6]]
+assert s.merge([[1, 4], [0, 0]]) == [[0, 0], [1, 4]]
+@@ PROBLEM: insert-interval
+@@ APPROACH:
+The list is already sorted, so no sort is needed. Copy every interval that ends before the new one starts. Then merge every interval that overlaps into the new one by taking the min start and max end. Finally copy the rest, which all start after the new interval ends.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def insert(self, intervals: List[List[int]], newInterval: List[int]) -> List[List[int]]:
+        out = []
+        i, n = 0, len(intervals)
+        while i < n and intervals[i][1] < newInterval[0]:     # entirely before the new interval
+            out.append(intervals[i])
+            i += 1
+        while i < n and intervals[i][0] <= newInterval[1]:    # overlaps: merge into the new interval
+            newInterval = [min(newInterval[0], intervals[i][0]), max(newInterval[1], intervals[i][1])]
+            i += 1
+        out.append(newInterval)
+        out.extend(intervals[i:])                              # entirely after
+        return out
+@@ TEST:
+s = Solution()
+assert s.insert([[1, 3], [6, 9]], [2, 5]) == [[1, 5], [6, 9]]
+assert s.insert([[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]], [4, 8]) == [[1, 2], [3, 10], [12, 16]]
+assert s.insert([], [5, 7]) == [[5, 7]]
+assert s.insert([[1, 5]], [2, 3]) == [[1, 5]]
+assert s.insert([[1, 5]], [6, 8]) == [[1, 5], [6, 8]]
+assert s.insert([[1, 5]], [0, 0]) == [[0, 0], [1, 5]]
+@@ PROBLEM: data-stream-as-disjoint-intervals
+@@ APPROACH:
+Keep the merged, disjoint intervals sorted in two lists: `starts` and `ends`. Each new number is the interval `[v, v]`. Binary search (`bisect_right`) finds the neighbours, and the number either is already covered, touches the left interval, touches the right one, touches both (merge them), or stands alone.
+@@ COMPLEXITY: addNum O(log n) search plus O(n) list shift, getIntervals O(n)
+@@ CODE:
+from bisect import bisect_right
+
+class SummaryRanges:
+    def __init__(self):
+        self.starts = []                    # sorted starts of the disjoint intervals
+        self.ends = []                      # ends[i] belongs to starts[i]
+
+    def addNum(self, value: int) -> None:
+        i = bisect_right(self.starts, value)        # first interval that starts after value
+        if i > 0 and self.ends[i - 1] >= value:     # already covered
+            return
+        touch_left = i > 0 and self.ends[i - 1] == value - 1
+        touch_right = i < len(self.starts) and self.starts[i] == value + 1
+        if touch_left and touch_right:              # value bridges two intervals: merge them
+            self.ends[i - 1] = self.ends[i]
+            del self.starts[i]
+            del self.ends[i]
+        elif touch_left:
+            self.ends[i - 1] = value
+        elif touch_right:
+            self.starts[i] = value
+        else:                                       # stands alone: new interval [value, value]
+            self.starts.insert(i, value)
+            self.ends.insert(i, value)
+
+    def getIntervals(self) -> List[List[int]]:
+        return [[s, e] for s, e in zip(self.starts, self.ends)]
+@@ TEST:
+obj = SummaryRanges()
+obj.addNum(1)
+assert obj.getIntervals() == [[1, 1]]
+obj.addNum(3)
+assert obj.getIntervals() == [[1, 1], [3, 3]]
+obj.addNum(7)
+assert obj.getIntervals() == [[1, 1], [3, 3], [7, 7]]
+obj.addNum(2)
+assert obj.getIntervals() == [[1, 3], [7, 7]]
+obj.addNum(6)
+assert obj.getIntervals() == [[1, 3], [6, 7]]
+obj.addNum(2)
+assert obj.getIntervals() == [[1, 3], [6, 7]]
+obj.addNum(4)
+assert obj.getIntervals() == [[1, 4], [6, 7]]
+obj.addNum(5)
+assert obj.getIntervals() == [[1, 7]]
+other = SummaryRanges()
+other.addNum(5)
+other.addNum(1)
+assert other.getIntervals() == [[1, 1], [5, 5]]
+other.addNum(0)
+assert other.getIntervals() == [[0, 1], [5, 5]]
+@@ PATTERN: Cyclic Sort
+@@ SPOT: Use this when the numbers lie in the range 0..n or 1..n and you must find a missing or duplicate number in O(1) space.
+@@ PROBLEM: missing-number
+@@ APPROACH:
+The values are 0..n with one missing. Put each value `j` at index `j` by swapping, and skip the value n because it has no slot. After that, the first index `i` where `nums[i] != i` is the missing number. If every slot is right, the answer is n.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def missingNumber(self, nums: List[int]) -> int:
+        i, n = 0, len(nums)
+        while i < n:
+            j = nums[i]                          # the slot where nums[i] belongs
+            if j < n and nums[j] != nums[i]:     # not home yet: swap it into place
+                nums[i], nums[j] = nums[j], nums[i]
+            else:
+                i += 1
+        for i in range(n):
+            if nums[i] != i:                     # first slot holding the wrong value
+                return i
+        return n
+@@ TEST:
+s = Solution()
+assert s.missingNumber([3, 0, 1]) == 2
+assert s.missingNumber([0, 1]) == 2
+assert s.missingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1]) == 8
+assert s.missingNumber([0]) == 1
+assert s.missingNumber([1]) == 0
+@@ PROBLEM: find-all-duplicates-in-an-array
+@@ APPROACH:
+Values are 1..n, so value `v` belongs at index `v - 1`. Swap each value toward its own slot; if that slot already holds the same value, move on. When all swaps are done, any index `i` that holds a value other than `i + 1` holds a duplicate of a value that is already at home.
+@@ COMPLEXITY: O(n) time, O(1) extra space besides the output
+@@ CODE:
+class Solution:
+    def findDuplicates(self, nums: List[int]) -> List[int]:
+        i = 0
+        while i < len(nums):
+            j = nums[i] - 1                      # the slot where nums[i] belongs
+            if nums[j] != nums[i]:               # not home yet: swap it into place
+                nums[i], nums[j] = nums[j], nums[i]
+            else:
+                i += 1
+        return [x for i, x in enumerate(nums) if x != i + 1]   # a wrong value here is a duplicate
+@@ TEST:
+s = Solution()
+assert sorted(s.findDuplicates([4, 3, 2, 7, 8, 2, 3, 1])) == [2, 3]
+assert s.findDuplicates([1, 1, 2]) == [1]
+assert s.findDuplicates([1]) == []
+assert s.findDuplicates([2, 1]) == []
+assert s.findDuplicates([2, 2]) == [2]
+@@ PROBLEM: first-missing-positive
+@@ APPROACH:
+The smallest missing positive must be in 1..n+1, so only values in 1..n matter. For each index, keep swapping `nums[i]` to slot `nums[i] - 1` while it is in range and that slot does not already hold it. Negatives, zeros and big values stay where they are. Then the first index with `nums[i] != i + 1` gives the answer `i + 1`.
+@@ COMPLEXITY: O(n) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def firstMissingPositive(self, nums: List[int]) -> int:
+        n = len(nums)
+        for i in range(n):
+            while 1 <= nums[i] <= n and nums[nums[i] - 1] != nums[i]:   # value belongs in range and not home
+                j = nums[i] - 1
+                nums[i], nums[j] = nums[j], nums[i]                      # send it to its own slot
+        for i in range(n):
+            if nums[i] != i + 1:
+                return i + 1
+        return n + 1
+@@ TEST:
+s = Solution()
+assert s.firstMissingPositive([1, 2, 0]) == 3
+assert s.firstMissingPositive([3, 4, -1, 1]) == 2
+assert s.firstMissingPositive([7, 8, 9, 11, 12]) == 1
+assert s.firstMissingPositive([1]) == 2
+assert s.firstMissingPositive([2, 1]) == 3
+assert s.firstMissingPositive([1, 1]) == 2
+assert s.firstMissingPositive([-1, -2]) == 1
+@@ PATTERN: Matrix Traversal
+@@ SPOT: Use this when the input is a grid and you walk neighbours with a direction array and bounds check, shrink four boundaries, or transpose and reverse.
+@@ PROBLEM: image-smoother
+@@ APPROACH:
+For every cell, visit its neighbours with direction vectors `(dr, dc)` and a bounds check, so border cells have fewer neighbours. The cell itself is the offset `(0, 0)`. Add the values and count the cells that were inside the grid, then use integer division for the average.
+@@ COMPLEXITY: O(rows * cols) time, O(1) extra space besides the output
+@@ CODE:
+class Solution:
+    def imageSmoother(self, img: List[List[int]]) -> List[List[int]]:
+        rows, cols = len(img), len(img[0])
+        DIRS = [(dr, dc) for dr in (-1, 0, 1) for dc in (-1, 0, 1)]   # the cell and its 8 neighbours
+        out = [[0] * cols for _ in range(rows)]
+        for r in range(rows):
+            for c in range(cols):
+                total = count = 0
+                for dr, dc in DIRS:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < rows and 0 <= nc < cols:             # bounds check
+                        total += img[nr][nc]
+                        count += 1
+                out[r][c] = total // count
+        return out
+@@ TEST:
+s = Solution()
+assert s.imageSmoother([[1, 1, 1], [1, 0, 1], [1, 1, 1]]) == [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+assert s.imageSmoother([[100, 200, 100], [200, 50, 200], [100, 200, 100]]) == [[137, 141, 137], [141, 138, 141], [137, 141, 137]]
+assert s.imageSmoother([[5]]) == [[5]]
+assert s.imageSmoother([[1, 2], [3, 4]]) == [[2, 2], [2, 2]]
+assert s.imageSmoother([[1, 2, 3]]) == [[1, 2, 2]]
+@@ PROBLEM: spiral-matrix
+@@ APPROACH:
+Keep four boundaries: `top`, `bottom`, `left`, `right`. Walk the top row, then the right column, then the bottom row, then the left column, and shrink the matching boundary after each side. Check `top <= bottom` and `left <= right` before the last two sides so a single row or column is not read twice. Stop when the boundaries cross.
+@@ COMPLEXITY: O(rows * cols) time, O(1) extra space besides the output
+@@ CODE:
+class Solution:
+    def spiralOrder(self, matrix: List[List[int]]) -> List[int]:
+        top, bottom = 0, len(matrix) - 1
+        left, right = 0, len(matrix[0]) - 1
+        out = []
+        while top <= bottom and left <= right:
+            for c in range(left, right + 1):           # top row, left to right
+                out.append(matrix[top][c])
+            top += 1                                    # shrink after each side
+            for r in range(top, bottom + 1):           # right column, top to bottom
+                out.append(matrix[r][right])
+            right -= 1
+            if top <= bottom:                           # a single row left: do not walk it twice
+                for c in range(right, left - 1, -1):   # bottom row, right to left
+                    out.append(matrix[bottom][c])
+                bottom -= 1
+            if left <= right:                           # a single column left: do not walk it twice
+                for r in range(bottom, top - 1, -1):   # left column, bottom to top
+                    out.append(matrix[r][left])
+                left += 1
+        return out
+@@ TEST:
+s = Solution()
+assert s.spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) == [1, 2, 3, 6, 9, 8, 7, 4, 5]
+assert s.spiralOrder([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]) == [1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7]
+assert s.spiralOrder([[1]]) == [1]
+assert s.spiralOrder([[1, 2, 3]]) == [1, 2, 3]
+assert s.spiralOrder([[1], [2], [3]]) == [1, 2, 3]
+assert s.spiralOrder([[1, 2], [3, 4]]) == [1, 2, 4, 3]
+@@ PROBLEM: rotate-image
+@@ APPROACH:
+Rotating 90 degrees clockwise is two moves. First transpose: swap `matrix[r][c]` with `matrix[c][r]` for every pair above the diagonal. Then reverse each row. Both steps work in place, so no second matrix is needed.
+@@ COMPLEXITY: O(n^2) time, O(1) extra space
+@@ CODE:
+class Solution:
+    def rotate(self, matrix: List[List[int]]) -> None:
+        n = len(matrix)
+        for r in range(n):
+            for c in range(r + 1, n):                                   # transpose: swap across the diagonal
+                matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]
+        for row in matrix:
+            row.reverse()                                               # then reverse each row
+@@ TEST:
+s = Solution()
+m = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+s.rotate(m)
+assert m == [[7, 4, 1], [8, 5, 2], [9, 6, 3]]
+m = [[5, 1, 9, 11], [2, 4, 8, 10], [13, 3, 6, 7], [15, 14, 12, 16]]
+s.rotate(m)
+assert m == [[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7, 10, 11]]
+m = [[1]]
+s.rotate(m)
+assert m == [[1]]
+m = [[1, 2], [3, 4]]
+s.rotate(m)
+assert m == [[3, 1], [4, 2]]

@@ -1,0 +1,742 @@
+@@ PATTERN: Basic Recursion
+@@ SPOT: Use this when a problem is defined in terms of a smaller copy of itself and you can name the smallest case that needs no more work.
+@@ PROBLEM: fibonacci-number
+@@ APPROACH:
+fib(k) is defined by fib(k-1) and fib(k-2), so each call hands two smaller problems to itself.
+The base case `k < 2` stops the calls: fib(0) = 0 and fib(1) = 1.
+Plain double recursion is exponential because the same k is solved again and again. The `memo` dictionary caches each answer, so every k is solved once.
+@@ COMPLEXITY: O(n) time, O(n) extra space
+@@ CODE:
+class Solution:
+    def fib(self, n: int) -> int:
+        memo = {}
+        def go(k):
+            if k < 2: return k                  # base case: fib(0) = 0, fib(1) = 1
+            if k in memo: return memo[k]        # already solved: reuse it
+            memo[k] = go(k - 1) + go(k - 2)     # two smaller calls, trust them
+            return memo[k]
+        return go(n)
+@@ TEST:
+s = Solution()
+assert s.fib(2) == 1
+assert s.fib(3) == 2
+assert s.fib(4) == 3
+assert s.fib(0) == 0
+assert s.fib(1) == 1
+assert s.fib(10) == 55
+assert s.fib(30) == 832040
+@@ PROBLEM: powx-n
+@@ APPROACH:
+x^n is (x^(n/2)) squared, times one more x when n is odd. That is one smaller call on half the power, so the depth is only about log n.
+The base case is `n == 0`, which returns 1. A negative power is flipped once with `1 / myPow(x, -n)`.
+Computing `half` once and reusing it is the key line: calling myPow twice would undo the speed-up.
+@@ COMPLEXITY: O(log n) time, O(log n) stack space
+@@ CODE:
+class Solution:
+    def myPow(self, x: float, n: int) -> float:
+        if n < 0:
+            return 1 / self.myPow(x, -n)        # negative power: flip once
+        if n == 0:
+            return 1.0                          # base case
+        half = self.myPow(x, n // 2)            # one smaller call on half the power
+        if n % 2:
+            return half * half * x              # odd power needs one extra x
+        return half * half
+@@ TEST:
+s = Solution()
+assert s.myPow(2.0, 10) == 1024.0
+assert abs(s.myPow(2.1, 3) - 9.261) < 1e-9
+assert s.myPow(2.0, -2) == 0.25
+assert s.myPow(5.0, 0) == 1.0
+assert s.myPow(1.0, -2147483648) == 1.0
+assert s.myPow(0.0, 5) == 0.0
+assert s.myPow(-2.0, 3) == -8.0
+@@ PROBLEM: regular-expression-matching
+@@ APPROACH:
+Ask one question: does `s[i:]` match `p[j:]`? Each answer comes from a smaller question on shorter suffixes.
+The base case is an empty pattern, which only matches an empty string. When the pattern has `x*`, there are two smaller calls: skip the whole `x*`, or use `x` once and stay on the same `x*`.
+Both branches revisit the same (i, j) pairs, so `lru_cache` turns the exponential recursion into a table of at most len(s) * len(p) answers.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space for m = len(s), n = len(p)
+@@ CODE:
+from functools import lru_cache
+
+class Solution:
+    def isMatch(self, s: str, p: str) -> bool:
+        @lru_cache(None)
+        def go(i, j):                           # does s[i:] match p[j:]?
+            if j == len(p):
+                return i == len(s)              # base case: pattern is used up
+            first = i < len(s) and p[j] in (s[i], '.')
+            if j + 1 < len(p) and p[j + 1] == '*':
+                # skip "x*" entirely, or use x once and stay on the same "x*"
+                return go(i, j + 2) or (first and go(i + 1, j))
+            return first and go(i + 1, j + 1)   # plain char: both advance
+        return go(0, 0)
+@@ TEST:
+s = Solution()
+assert s.isMatch("aa", "a") == False
+assert s.isMatch("aa", "a*") == True
+assert s.isMatch("ab", ".*") == True
+assert s.isMatch("aab", "c*a*b") == True
+assert s.isMatch("mississippi", "mis*is*p*.") == False
+assert s.isMatch("", "a*") == True
+assert s.isMatch("", "") == True
+assert s.isMatch("a", "") == False
+assert s.isMatch("a", "ab*") == True
+assert s.isMatch("ab", ".*c") == False
+@@ PATTERN: Pick / Not Pick
+@@ SPOT: Use this when every element gives a yes-or-no choice (take it or leave it) and you need to count, collect or test the outcomes.
+@@ PROBLEM: binary-watch
+@@ APPROACH:
+Each of the 10 LEDs is one element: pick it (turn it on) or not pick it (leave it off). `left` counts how many LEDs still have to be turned on.
+When `left` reaches 0, the picked LEDs form a time, so the leaf condition is "valid time" and it is saved.
+A time with hours above 11 or minutes above 59 can only get worse, so the first line of `go` prunes it.
+@@ COMPLEXITY: O(2^L) time for L = 10 LEDs (a constant), O(L) stack space
+@@ CODE:
+class Solution:
+    def readBinaryWatch(self, turnedOn: int) -> List[str]:
+        leds = [8, 4, 2, 1, 32, 16, 8, 4, 2, 1]     # first 4 are hours, last 6 are minutes
+        out = []
+        def go(i, left, hours, minutes):
+            if hours > 11 or minutes > 59: return   # prune: not a real time
+            if left == 0:
+                out.append(f"{hours}:{minutes:02d}")    # leaf: all needed LEDs are on
+                return
+            if i == len(leds): return               # ran out of LEDs
+            if i < 4:
+                go(i + 1, left - 1, hours + leds[i], minutes)       # pick an hour LED
+            else:
+                go(i + 1, left - 1, hours, minutes + leds[i])       # pick a minute LED
+            go(i + 1, left, hours, minutes)         # not pick
+        go(0, turnedOn, 0, 0)
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.readBinaryWatch(1)) == sorted(["0:01", "0:02", "0:04", "0:08", "0:16", "0:32", "1:00", "2:00", "4:00", "8:00"])
+assert s.readBinaryWatch(9) == []
+assert s.readBinaryWatch(0) == ["0:00"]
+assert s.readBinaryWatch(10) == []
+res = s.readBinaryWatch(2)
+assert len(res) == 44 and len(set(res)) == 44
+assert "0:03" in res and "1:01" in res and "10:00" in res and "12:00" not in res
+@@ PROBLEM: target-sum
+@@ APPROACH:
+Giving every number a sign is the same as picking a group that gets "+". If the numbers sum to `total`, that group must add up to `need = (total + target) / 2`.
+So each number is picked (subtract it from `remain`) or not picked, and the leaf condition is `remain == 0`, which counts as one way.
+Two different paths often reach the same (i, remain), so the `memo` dictionary stops the 2^n blow-up.
+@@ COMPLEXITY: O(n * need) time, O(n * need) space
+@@ CODE:
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        total = sum(nums)
+        if abs(target) > total or (total + target) % 2:
+            return 0                            # no split can reach target
+        need = (total + target) // 2            # the "+" group must add up to need
+        memo = {}
+        def go(i, remain):
+            if i == len(nums):
+                return 1 if remain == 0 else 0  # leaf: count it if the sum is hit
+            if (i, remain) in memo: return memo[(i, remain)]
+            ways = go(i + 1, remain)                        # not pick nums[i]
+            if nums[i] <= remain:
+                ways += go(i + 1, remain - nums[i])         # pick nums[i]
+            memo[(i, remain)] = ways
+            return ways
+        return go(0, need)
+@@ TEST:
+s = Solution()
+assert s.findTargetSumWays([1, 1, 1, 1, 1], 3) == 5
+assert s.findTargetSumWays([1], 1) == 1
+assert s.findTargetSumWays([1], 2) == 0
+assert s.findTargetSumWays([0, 0, 0, 0, 0, 0, 0, 0, 1], 1) == 256
+assert s.findTargetSumWays([1, 0], 1) == 2
+assert s.findTargetSumWays([1, 1, 1], -1) == 3
+assert s.findTargetSumWays([2, 2], 5) == 0
+@@ PROBLEM: remove-invalid-parentheses
+@@ APPROACH:
+Each character is one choice. A bracket can be picked (kept) or not picked (removed). Letters are always kept.
+First count how many `(` and `)` must go (`left_rem`, `right_rem`). The "not pick" branch only exists while a removal is still owed, and the "pick" branch drops a `)` that has no open `(`. These two checks prune most of the 2^n tree.
+At the leaf, accept the string when no removals are owed and no `(` is left open. A `set` removes duplicate strings.
+@@ COMPLEXITY: O(2^n) time in the worst case, O(n) stack space
+@@ CODE:
+class Solution:
+    def removeInvalidParentheses(self, s: str) -> List[str]:
+        left_rem = right_rem = 0                # how many ( and ) must be removed
+        for ch in s:
+            if ch == '(':
+                left_rem += 1
+            elif ch == ')':
+                if left_rem: left_rem -= 1
+                else: right_rem += 1
+        out, path = set(), []
+        def go(i, left_rem, right_rem, open_count):
+            if i == len(s):
+                if left_rem == 0 and right_rem == 0 and open_count == 0:
+                    out.add(''.join(path))      # leaf: balanced, nothing owed
+                return
+            ch = s[i]
+            if ch == '(' and left_rem > 0:      # not pick: remove this (
+                go(i + 1, left_rem - 1, right_rem, open_count)
+            if ch == ')' and right_rem > 0:     # not pick: remove this )
+                go(i + 1, left_rem, right_rem - 1, open_count)
+            if ch == ')' and open_count == 0:
+                return                          # prune: a ) with no ( can never be kept
+            path.append(ch)                     # pick: keep it
+            go(i + 1, left_rem, right_rem, open_count + (ch == '(') - (ch == ')'))
+            path.pop()                          # undo
+        go(0, left_rem, right_rem, 0)
+        return list(out)
+@@ TEST:
+s = Solution()
+assert sorted(s.removeInvalidParentheses("()())()")) == sorted(["(())()", "()()()"])
+assert sorted(s.removeInvalidParentheses("(a)())()")) == sorted(["(a())()", "(a)()()"])
+assert s.removeInvalidParentheses(")(") == [""]
+assert s.removeInvalidParentheses("n") == ["n"]
+assert s.removeInvalidParentheses("()") == ["()"]
+assert s.removeInvalidParentheses("((") == [""]
+assert s.removeInvalidParentheses(")(f") == ["f"]
+assert s.removeInvalidParentheses("(()") == ["()"]
+@@ PATTERN: Subsets
+@@ SPOT: Use this when you need every possible group of elements and the order inside a group does not matter.
+@@ PROBLEM: sum-of-all-subset-xor-totals
+@@ APPROACH:
+Walk the array once and make the pick / not pick choice for each number. After the last index, the path is one finished subset.
+Instead of storing the subset, carry its running XOR down the calls: `xor_so_far ^ nums[i]` when picked, `xor_so_far` when not.
+At the leaf return that XOR, and add the answers of the two branches. There are 2^n leaves, one per subset.
+@@ COMPLEXITY: O(2^n) time, O(n) stack space
+@@ CODE:
+class Solution:
+    def subsetXORSum(self, nums: List[int]) -> int:
+        def go(i, xor_so_far):
+            if i == len(nums):
+                return xor_so_far               # one finished subset: its XOR
+            pick = go(i + 1, xor_so_far ^ nums[i])      # pick nums[i]
+            not_pick = go(i + 1, xor_so_far)            # not pick
+            return pick + not_pick
+        return go(0, 0)
+@@ TEST:
+s = Solution()
+assert s.subsetXORSum([1, 3]) == 6
+assert s.subsetXORSum([5, 1, 6]) == 28
+assert s.subsetXORSum([3, 4, 5, 6, 7, 8]) == 480
+assert s.subsetXORSum([5]) == 5
+assert s.subsetXORSum([1, 1]) == 2
+@@ PROBLEM: subsets
+@@ APPROACH:
+This is the template itself. At index i, append `nums[i]` and recurse (pick), pop it, and recurse again (not pick).
+When `i == len(nums)` the path holds one subset, so save a copy `path[:]`. Saving `path` itself would leave every result empty.
+Every element has two choices, so there are 2^n subsets.
+@@ COMPLEXITY: O(n * 2^n) time, O(n) extra space besides the output
+@@ CODE:
+class Solution:
+    def subsets(self, nums: List[int]) -> List[List[int]]:
+        out = []
+        def go(i, path):
+            if i == len(nums):
+                out.append(path[:])             # save a copy, not the list itself
+                return
+            path.append(nums[i]); go(i + 1, path)   # pick
+            path.pop();           go(i + 1, path)   # not pick
+        go(0, [])
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.subsets([1, 2, 3])) == sorted([[], [1], [2], [1, 2], [3], [1, 3], [2, 3], [1, 2, 3]])
+assert sorted(s.subsets([0])) == [[], [0]]
+assert sorted(s.subsets([1, 2])) == sorted([[], [1], [2], [1, 2]])
+assert sorted(s.subsets([-1, 0])) == sorted([[], [-1], [0], [-1, 0]])
+assert len(s.subsets(list(range(10)))) == 1024
+@@ PROBLEM: subsets-ii
+@@ APPROACH:
+Sort first so equal numbers sit next to each other. Pick / not pick would now build the same subset twice, for example {2} from either 2.
+Fix it in the "not pick" branch: if you leave out `nums[i]`, move `j` past every copy of that value. This is the same as skipping `a[i] == a[i-1]` at the same level.
+Picking still goes to `i + 1`, so each value is used 0, 1, 2, ... times and every subset appears once.
+@@ COMPLEXITY: O(n * 2^n) time, O(n) extra space besides the output
+@@ CODE:
+class Solution:
+    def subsetsWithDup(self, nums: List[int]) -> List[List[int]]:
+        nums.sort()                             # equal values become neighbours
+        out = []
+        def go(i, path):
+            if i == len(nums):
+                out.append(path[:])
+                return
+            path.append(nums[i]); go(i + 1, path)   # pick
+            path.pop()
+            j = i + 1
+            while j < len(nums) and nums[j] == nums[i]:
+                j += 1                          # not pick: skip every copy of this value
+            go(j, path)
+        go(0, [])
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.subsetsWithDup([1, 2, 2])) == sorted([[], [1], [1, 2], [1, 2, 2], [2], [2, 2]])
+assert sorted(s.subsetsWithDup([0])) == [[], [0]]
+assert sorted(s.subsetsWithDup([2, 1, 2])) == sorted([[], [1], [1, 2], [1, 2, 2], [2], [2, 2]])
+assert sorted(s.subsetsWithDup([1, 1, 1])) == [[], [1], [1, 1], [1, 1, 1]]
+res = s.subsetsWithDup([4, 4, 4, 1, 4])
+assert len(res) == 10 and len(set(tuple(r) for r in res)) == 10
+@@ PATTERN: Subsequences
+@@ SPOT: Use this when you need pieces of a sequence that keep their order but may skip elements, and a condition at the end decides which ones count.
+@@ PROBLEM: is-subsequence
+@@ APPROACH:
+Build the subsequence of `t` that equals `s`. At each step the next char of `t` is either skipped (not pick) or used to match `s[i]` (pick).
+`t.find(s[i], j)` skips every unusable char of `t` in one move, so the recursion only goes one level deeper per matched char.
+The base case is `i == len(s)`: every char of `s` was matched. If `find` returns -1, `t` ran out first.
+@@ COMPLEXITY: O(len(t)) time, O(len(s)) stack space
+@@ CODE:
+class Solution:
+    def isSubsequence(self, s: str, t: str) -> bool:
+        def go(i, j):
+            if i == len(s):
+                return True                     # base case: all of s matched
+            j = t.find(s[i], j)                 # not pick: skip chars that are not s[i]
+            if j == -1:
+                return False                    # t ran out first
+            return go(i + 1, j + 1)             # pick it, then match the rest
+        return go(0, 0)
+@@ TEST:
+s = Solution()
+assert s.isSubsequence("abc", "ahbgdc") == True
+assert s.isSubsequence("axc", "ahbgdc") == False
+assert s.isSubsequence("", "ahbgdc") == True
+assert s.isSubsequence("", "") == True
+assert s.isSubsequence("a", "") == False
+assert s.isSubsequence("aaa", "aa") == False
+assert s.isSubsequence("b", "abc") == True
+assert s.isSubsequence("acb", "abc") == False
+@@ PROBLEM: non-decreasing-subsequences
+@@ APPROACH:
+Every subsequence is a pick / not pick walk, and the leaf rule is "length at least 2". Picking `nums[i]` is only allowed when it is not smaller than the last picked value.
+Duplicates are the twist. Skip `nums[i]` only when it differs from the last picked value. If it is equal, picking it already covers that subsequence, so skipping would repeat it.
+No `set` of results is needed: the two rules together make each subsequence appear exactly once.
+@@ COMPLEXITY: O(n * 2^n) time, O(n) extra space besides the output
+@@ CODE:
+class Solution:
+    def findSubsequences(self, nums: List[int]) -> List[List[int]]:
+        out, path = [], []
+        def go(i):
+            if i == len(nums):
+                if len(path) >= 2:
+                    out.append(path[:])         # leaf condition: at least 2 elements
+                return
+            if not path or nums[i] >= path[-1]:     # pick only if the order stays non-decreasing
+                path.append(nums[i]); go(i + 1)
+                path.pop()
+            if not path or nums[i] != path[-1]:     # not pick, unless picking an equal value covers it
+                go(i + 1)
+        go(0)
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.findSubsequences([4, 6, 7, 7])) == sorted([[4, 6], [4, 6, 7], [4, 6, 7, 7], [4, 7], [4, 7, 7], [6, 7], [6, 7, 7], [7, 7]])
+assert s.findSubsequences([4, 4, 3, 2, 1]) == [[4, 4]]
+assert sorted(s.findSubsequences([1, 1, 1])) == [[1, 1], [1, 1, 1]]
+assert s.findSubsequences([1, 2]) == [[1, 2]]
+assert s.findSubsequences([2, 1]) == []
+assert sorted(s.findSubsequences([1, 3, 2, 3])) == sorted([[1, 2], [1, 3], [1, 2, 3], [1, 3, 3], [2, 3], [3, 3]])
+assert sorted(s.findSubsequences([1, 2, 1, 2])) == sorted([[1, 2], [1, 1], [2, 2], [1, 1, 2], [1, 2, 2]])
+assert len(s.findSubsequences([1, 2, 3, 4, 5])) == 26
+@@ PROBLEM: distinct-subsequences
+@@ APPROACH:
+Count the ways to build `t[j:]` from `s[i:]`. For each char of `s` there is a not pick branch (`go(i + 1, j)`), and a pick branch only when `s[i] == t[j]`.
+The base cases: `j == len(t)` means t is fully built, which is one way; `i == len(s)` first means zero ways.
+Many (i, j) pairs repeat, so `lru_cache` keeps it polynomial. The depth can pass 1000, so the recursion limit is raised.
+@@ COMPLEXITY: O(m * n) time, O(m * n) space for m = len(s), n = len(t)
+@@ CODE:
+import sys
+from functools import lru_cache
+
+class Solution:
+    def numDistinct(self, s: str, t: str) -> int:
+        sys.setrecursionlimit(10000)            # depth can reach len(s) + len(t)
+        @lru_cache(None)
+        def go(i, j):                           # ways to build t[j:] from s[i:]
+            if j == len(t): return 1            # t fully built: one way
+            if i == len(s): return 0            # s used up first: no way
+            ways = go(i + 1, j)                 # not pick s[i]
+            if s[i] == t[j]:
+                ways += go(i + 1, j + 1)        # pick s[i] to match t[j]
+            return ways
+        return go(0, 0)
+@@ TEST:
+s = Solution()
+assert s.numDistinct("rabbbit", "rabbit") == 3
+assert s.numDistinct("babgbag", "bag") == 5
+assert s.numDistinct("a", "a") == 1
+assert s.numDistinct("a", "b") == 0
+assert s.numDistinct("aaa", "aa") == 3
+assert s.numDistinct("abc", "") == 1
+assert s.numDistinct("", "a") == 0
+assert s.numDistinct("abc", "abcd") == 0
+assert s.numDistinct("a" * 1010, "a" * 1010) == 1
+@@ PATTERN: Permutations
+@@ SPOT: Use this when order matters and every element is used exactly once, so each position can take any unused element.
+@@ PROBLEM: permutations
+@@ APPROACH:
+Fill the positions one by one. At each position loop over all indices and skip the ones with `used[i]` set.
+Choose: mark the element used and append it. Explore: recurse. Un-choose: pop it and clear the mark.
+When the path has the same length as `nums`, save a copy `cur[:]`. There are n! results.
+@@ COMPLEXITY: O(n * n!) time, O(n) extra space besides the output
+@@ CODE:
+class Solution:
+    def permute(self, nums: List[int]) -> List[List[int]]:
+        out, used, cur = [], [False] * len(nums), []
+        def go():
+            if len(cur) == len(nums):
+                out.append(cur[:])              # copy, not cur itself
+                return
+            for i in range(len(nums)):
+                if used[i]: continue            # each element once per permutation
+                used[i] = True; cur.append(nums[i])     # choose
+                go()                                    # explore
+                cur.pop(); used[i] = False              # un-choose
+        go()
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.permute([1, 2, 3])) == sorted([[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]])
+assert sorted(s.permute([0, 1])) == [[0, 1], [1, 0]]
+assert s.permute([1]) == [[1]]
+assert len(s.permute([1, 2, 3, 4, 5])) == 120
+assert sorted(s.permute([-1, 5])) == [[-1, 5], [5, -1]]
+@@ PROBLEM: permutations-ii
+@@ APPROACH:
+Same loop as plain permutations, but equal numbers would build the same permutation more than once.
+Sort first. Then skip `nums[i]` when it equals `nums[i-1]` and `nums[i-1]` is not used: that copy has to wait for its twin, so equal values are always placed left to right.
+Everything else (mark, recurse, unmark, copy the path) is unchanged.
+@@ COMPLEXITY: O(n * n!) time, O(n) extra space besides the output
+@@ CODE:
+class Solution:
+    def permuteUnique(self, nums: List[int]) -> List[List[int]]:
+        nums.sort()                             # equal values become neighbours
+        out, used, cur = [], [False] * len(nums), []
+        def go():
+            if len(cur) == len(nums):
+                out.append(cur[:])
+                return
+            for i in range(len(nums)):
+                if used[i]: continue
+                if i > 0 and nums[i] == nums[i - 1] and not used[i - 1]:
+                    continue                    # skip a duplicate whose twin is unused
+                used[i] = True; cur.append(nums[i])
+                go()
+                cur.pop(); used[i] = False      # undo
+        go()
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.permuteUnique([1, 1, 2])) == sorted([[1, 1, 2], [1, 2, 1], [2, 1, 1]])
+assert sorted(s.permuteUnique([1, 2, 3])) == sorted([[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]])
+assert s.permuteUnique([2, 2]) == [[2, 2]]
+assert sorted(s.permuteUnique([1, 1, 1, 2])) == sorted([[1, 1, 1, 2], [1, 1, 2, 1], [1, 2, 1, 1], [2, 1, 1, 1]])
+assert len(s.permuteUnique([3, 3, 0, 3])) == 4
+assert s.permuteUnique([7]) == [[7]]
+@@ PROBLEM: number-of-squareful-arrays
+@@ APPROACH:
+This is permutations-ii with one more rule. Place the elements one by one, and skip a duplicate whose twin is unused.
+Prune early: a candidate is only allowed when `prev + nums[i]` is a perfect square, so dead branches stop after one step.
+Nothing needs to be stored. The leaf (`placed == n`) returns 1, and each call adds up the counts of its children.
+@@ COMPLEXITY: O(n * n!) time worst case, much less with pruning; O(n) stack space
+@@ CODE:
+import math
+
+class Solution:
+    def numSquarefulPerms(self, nums: List[int]) -> int:
+        nums.sort()                             # equal values become neighbours
+        n = len(nums)
+        used = [False] * n
+        def is_square(x):
+            r = math.isqrt(x)
+            return r * r == x
+        def go(prev, placed):
+            if placed == n:
+                return 1                        # leaf: one valid arrangement
+            count = 0
+            for i in range(n):
+                if used[i]: continue
+                if i > 0 and nums[i] == nums[i - 1] and not used[i - 1]:
+                    continue                    # skip duplicate
+                if placed and not is_square(prev + nums[i]):
+                    continue                    # prune: neighbour sum must be a square
+                used[i] = True                  # choose
+                count += go(nums[i], placed + 1)    # explore
+                used[i] = False                 # un-choose
+            return count
+        return go(0, 0)
+@@ TEST:
+s = Solution()
+assert s.numSquarefulPerms([1, 17, 8]) == 2
+assert s.numSquarefulPerms([2, 2, 2]) == 1
+assert s.numSquarefulPerms([1]) == 1
+assert s.numSquarefulPerms([1, 1]) == 0
+assert s.numSquarefulPerms([1, 3]) == 2
+assert s.numSquarefulPerms([0, 0, 0]) == 1
+assert s.numSquarefulPerms([2] * 12) == 1
+@@ PATTERN: Combination
+@@ SPOT: Use this when order does not matter, so you only look forward from a start index and never build both [1,2] and [2,1].
+@@ PROBLEM: combinations
+@@ APPROACH:
+Choose k numbers from 1..n. Each call loops `i` from `start` to n, appends i, and recurses with `i + 1`, so only larger numbers can follow.
+That forward-only start index is what stops [1,2] and [2,1] both appearing.
+When the path has k numbers, save a copy. The `break` prunes loops where too few numbers are left to reach k.
+@@ COMPLEXITY: O(k * C(n, k)) time, O(k) extra space besides the output
+@@ CODE:
+class Solution:
+    def combine(self, n: int, k: int) -> List[List[int]]:
+        out = []
+        def go(start, path):
+            if len(path) == k:
+                out.append(path[:])             # k chosen: save a copy
+                return
+            for i in range(start, n + 1):
+                if n - i + 1 < k - len(path):
+                    break                       # prune: not enough numbers left
+                path.append(i)                  # choose
+                go(i + 1, path)                 # explore, only look forward
+                path.pop()                      # un-choose
+        go(1, [])
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.combine(4, 2)) == sorted([[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]])
+assert s.combine(1, 1) == [[1]]
+assert s.combine(3, 3) == [[1, 2, 3]]
+assert len(s.combine(5, 3)) == 10
+assert sorted(s.combine(4, 1)) == [[1], [2], [3], [4]]
+assert len(s.combine(10, 5)) == 252
+@@ PROBLEM: combination-sum
+@@ APPROACH:
+This is the template from the notes. The loop starts at `start`, so only the current or later candidates are used and no order repeats.
+The same number may be used again, so the recursive call passes `i`, not `i + 1`.
+Save the path when `remain == 0`. Skip any candidate bigger than `remain`: that is the early prune.
+@@ COMPLEXITY: O(n^(target / min)) time in the worst case, O(target / min) stack space
+@@ CODE:
+class Solution:
+    def combinationSum(self, candidates: List[int], target: int) -> List[List[int]]:
+        out = []
+        def go(start, path, remain):
+            if remain == 0:
+                out.append(path[:])             # found a combination
+                return
+            for i in range(start, len(candidates)):
+                if candidates[i] > remain: continue     # prune
+                path.append(candidates[i])              # choose
+                go(i, path, remain - candidates[i])     # i, not i + 1: reuse allowed
+                path.pop()                              # un-choose
+        go(0, [], target)
+        return out
+@@ TEST:
+s = Solution()
+norm = lambda res: sorted(sorted(x) for x in res)
+assert norm(s.combinationSum([2, 3, 6, 7], 7)) == [[2, 2, 3], [7]]
+assert norm(s.combinationSum([2, 3, 5], 8)) == [[2, 2, 2, 2], [2, 3, 3], [3, 5]]
+assert s.combinationSum([2], 1) == []
+assert s.combinationSum([1], 2) == [[1, 1]]
+assert norm(s.combinationSum([7, 3, 2], 7)) == [[2, 2, 3], [7]]
+@@ PROBLEM: combination-sum-ii
+@@ APPROACH:
+Each candidate may be used once, so the recursive call moves on with `i + 1`. Sort first so duplicates sit together.
+Inside one loop, skip `candidates[i]` when `i > start` and it equals the previous one. Taking the same value twice at the same level would repeat a combination.
+Because the list is sorted, `break` replaces `continue`: once one candidate is too big, so are all later ones.
+@@ COMPLEXITY: O(2^n) time, O(n) stack space
+@@ CODE:
+class Solution:
+    def combinationSum2(self, candidates: List[int], target: int) -> List[List[int]]:
+        candidates.sort()                       # duplicates become neighbours
+        out = []
+        def go(start, path, remain):
+            if remain == 0:
+                out.append(path[:])
+                return
+            for i in range(start, len(candidates)):
+                if candidates[i] > remain: break            # sorted, so the rest are too big
+                if i > start and candidates[i] == candidates[i - 1]:
+                    continue                                # same value at the same level
+                path.append(candidates[i])
+                go(i + 1, path, remain - candidates[i])     # i + 1: each number once
+                path.pop()
+        go(0, [], target)
+        return out
+@@ TEST:
+s = Solution()
+norm = lambda res: sorted(sorted(x) for x in res)
+assert norm(s.combinationSum2([10, 1, 2, 7, 6, 1, 5], 8)) == [[1, 1, 6], [1, 2, 5], [1, 7], [2, 6]]
+assert norm(s.combinationSum2([2, 5, 2, 1, 2], 5)) == [[1, 2, 2], [5]]
+assert s.combinationSum2([1], 2) == []
+assert s.combinationSum2([1, 1, 1], 2) == [[1, 1]]
+assert norm(s.combinationSum2([3, 1, 3, 5, 1, 1], 8)) == [[1, 1, 1, 5], [1, 1, 3, 3], [3, 5]]
+@@ PATTERN: Backtracking
+@@ SPOT: Use this when you build an answer step by step and can undo a step (and cut the branch) as soon as the partial answer cannot work.
+@@ PROBLEM: generate-parentheses
+@@ APPROACH:
+Build the string one character at a time with the three steps: choose (append), explore (recurse), un-choose (pop).
+Two conditions prune the tree. Add `(` only while fewer than n are used, and add `)` only while it would not close more than has been opened.
+Because bad branches are never entered, every string that reaches length 2n is already valid.
+@@ COMPLEXITY: O(4^n / sqrt(n)) time (Catalan number of results), O(n) stack space
+@@ CODE:
+class Solution:
+    def generateParenthesis(self, n: int) -> List[str]:
+        out, path = [], []
+        def go(open_used, close_used):
+            if len(path) == 2 * n:
+                out.append(''.join(path))       # complete and valid by construction
+                return
+            if open_used < n:                   # prune: at most n opening brackets
+                path.append('(')                # choose
+                go(open_used + 1, close_used)   # explore
+                path.pop()                      # un-choose
+            if close_used < open_used:          # prune: never close more than opened
+                path.append(')')
+                go(open_used, close_used + 1)
+                path.pop()
+        go(0, 0)
+        return out
+@@ TEST:
+s = Solution()
+assert s.generateParenthesis(1) == ["()"]
+assert sorted(s.generateParenthesis(2)) == sorted(["(())", "()()"])
+assert sorted(s.generateParenthesis(3)) == sorted(["((()))", "(()())", "(())()", "()(())", "()()()"])
+res = s.generateParenthesis(4)
+assert len(res) == 14 and len(set(res)) == 14
+assert "(((())))" in res and "()()()()" in res and "())(())(" not in res
+@@ PROBLEM: palindrome-partitioning
+@@ APPROACH:
+Cut the string from left to right. At each call, loop over every end position and take the piece `s[start:end]`.
+Prune: only recurse when the piece is a palindrome. A bad first piece can never lead to a valid partition.
+Choose (append the piece), explore (continue from `end`), un-choose (pop). When `start` reaches the end, save a copy of the path.
+@@ COMPLEXITY: O(n * 2^n) time, O(n) stack space
+@@ CODE:
+class Solution:
+    def partition(self, s: str) -> List[List[str]]:
+        out, path = [], []
+        def go(start):
+            if start == len(s):
+                out.append(path[:])             # whole string is cut into palindromes
+                return
+            for end in range(start + 1, len(s) + 1):
+                piece = s[start:end]
+                if piece != piece[::-1]: continue   # prune: piece is not a palindrome
+                path.append(piece)              # choose
+                go(end)                         # explore
+                path.pop()                      # un-choose
+        go(0)
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.partition("aab")) == sorted([["a", "a", "b"], ["aa", "b"]])
+assert s.partition("a") == [["a"]]
+assert sorted(s.partition("aaa")) == sorted([["a", "a", "a"], ["a", "aa"], ["aa", "a"], ["aaa"]])
+assert s.partition("ab") == [["a", "b"]]
+assert sorted(s.partition("abba")) == sorted([["a", "b", "b", "a"], ["a", "bb", "a"], ["abba"]])
+@@ PROBLEM: n-queens
+@@ APPROACH:
+Place one queen per row. For each column, check whether it is already attacked: the column set, the `row - c` diagonal set, or the `row + c` diagonal set.
+Choose (add the column and both diagonals), explore the next row, then un-choose by removing them all again.
+Attacked squares are skipped at once, so most of the n^n placements are never tried. A full board is built only at the leaf.
+@@ COMPLEXITY: O(n!) time, O(n) extra space besides the output
+@@ CODE:
+class Solution:
+    def solveNQueens(self, n: int) -> List[List[str]]:
+        out, queens = [], []                    # queens[r] = column of the queen in row r
+        cols, diag1, diag2 = set(), set(), set()
+        def go(row):
+            if row == n:
+                out.append(['.' * c + 'Q' + '.' * (n - c - 1) for c in queens])
+                return
+            for c in range(n):
+                if c in cols or row - c in diag1 or row + c in diag2:
+                    continue                    # prune: this square is attacked
+                cols.add(c); diag1.add(row - c); diag2.add(row + c)     # choose
+                queens.append(c)
+                go(row + 1)                                             # explore
+                queens.pop()                                            # un-choose
+                cols.remove(c); diag1.remove(row - c); diag2.remove(row + c)
+        go(0)
+        return out
+@@ TEST:
+s = Solution()
+assert sorted(s.solveNQueens(4)) == sorted([[".Q..", "...Q", "Q...", "..Q."], ["..Q.", "Q...", "...Q", ".Q.."]])
+assert s.solveNQueens(1) == [["Q"]]
+assert s.solveNQueens(2) == []
+assert s.solveNQueens(3) == []
+assert len(s.solveNQueens(5)) == 10
+assert len(s.solveNQueens(6)) == 4
+assert len(s.solveNQueens(7)) == 40
+assert len(s.solveNQueens(8)) == 92
+@@ PATTERN: Recursion on Trees
+@@ SPOT: Use this when the answer for a node comes from the answers of its left and right subtrees, or from information passed down to them.
+@@ PROBLEM: maximum-depth-of-binary-tree
+@@ APPROACH:
+Bottom-up: the base case is `None`, which has depth 0. Otherwise ask the left child and the right child, then combine.
+The depth of a node is 1 plus the larger depth of its two subtrees. This is the `height` example from the notes.
+@@ COMPLEXITY: O(n) time, O(h) stack space for tree height h
+@@ CODE:
+class Solution:
+    def maxDepth(self, root: Optional[TreeNode]) -> int:
+        if not root:
+            return 0                            # base case: empty tree
+        left = self.maxDepth(root.left)         # ask the left subtree
+        right = self.maxDepth(root.right)       # ask the right subtree
+        return 1 + max(left, right)             # combine
+@@ TEST:
+s = Solution()
+assert s.maxDepth(tree([3, 9, 20, None, None, 15, 7])) == 3
+assert s.maxDepth(tree([1, None, 2])) == 2
+assert s.maxDepth(tree([])) == 0
+assert s.maxDepth(tree([1])) == 1
+assert s.maxDepth(tree([1, 2, 3, 4, None, None, 5, 6])) == 4
+@@ PROBLEM: path-sum
+@@ APPROACH:
+Top-down: pass information down through a parameter. Each call subtracts the node's value and hands the smaller `remain` to its children.
+The base cases are `None` (no path, False) and a leaf (the path is complete, so check `remain == 0`).
+Only a leaf can end a path, so `1 -> 2` with target 1 is False even though the root alone equals 1. Either child may succeed, so combine with `or`.
+@@ COMPLEXITY: O(n) time, O(h) stack space for tree height h
+@@ CODE:
+class Solution:
+    def hasPathSum(self, root: Optional[TreeNode], targetSum: int) -> bool:
+        if not root:
+            return False                        # base case: no node, no path
+        remain = targetSum - root.val           # pass the smaller target down
+        if not root.left and not root.right:
+            return remain == 0                  # a leaf ends the path
+        return self.hasPathSum(root.left, remain) or self.hasPathSum(root.right, remain)
+@@ TEST:
+s = Solution()
+assert s.hasPathSum(tree([5, 4, 8, 11, None, 13, 4, 7, 2, None, None, None, 1]), 22) == True
+assert s.hasPathSum(tree([1, 2, 3]), 5) == False
+assert s.hasPathSum(tree([]), 0) == False
+assert s.hasPathSum(tree([1, 2]), 1) == False
+assert s.hasPathSum(tree([1, 2]), 3) == True
+assert s.hasPathSum(tree([-2, None, -3]), -5) == True
+@@ PROBLEM: binary-tree-maximum-path-sum
+@@ APPROACH:
+Bottom-up with a twist. `gain(node)` returns the best sum of a path that starts at that node and goes down one side only, because a parent can only continue along one branch.
+At each node a path may bend: `node.val + left + right` is a candidate for the overall answer, stored in `best`. A negative child gain is replaced by 0, which means "do not take that branch".
+The value returned upward is `node.val + max(left, right)`, while the bent path is only recorded in `best`.
+@@ COMPLEXITY: O(n) time, O(h) stack space for tree height h
+@@ CODE:
+from math import inf
+
+class Solution:
+    def maxPathSum(self, root: Optional[TreeNode]) -> int:
+        best = -inf
+        def gain(node):
+            nonlocal best
+            if not node:
+                return 0                        # base case: empty tree adds nothing
+            left = max(gain(node.left), 0)      # drop a branch that only hurts
+            right = max(gain(node.right), 0)
+            best = max(best, node.val + left + right)   # path that bends at this node
+            return node.val + max(left, right)          # going up, take one side only
+        gain(root)
+        return best
+@@ TEST:
+s = Solution()
+assert s.maxPathSum(tree([1, 2, 3])) == 6
+assert s.maxPathSum(tree([-10, 9, 20, None, None, 15, 7])) == 42
+assert s.maxPathSum(tree([-3])) == -3
+assert s.maxPathSum(tree([2, -1])) == 2
+assert s.maxPathSum(tree([-2, -1])) == -1
+assert s.maxPathSum(tree([5, 4, 8, 11, None, 13, 4, 7, 2, None, None, None, 1])) == 48
