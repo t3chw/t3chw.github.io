@@ -9,7 +9,7 @@ description: "A simulated case study inspired by Duck.ai: measuring a launch cam
 
 Privacy first campaign measurement \| Part 1: The launch campaign \| [Part 2: Every channel]({% post_url 2026-10-12-campaign-measurement-2-every-channel %}) \| [Part 3: The next dollar]({% post_url 2026-10-12-campaign-measurement-3-the-next-dollar %})
 
-A six week launch campaign ran in 20 of 40 simulated regions, picked by coin flip. With no user level data, counting tagged installs prices it at $854 an install, and a before and after at $22 a new user. A Bayesian geo experiment, designed before any result was seen, puts it at $33 a new user against a $35 target, and because the data are simulated, I can check that answer against the truth.
+A six week launch campaign ran in 20 of 40 simulated regions, picked by coin flip. With no user level data, counting tagged installs prices it at $854 an install, and a before and after at $22 a new user. A Bayesian geo experiment, designed on data from before the campaign, puts it at $33 a new user against a $35 target, and because the data are simulated, I can check that answer against the truth.
 
 _40 simulated regions \| Jan 2024 to Dec 2025 \| Bayesian geo experiment in NumPyro \| [notebook](https://github.com/t3chw/launch-campaign-analysis/blob/main/DuckAI_1_did_it_work.ipynb)_
 
@@ -17,7 +17,7 @@ _40 simulated regions \| Jan 2024 to Dec 2025 \| Bayesian geo experiment in NumP
 
 Duck.ai is DuckDuckGo's private AI chat. This series takes up a question any product built on privacy has to answer: how to measure a big marketing campaign without following anyone from an ad to a sign up. Everything here runs on a simulation I built: 40 regions, two years of daily counts, five marketing channels and one launch campaign. Nothing in it is DuckDuckGo data or describes how DuckDuckGo measures its marketing. A simulation gives up realism for the one thing real data never has, an answer key, so every method can be graded at the end.
 
-The campaign in this world is a launch push: $2,399,999 from 24 March to 4 May 2025, weeks 65 to 70 of the data, in 20 of the 40 regions. 55% of the money went to connected TV, 25% to out of home and 20% to podcasts. The target was $35 per incremental new user.
+The campaign in this world is a launch push: $2.4 million from 24 March to 4 May 2025, weeks 65 to 70 of the data, in 20 of the 40 regions. 55% of the money went to connected TV, 25% to out of home and 20% to podcasts. The target was $35 per incremental new user.
 
 > **Did the launch campaign bring in new users, and was the cost per incremental new user under $35?**
 
@@ -41,11 +41,11 @@ _New users per week in each group, indexed to the average of weeks 55 to 64. Bot
 
 The holdout regions went through everything the campaign regions went through except the campaign: spring, growth, and a news story that sent people to Duck.ai everywhere. Subtracting what they did is the job no before and after can do.
 
-Tags fail the other way. Over the same weeks, podcast tagged installs rose by 2,811 against the ten weeks before; credited with the whole $2,399,999, that is $854 an install. Untagged installs rose by 57,204: connected TV and out of home carry no tags, and most people who hear a podcast ad never use its link or code. Search tagged installs rose by 11,854, but a search ad catches people already looking for Duck.ai, whatever sent them, so the tag can't say whether the campaign or the search ad earned the install.
+Tags fail the other way. Over the same weeks, podcast tagged installs rose by 2,811 against the ten weeks before; credited with the whole $2.4 million, that is $854 an install. Untagged installs rose by 57,204: connected TV and out of home carry no tags, and most people who hear a podcast ad never use its link or code. Search tagged installs rose by 11,854, but a search ad catches people already looking for Duck.ai, whatever sent them, so the tag can't say whether the campaign or the search ad earned the install.
 
 ## 4. A design fixed in advance
 
-The campaign ran in half the regions by design. Before it started, the 40 regions were matched into 20 pairs on their new users, and one coin flip per pair decided which region got the campaign. Everything in this section uses data up to week 64 only: the outcome, the model, its checks and the decision rule were fixed before I looked at a single test week.
+The campaign ran in half the regions by design. Before it started, the 40 regions were matched into 20 pairs on their new users, and one coin flip per pair decided which region got the campaign. Everything in this section uses data up to week 64 only, so the outcome, the model, its checks and the decision rule owe nothing to the test weeks.
 
 The pairs came out close but not identical: from the first five to the last five of the ten weeks before the campaign, the campaign regions grew 0.9% and the holdout regions 2.6%. A gap in trend like that can pass for a campaign effect or hide one, so the model has to allow for it.
 
@@ -53,11 +53,19 @@ The pairs came out close but not identical: from the first five to the last five
 
 Subscriptions are closer to value, but I chose new Duck.ai users as the outcome. The ratio of campaign to holdout new users had a weekly noise of 1.7%; for subscriptions it was 6.1%, and many of their weekly counts are hidden. Subscriptions get their own, wider estimate with the result.
 
-At $35 each, $2,399,999 has to bring in 68,571 new users, about 13.5% on top of the 507,452 the campaign regions would have had over ten weeks at their pace in weeks 55 to 64. That projection ignores the season and the news, so the decision rests on the cost per user rather than on a lift threshold.
+At $35 each, $2.4 million has to bring in 68,571 new users, about 13.5% on top of the 507,452 the campaign regions would have had over ten weeks at their pace in weeks 55 to 64. That projection ignores the season and the news, so the decision rests on the cost per user rather than on a lift threshold.
 
 ### The model
 
-The model is a hierarchical difference in differences on the log of each region's weekly new users, weeks 55 to 74. Each region has its own level and trend, and may drift a little in the test weeks for reasons unrelated to the campaign; each week has a national effect, which takes up the season and the news story. The campaign regions get a lift in each of the ten weeks from launch, tied to one overall lift, so the effect can build up and fade. The region effects integrate out exactly, which leaves the sampler about 35 national parameters.
+The model is a hierarchical difference in differences on the log of each region's weekly new users, weeks 55 to 74. Each region has its own level and trend, and may drift a little in the test weeks for reasons unrelated to the campaign; each week has a national effect, which takes up the season and the news story. The campaign regions get a lift in each of the ten weeks from launch, tied to one overall lift, so the effect can build up and fade. The region effects integrate out exactly, which leaves the sampler 37 parameters; the count version I use for subscriptions in section 5 samples all 157.
+
+![Graphical model of the geo experiment drawn by NumPyro: spreads of region levels, trends and drifts, a national week effect and a weekly lift built from one overall lift and ten weekly deviations, all feeding the observed log weekly new users of 40 regions](/assets/img/campaign-measurement/p1_model.png){: .light style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
+![Graphical model of the geo experiment drawn by NumPyro: spreads of region levels, trends and drifts, a national week effect and a weekly lift built from one overall lift and ten weekly deviations, all feeding the observed log weekly new users of 40 regions](/assets/img/campaign-measurement/p1_model_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
+_The geo model as NumPyro's render_model draws it, with plain names added. Grey nodes are data, dashed nodes are computed from others, and each box repeats its contents, once per region or test week._
+
+![Graphical model of the count version: the same structure, but each region's level, trend and drift are drawn as parameters inside a box of 40 regions, feeding weekly new users for 40 regions and 20 weeks](/assets/img/campaign-measurement/p1_model_counts.png){: .light style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
+![Graphical model of the count version: the same structure, but each region's level, trend and drift are drawn as parameters inside a box of 40 regions, feeding weekly new users for 40 regions and 20 weeks](/assets/img/campaign-measurement/p1_model_counts_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
+_The count version samples every region's level, trend and drift: 157 parameters against 37._
 
 I set the priors by simulating from them. The chosen ones put 90% of a region's weekly new users between 31 and 87,454, wide around the observed 637 to 5,180, and the campaign's lift between −23% and +28%, so they start sceptical: a 0.20 chance of beating break even before any data. Vague priors are not neutral at all: they spread a region's weekly new users from 2.29 × 10<sup>−11</sup> to 3.04 × 10<sup>10</sup> and put the lift's 95th percentile at +26,668%. Giving each week's lift its own independent prior, with a standard deviation of 0.15, looks as wide but implies a total lift of only −7% to +9%, because ten weeks average out; tying them to one overall lift avoids that.
 
@@ -69,9 +77,15 @@ Two checks asked whether the model can be trusted here. In 40 fake worlds drawn 
 ![Thirty six placebo estimates sorted from lowest to highest, each with a 90% interval; all but two intervals cross zero](/assets/img/campaign-measurement/p1_placebo_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 _Estimated lift with its 90% interval in 36 placebo campaigns on weeks before the real one, sorted by estimate; the true lift is zero in every one. Two intervals miss zero, about what 90% intervals should do._
 
-Adding a known lift to the placebo windows shows how small an effect the design can see: it detects 2.8% with 80% power. An injected 2% was found in 7 of 12 windows and recovered as 2.2% on average; 4% was found in 11 of 12 and recovered as 4.1%. So the design can easily tell a 13.5% lift from no lift. Pricing is harder: a campaign exactly at break even would be priced somewhere between $31 and $41 per user, 90% of the time.
+Adding a known lift to the placebo windows shows how small an effect the design can see.
 
-Real campaigns build and fade, so I also injected a lift that rises to 21% and falls to 3% over ten weeks into six earlier windows. The estimates averaged 13.1% against 12.8% injected and the intervals held the truth in 4 of 6; the two misses came in windows whose placebo estimates were already off, by −2.8 and +1.6 points, and net of that the average error was 0.1 points.
+![Line chart of the detection rate against the size of an added lift, rising from 0 to 100% and crossing 80% at a 2.8% lift, with injected lifts of 2% and 4% found in 7 and 11 of 12 windows](/assets/img/campaign-measurement/p1_power.png){: .light style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
+![Line chart of the detection rate against the size of an added lift, rising from 0 to 100% and crossing 80% at a 2.8% lift, with injected lifts of 2% and 4% found in 7 and 11 of 12 windows](/assets/img/campaign-measurement/p1_power_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
+_Share of placebo windows in which an added lift of each size would be detected; the design reaches 80% power at a 2.8% lift. Lifts of 2% and 4% injected into twelve windows were found in 7 and 11 of them._
+
+So the design can easily tell a 13.5% lift from no lift, and the injected lifts came back on average as 2.2% and 4.1%. Pricing is harder: a campaign exactly at break even would be priced somewhere between $31 and $41 per user, 90% of the time.
+
+Real campaigns build and fade, so I also injected a lift that rises to 21% and falls to 3% over ten weeks into six earlier windows. The estimates averaged 13.1% against 12.8% injected and the intervals held the truth in 5 of 6; the miss came in a window whose placebo estimate was already off, by −2.8 points, and net of that the average error was 0.1 points.
 
 Last, the decision rule, written down before the result. If the probability that the lift is above zero is under 0.95, the campaign is not shown to work. Otherwise, a probability of at least 0.80 that the cost per user is under $35 says scale it, 0.50 to 0.80 says improve the mix and test again, and under 0.50 says don't scale it.
 
@@ -103,7 +117,11 @@ The decision rests on the cost, and there the answer is less clean.
 ![Histogram of the cost per incremental new user, centred near $33, with most of it left of the $35 target and a tail reaching past $40](/assets/img/campaign-measurement/p1_cost_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 _Posterior of the cost per incremental new user, median $33.01. 75.8% of it lies under the $35 target, a share with a Monte Carlo standard error of 0.008._
 
-Run on each stage of the funnel, the same model finds the brand search index up 22.1%, browser installs up 15.9% and visits to duck.ai up only 3.4%, as expected when most visits come from people who already use it. A count version of the model, which treats every hidden subscription count as some number under 10 rather than dropping it, puts subscriptions up 18.9%, with a far wider interval, 13.5% to 24.2%.
+Every stage of the funnel moved. Visits moved least, as expected when most come from people who already use Duck.ai, and subscriptions, from the count version, which treats every hidden count as some number under 10 rather than dropping it, carry the widest interval.
+
+![Dot chart of the campaign lift by funnel stage with 90% intervals: brand search index 22.1%, visits 3.4%, browser installs 15.9%, new Duck.ai users 13.4% and subscriptions 18.9%](/assets/img/campaign-measurement/p1_funnel.png){: .light style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
+![Dot chart of the campaign lift by funnel stage with 90% intervals: brand search index 22.1%, visits 3.4%, browser installs 15.9%, new Duck.ai users 13.4% and subscriptions 18.9%](/assets/img/campaign-measurement/p1_funnel_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
+_Campaign lift by stage over weeks 65 to 74, with 90% intervals: brand search index 22.1%, visits to duck.ai 3.4%, browser installs 15.9%, new Duck.ai users 13.4% and subscriptions 18.9% (13.5% to 24.2%)._
 
 ## 6. How much the answer depends on my choices
 
@@ -129,7 +147,7 @@ In the answer key, the campaign brought in 70,475 new users, a lift of 12.9%, at
 ![Dot chart of the cost per incremental new user on a log scale: campaign tags $854, before and after $21.78, geo experiment $33.01 with an interval from $29.15 to $38.10, and the answer key at $34.05](/assets/img/campaign-measurement/p1_four_answers_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 _Cost per incremental new user from three approaches and the truth, on a log scale, with the $35 target dashed; for tags, the cost per extra podcast tagged install. Tags miss far too high and the before and after too low; the experiment's 90% interval contains the truth._
 
-The true cost was 2.7% under the target, well inside the roughly $5 either way to which this design can price a campaign near break even, so the rule's middle answer was the right one. Improving the mix means knowing which of the three channels did the work, and this experiment can't say: all three ran together in the same regions.
+The true cost was 2.7% under the target, well inside the roughly $5 either way to which this design can price a campaign near break even. The campaign did pay, but by a margin the data couldn't show, which is the case the rule's middle answer is for. Improving the mix means knowing which of the three channels did the work, and this experiment can't say: all three ran together in the same regions.
 
 ## 8. What I can and cannot say
 
