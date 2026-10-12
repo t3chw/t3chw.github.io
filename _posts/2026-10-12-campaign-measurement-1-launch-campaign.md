@@ -13,18 +13,6 @@ A six week launch campaign ran in 20 of 40 simulated regions, picked by coin fli
 
 _40 simulated regions \| Jan 2024 to Dec 2025 \| Bayesian geo experiment in NumPyro \| [notebook](https://github.com/t3chw/launch-campaign-analysis/blob/main/DuckAI_1_did_it_work.ipynb)_
 
-- **+13.4%**: more new users in the campaign regions over the ten weeks from launch, 90% interval 11.4% to 15.4%
-- **$33**: per incremental new user against a $35 target, 90% interval $29 to $38
-- **0.76**: probability that the cost per incremental new user is under $35; the rule fixed in advance asked for 0.80 to scale
-
-**At a glance**
-
-- **Question.** Did a $2.4 million launch campaign on connected TV, out of home and podcasts bring Duck.ai new users, and was the cost per incremental new user under $35? The setting is inspired by Duck.ai; the data come from a simulation with a known answer.
-- **Why the easy answers fail.** A before and after gives +21.7% and $21.78 per user, but regions with no campaign grew 8.3% over the same weeks. Podcast tags add only 2,811 installs, $854 each, because most people who hear an ad never use a tagged link.
-- **The design.** 20 pairs of matched regions, one coin flip per pair, and a model, checks and decision rule fixed before any result was seen. 34 of 36 placebo campaigns on earlier weeks find nothing, and the design detects a 2.8% lift with 80% power.
-- **The result.** 72,706 incremental new users (90% interval 62,991 to 82,319), a 13.4% lift, at $33.01 each. 27% of them came after the ads stopped. The probability that the cost is under $35 is 0.76, so the rule says improve the mix and test again rather than scale.
-- **Graded against the answer key.** The truth is 70,475 users, +12.9% and $34.05 each, all inside the 90% intervals. The campaign beat its target by 2.7%, a margin too thin for a test this size to confirm.
-
 ## 1. The question
 
 Duck.ai is DuckDuckGo's private AI chat. This series takes up a question any product built on privacy has to answer: how to measure a big marketing campaign without following anyone from an ad to a sign up. Everything here runs on a simulation I built: 40 regions, two years of daily counts, five marketing channels and one launch campaign. Nothing in it is DuckDuckGo data or describes how DuckDuckGo measures its marketing. A simulation gives up realism for the one thing real data never has, an answer key, so every method can be graded at the end.
@@ -54,8 +42,6 @@ _New users per week in each group, indexed to the average of weeks 55 to 64. Bot
 The holdout regions went through everything the campaign regions went through except the campaign: spring, growth, and a news story that sent people to Duck.ai everywhere. Subtracting what they did is the job no before and after can do.
 
 Tags fail the other way. Over the same weeks, podcast tagged installs rose by 2,811 against the ten weeks before; credited with the whole $2,399,999, that is $854 an install. Untagged installs rose by 57,204: connected TV and out of home carry no tags, and most people who hear a podcast ad never use its link or code. Search tagged installs rose by 11,854, but a search ad catches people already looking for Duck.ai, whatever sent them, so the tag can't say whether the campaign or the search ad earned the install.
-
-> A before and after counts everything that changed as the campaign's work, and tags count only the few people who used a tagged link. Both are easy to compute, and they miss in opposite directions.
 
 ## 4. A design fixed in advance
 
@@ -119,8 +105,6 @@ _Posterior of the cost per incremental new user, median $33.01. 75.8% of it lies
 
 Run on each stage of the funnel, the same model finds the brand search index up 22.1%, browser installs up 15.9% and visits to duck.ai up only 3.4%, as expected when most visits come from people who already use it. A count version of the model, which treats every hidden subscription count as some number under 10 rather than dropping it, puts subscriptions up 18.9%, with a far wider interval, 13.5% to 24.2%.
 
-> The campaign worked, at an estimated $33 per new user against a $35 target. A quarter of its users arrived after the ads stopped, so a readout has to wait for those weeks.
-
 ## 6. How much the answer depends on my choices
 
 Every choice in section 4 was mine, so the result has to survive choices I didn't make. The first check uses no model at all. If the campaign did nothing, which region in each pair got it made no difference, so I recomputed a simple ratio estimate under every one of the 2<sup>20</sup> ways the 20 coin flips could have landed, 1,048,576 in all. Only 2 are as extreme as the real assignment, the real one and its mirror image, so p = 1.9 × 10<sup>−6</sup>. The ratio estimate is 12.4%, with a 90% confidence interval of 10.5% to 15.0% from inverting the test.
@@ -147,8 +131,6 @@ _Cost per incremental new user from three approaches and the truth, on a log sca
 
 The true cost was 2.7% under the target, well inside the roughly $5 either way to which this design can price a campaign near break even, so the rule's middle answer was the right one. Improving the mix means knowing which of the three channels did the work, and this experiment can't say: all three ran together in the same regions.
 
-> The experiment priced the campaign at $33.01 against a true $34.05, and its interval said what mattered: close to the target, not clearly under it.
-
 ## 8. What I can and cannot say
 
 **I can say**
@@ -159,7 +141,7 @@ The true cost was 2.7% under the target, well inside the roughly $5 either way t
 - Where there was no campaign the design found none: 34 of 36 placebo intervals contain zero, and they are as wide as the estimates really vary.
 - Tags and a before and after both mislead, in opposite directions: $854 an install and $21.78 a user.
 
-**I cannot say**
+**I can't say**
 
 - Which of the three channels did the work. They ran together in the same regions.
 - From the data alone, that the campaign beat $35. The probability is 0.76.
@@ -167,9 +149,7 @@ The true cost was 2.7% under the target, well inside the roughly $5 either way t
 - Anything about individual people. The data are counts by region and day, by design.
 - How any of this carries over to real Duck.ai marketing. Every number here comes from a simulation.
 
-**In one sentence:** Against holdout regions picked by coin flip, the launch campaign brought in about 13% more new users at about $33 each, so close to the $35 target that the rule fixed in advance says improve the mix and test again rather than scale.
-
-**Next.** The experiment priced one campaign. The rest of the $22.1 million paid for always on marketing on five channels, the budget that runs on and off all year outside campaigns, and for a national flight in the fourth quarter; none of it was switched off region by region to test it. [Part 2]({% post_url 2026-10-12-campaign-measurement-2-every-channel %}) fits a Bayesian media mix model to all of it, asks whether the data can tell the channels apart, and grades each channel's cost against the answer key.
+**Next:** The experiment priced one campaign. The rest of the $22.1 million paid for always on marketing on five channels, the budget that runs on and off all year outside campaigns, and for a national flight in the fourth quarter; none of it was switched off region by region to test it. [Part 2]({% post_url 2026-10-12-campaign-measurement-2-every-channel %}) fits a Bayesian media mix model to all of it, asks whether the data can tell the channels apart, and grades each channel's cost against the answer key.
 
 ---
 

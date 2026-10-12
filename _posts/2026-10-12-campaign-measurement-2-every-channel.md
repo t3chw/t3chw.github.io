@@ -13,18 +13,6 @@ The experiment in Part 1 priced one campaign. The always on budget behind it, fi
 
 _4,160 region weeks \| five channels \| Bayesian media mix model in NumPyro \| [notebook](https://github.com/t3chw/launch-campaign-analysis/blob/main/DuckAI_2_every_channel.ipynb)_
 
-- **13.0%**: of all new users came from marketing by the model's account; the truth is 12.4%
-- **1.1%**: average error forecasting the last 14 weeks from a fit that never saw them
-- **2.2x and 2.8x**: the true cost of the next new user from online video and from search ads, as a multiple of the model's estimate
-
-**At a glance**
-
-- **Why a model.** The experiment measured one campaign in one window. Connected TV, out of home, podcasts, online video and search ads also run on and off all year as always on marketing, so splitting the $22.1 million between them takes a media mix model: new users explained by each channel's spend, with ads that keep working after they run and returns that fall as spend rises.
-- **Can the data tell the channels apart?** Barely. Every channel's always on spend followed one national calendar, split across regions by population: without the six campaign weeks, 96% to 99% of each channel's variation is over time. The only regional contrast is the campaign, which moved three channels together; online video and search never had any.
-- **Making the sampler work.** In float32, JAX's default, the model's log density jitters by about 0.25 from one point to the next, enough to stall the sampler; in float64 the jitter is gone. At the step size warmup tuned, 13 of 4,000 transitions diverged; at half that step none did, and the largest Rhat was 1.004.
-- **Checks before believing it.** In three fake worlds with known costs, 12 of 15 true costs per user fell inside their 90% intervals. Fitted on 90 weeks, the model forecast the last 14, a national flight included, with an average error of 1.1%.
-- **Graded against the answer key.** The model gets marketing's share about right, 13.0% against 12.4%, and ranks the five channels' average costs in the true order. At the margin the truth falls outside its interval for four of five channels: the next video user truly costs 2.2 times the model's estimate and the next search user 2.8 times.
-
 ## 1. What one experiment can't say
 
 Part 1 measured one campaign: $2,399,999 on connected TV, out of home and podcasts in 20 regions, which brought in 72,706 incremental users over the ten test weeks, 65 to 74. Most marketing isn't like that. In this world the same three channels, along with online video and search ads, also run on and off all year as always on marketing, and switching each one off in half the regions long enough to price it would cost real users and real money. A media mix model estimates all five at once from the variation the spend already has: how new users moved when spend moved, over time and across regions.
@@ -85,8 +73,6 @@ Against the data it was fitted on, 91.2% of region weeks fall inside their 90% p
 ![Line chart of national new users per week over two years, observed and as modelled; in the last 14 weeks, which the fit never saw, the forecast stays close to the observed line](/assets/img/campaign-measurement/p2_forecast_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 _National new users per week, observed and as modelled by a fit on weeks 1 to 90 only. Over weeks 91 to 104, shaded, the forecast misses by 1.1% on average, through a national flight the fit never saw._
 
-> The model passes the checks I can run without the answer key. Section 7 shows that passing them is not the same as being right about each channel.
-
 ## 6. What it says about each channel
 
 The model credits marketing with 13.0% of all new users over the two years.
@@ -108,8 +94,6 @@ Medians, with 90% intervals in brackets. The marginal cost is the price of the n
 The two costs can differ a lot. Video has the lowest average cost, $8.7, but its next user costs $23.1, because the model puts video's typical spend where its curve has flattened. Podcasts are the reverse, $12.6 on average and $9.5 at the margin.
 
 How much the data taught the model also differs by channel. On the sampler's own scale, the posterior spread of each channel's cost is 11% to 13% of the prior spread for connected TV, podcasts and video, but 28% for out of home and 34% for search, the two the data say least about.
-
-> In the model, podcasts are the cheapest channel at the margin and out of home the dearest, with search second cheapest. Whether to act on that depends on how well the model knows each curve, which is what the answer key tests.
 
 ## 7. Graded against the answer key
 
@@ -137,7 +121,7 @@ One more check links back to Part 1. The model puts the launch campaign at 68,21
 
 The first thing I would change is the input. In this world every channel's price per impression rose by 28% to 32% from 15 October to 20 December, so a dollar bought almost a quarter less advertising in the weeks of the national flight and the holidays, and a model of spend reads that as weaker returns. Modelling impressions, with spend used only for the cost, would take that confusion out.
 
-> Fit and forecast checks test the totals, not each channel's curve. Only variation between regions or from an experiment tests a curve, so moving budget on a channel bought only nationally needs an experiment first.
+> Fit and forecast checks test the totals. They say little about each channel's curve. Only variation between regions or from an experiment tests a curve, so moving budget on a channel bought only nationally needs an experiment first.
 
 ## 8. What I can and cannot say
 
@@ -148,16 +132,14 @@ The first thing I would change is the input. In this world every channel's price
 - It puts the launch campaign at 68,215 users against a true 70,475.
 - In float32 the sampler can't work on this model; in float64, with half the tuned step, it converges cleanly.
 
-**I cannot say**
+**I can't say**
 
 - What the next dollar on video or search buys. The model prices both at a third to a half of their true cost.
 - Which channel to cut or grow on this model alone. It ranks search second cheapest at the margin; the truth ranks it fourth.
 - That passing the checks means the channel estimates are right. The answer key shows they need not be.
 - Anything about real channels or costs. The numbers come from a simulation.
 
-**In one sentence:** A Bayesian media mix model on two years of regional data fits, forecasts and gets marketing's share about right, but at the margin it misprices four of five channels, worst the two the campaign never moved, and only the variance split in section 2 warns of it.
-
-**Next.** The experiment and the model disagree about the campaign by about 4,500 users, and the model misprices channels the experiment never touched. [Part 3]({% post_url 2026-10-12-campaign-measurement-3-the-next-dollar %}) combines the two by Bayes' rule without counting the test weeks twice, shows what the experiment can and can't fix, and tests the budget the combined model recommends against the answer key. Back to [Part 1]({% post_url 2026-10-12-campaign-measurement-1-launch-campaign %}).
+**Next:** The experiment and the model disagree about the campaign by about 4,500 users, and the model misprices channels the experiment never touched. [Part 3]({% post_url 2026-10-12-campaign-measurement-3-the-next-dollar %}) combines the two by Bayes' rule without counting the test weeks twice, shows what the experiment can and can't fix, and tests the budget the combined model recommends against the answer key. Back to [Part 1]({% post_url 2026-10-12-campaign-measurement-1-launch-campaign %}).
 
 ---
 

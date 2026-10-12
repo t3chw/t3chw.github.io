@@ -13,18 +13,6 @@ Part 1's experiment priced one campaign well. Part 2's model covers every channe
 
 _4,160 region weeks, 400 held out \| importance reweighting and budget search \| NumPyro and SciPy \| [notebook](https://github.com/t3chw/launch-campaign-analysis/blob/main/DuckAI_3_the_next_dollar.ipynb)_
 
-- **17.1% to 3.3%**: campaign error of model B, fitted without the test weeks, before and after calibration; Part 2's model missed by 3.2%
-- **321 a week**: true extra new users from model C's split of the budget, against the 862 it expected
-- **32%**: of the gain the best split under the same rules would bring, 1,005 a week
-
-**At a glance**
-
-- **The double counting trap.** The media mix model in Part 2 already saw the test weeks, 65 to 74, so adding the experiment on top would count them twice. Model B refits it without those 400 of 4,160 region weeks and puts the campaign at 58,400 users.
-- **Calibration is Bayes' rule.** Model C is B's posterior times the experiment's likelihood, 72,706 users with a standard deviation of 5,891. Weighting B's 4,000 draws by that likelihood gives C up to Monte Carlo error, with an effective sample of 1,323 draws, at 68,128 users.
-- **What it fixed.** Model B's campaign error fell from 17.1% to 3.3%. The channel costs barely moved: the average cost error went from 30.8% to 29.6% and the marginal from 38.8% to 38.3%. The experiment measured the three campaign channels together, and nothing about video or search.
-- **The budget.** Model C halves out of home, adds half to podcasts and keeps the rest within 8%, for an expected 862 more new users a week. The answer key's curves give 321, most of the shortfall in out of home and podcasts, and the best split under the same rules gives 1,005 by moving money from video and search into connected TV.
-- **The next experiment.** The campaign moved three channels together and the other two never varied by region, so the next test should vary one channel alone. For search, at 1.7% to 2.4% of new users, that is under the 2.8% lift Part 1's design can detect, so it needs a longer or larger test.
-
 ## 1. The double counting trap
 
 Parts 1 and 2 give two estimates of the same campaign: 72,706 users from the experiment and 68,215 from the mix model. The obvious way to combine them is to add the experiment to the mix model as one more piece of data. That counts the test weeks twice: the mix model learned about the campaign's channels partly from those very weeks, and the experiment is a summary of the same weeks, so feeding both to one model treats one piece of evidence as two and makes the result more certain than it should be.
@@ -32,8 +20,6 @@ Parts 1 and 2 give two estimates of the same campaign: 72,706 users from the exp
 So I refitted the mix model without the weeks in which the experiment measured the effect. Model B never sees weeks 65 to 74 in any region, 400 of the 4,160 region weeks; everything else, the priors, the sampler settings and the other 94 weeks, is as in Part 2's model, which I call model A from here on. B and the experiment both use weeks 55 to 64, but before the campaign those weeks say nothing about its effect. B converged as cleanly as A, with a largest Rhat of 1.004, at least 1,948 effective draws and no divergences.
 
 The experiment enters as one number with its uncertainty: 72,706 incremental users with a standard deviation of 5,891. Strictly that is a posterior, not a likelihood, but its sceptical prior barely mattered (a nearly flat one gave the same 13.4% lift in Part 1), and it is close to normal, with a skewness of −0.03, so a normal likelihood loses almost nothing.
-
-> An experiment and a model are two pieces of evidence only if they rest on different data. Dropping the weeks the experiment measured from the model is what makes them so.
 
 ## 2. Calibration is Bayes' rule
 
@@ -48,8 +34,6 @@ The experiment pulled the estimate a long way. B put the campaign at 58,400 user
 ![Three distributions of the campaign's incremental users: model B, wide and centred near 58,000; the experiment, centred near 73,000; and model C between them near 68,000, narrower than B](/assets/img/campaign-measurement/p3_update.png){: .light style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 ![Three distributions of the campaign's incremental users: model B, wide and centred near 58,000; the experiment, centred near 73,000; and model C between them near 68,000, narrower than B](/assets/img/campaign-measurement/p3_update_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 _Users the campaign brought in, as model B sees them, as the experiment measured them, and as model C sees them after weighting B's draws by the experiment's likelihood. C sits between the two, closer to the experiment, which is the more precise._
-
-> Once the model is fitted without the experiment's weeks, calibration needs no second sampler run: reweighting its draws is the exact update, up to Monte Carlo error, and the overlap and the effective sample size say whether to trust it.
 
 ## 3. What calibration changed
 
@@ -87,7 +71,7 @@ It moves money from out of home, the dearest channel at the margin by its accoun
 
 ## 5. Testing the recommendation against the truth
 
-The answer key holds each channel's true response curve, so any split can be scored. In truth the always on channels bring in 14,158 users a week now. Model C's split adds 321 to that, 2.3% more and about 0.3% of all new users. The best split under the same rules, found by optimising the true curves directly, adds 1,005, so model C captures 32% of what was available. Model A, without calibration, captures about the same, 331 a week or 33%, which fits section 3: calibration moved the campaign, not the curves a split depends on.
+The answer key holds each channel's true response curve, so any split can be scored. In truth the always on channels bring in 14,158 users a week now. Model C's split adds 321 to that, 2.3% more and about 0.3% of all new users. The best split under the same rules, found by optimising the true curves directly, adds 1,005, so model C captures 32% of what was available. Model A, without calibration, captures about the same, 331 a week or 33%, as section 3 suggested: calibration changed the campaign estimate and left the curves a split depends on where they were.
 
 ![Grouped bar chart of weekly spend on five channels now, under model C's split and under the best split: both halve out of home and add half to podcasts; the best split also adds 48% to connected TV and cuts video by 32% and search by 50%, where model C barely moves them](/assets/img/campaign-measurement/p3_budget.png){: .light style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 ![Grouped bar chart of weekly spend on five channels now, under model C's split and under the best split: both halve out of home and add half to podcasts; the best split also adds 48% to connected TV and cuts video by 32% and search by 50%, where model C barely moves them](/assets/img/campaign-measurement/p3_budget_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
@@ -99,9 +83,7 @@ Channel by channel, most of the gap between the 862 expected and the 321 deliver
 ![Distribution of model C's expected weekly gain, centred near 860, with the true gain of 321 far below it and the best possible gain of 1,005 above its centre](/assets/img/campaign-measurement/p3_gain_dark.png){: .dark style="border: 1px solid rgba(128, 128, 128, 0.55); border-radius: 6px;" }
 _Extra new users a week from model C's split: its expectation, 862 on average with a 90% interval of 638 to 1,095; the true gain, 321; and the best gain possible under the same rules, 1,005._
 
-The model was also confident: its 90% interval, 638 to 1,095, sits far above the true 321. Its uncertainty covers the noise in the data it has, not the curves those data can't separate.
-
-> Model C's split is a real improvement, 321 users a week, in the right direction. Its size is not: the model can't separate the three campaign channels' curves, and it misses the larger gain from moving money out of video and search into connected TV.
+The model was also confident: its 90% interval, 638 to 1,095, sits far above the true 321. Its interval reflects the noise in the data it has. It can't reflect what those data can't separate, and here that is the channels' curves.
 
 ## 6. The next experiment
 
@@ -111,7 +93,7 @@ I would start with search: the model would grow it, and its curve rests on one n
 
 The answer key points to one more test the model gave no reason to run: connected TV, where the best split finds most of the missing gain. At 3.0% of new users in Part 2's model, a TV test sits within the design's reach.
 
-> Test one channel at a time, starting where the decision is most exposed, and size each test for an effect of 2% to 3% of new users, not for the launch campaign's 13%.
+> Test one channel at a time, starting where the decision is most exposed, and size each test to detect an effect of 2% to 3% of new users, far smaller than the launch campaign's 13%.
 
 ## 7. What I can and cannot say
 
@@ -123,16 +105,14 @@ The answer key points to one more test the model gave no reason to run: connecte
 - Model C's split adds 321 new users a week in truth, about a third of what the best split under the same rules adds.
 - The next experiment should vary one channel alone, and for search it needs a bigger test than the launch campaign had.
 
-**I cannot say**
+**I can't say**
 
 - What video and search are worth at the margin, from these data.
 - That the model's expected 862 a week is a forecast. The true 321 fell outside its 90% interval.
 - Whether the test weeks were typical. Calibration assumes the campaign's channels worked then as they do at other times.
 - Anything about real channels, budgets or DuckDuckGo's marketing. The numbers come from a simulation.
 
-**In one sentence:** Calibrating the mix model with the experiment, by reweighting a model that never saw the experiment's weeks, fixes the campaign and nothing else; the budget it recommends gains 321 new users a week against the 862 it expected, and the next experiment should vary one channel at a time, starting with search.
-
-**Where this leaves the question.** A geo experiment priced the launch campaign within about 3% of the truth ([Part 1]({% post_url 2026-10-12-campaign-measurement-1-launch-campaign %})). A mix model fitted and forecast well but mispriced most channels at the margin, worst the two the campaign never moved ([Part 2]({% post_url 2026-10-12-campaign-measurement-2-every-channel %})). Combining them fixed the campaign, not the channels, and the budget split they support captures a third of what was available. The next step is the tool that started the series: a holdout, this time one channel at a time.
+**Where this leaves the question.** A geo experiment priced the launch campaign within about 3% of the truth ([Part 1]({% post_url 2026-10-12-campaign-measurement-1-launch-campaign %})). A mix model fitted and forecast well but mispriced most channels at the margin, worst the two the campaign never moved ([Part 2]({% post_url 2026-10-12-campaign-measurement-2-every-channel %})). Combining them fixed the campaign estimate but left the channels where they were, and the budget split they support captures a third of what was available. The next step is the tool that started the series: a holdout, this time one channel at a time.
 
 ---
 
