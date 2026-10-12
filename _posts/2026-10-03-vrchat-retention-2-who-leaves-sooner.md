@@ -7,6 +7,8 @@ tags: [Survival Analysis, Product Analytics, VRChat, Case Study]
 description: "A case study on public Steam reviews: the shape of the risk of leaving, a 2025 shift, what playtime, thumbs and language add, and a model checked on held out reviewers and later years."
 ---
 
+_Co-written with Claude_
+
 VRChat retention case study \| [Part 1: Who stays]({% post_url 2026-10-03-vrchat-retention-1-data-and-question %}) \| Part 2: Who leaves sooner \| [Part 3: A fair test]({% post_url 2026-10-03-vrchat-retention-3-designing-a-test %})
 
 When do VRChat reviewers leave? The risk is about 70 times higher on the first day after a review than later on, then stays low and flat for years, though it rose in 2024 for people three or more years past their review, and in 2025 at every stage from day 30 on. Hours played at the review are the strongest signal of who leaves, especially early: on the first day, a player with under an hour is about 130 times as likely to stop as one with over 1,000 hours, and after two years about 5 times as likely.

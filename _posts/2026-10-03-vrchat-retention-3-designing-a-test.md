@@ -7,6 +7,8 @@ tags: [Experimentation, Product Analytics, VRChat, Case Study]
 description: "A case study on public Steam reviews: turning retention patterns into a fair, well sized experiment for new players at the moment of a negative review."
 ---
 
+_Co-written with Claude_
+
 VRChat retention case study \| [Part 1: Who stays]({% post_url 2026-10-03-vrchat-retention-1-data-and-question %}) \| [Part 2: Who leaves sooner]({% post_url 2026-10-03-vrchat-retention-2-who-leaves-sooner %}) \| Part 3: A fair test
 
 Can VRChat keep more new players by helping them at the moment they leave a negative review? A fair test of that is possible but slow: about 28 months of reviews, plus 3 months to the answer, for an effect bigger than the whole thumbs gap. So I would first test help for every new player who writes any review, which takes about 4.5 months, and the group with the worst retention, players in their first hour, may be the bigger opportunity.

@@ -7,6 +7,8 @@ tags: [Survival Analysis, Product Analytics, VRChat, Case Study]
 description: "A case study on public Steam reviews: how long VRChat reviewers keep playing, the three decisions that make it measurable, and who stays."
 ---
 
+_Co-written with Claude_
+
 VRChat retention case study \| Part 1: Who stays \| [Part 2: Who leaves sooner]({% post_url 2026-10-03-vrchat-retention-2-who-leaves-sooner %}) \| [Part 3: A fair test]({% post_url 2026-10-03-vrchat-retention-3-designing-a-test %})
 
 After someone reviews VRChat on Steam, how long do they keep playing? Most keep going for years: 82.1% are still playing 90 days after their review, and the median time to their last session is about three years, though newer reviewers leave sooner. What best predicts who stays is how many hours they had played when they wrote the review, far more than whether the review was positive or what language it was in.
