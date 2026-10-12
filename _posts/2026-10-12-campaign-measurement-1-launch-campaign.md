@@ -7,6 +7,8 @@ tags: [Bayesian Inference, Experimentation, Marketing Measurement, NumPyro, Case
 description: "A simulated case study inspired by Duck.ai: measuring a launch campaign with a Bayesian geo experiment on aggregate counts by region, designed in advance and graded against a known answer."
 ---
 
+_Co-written with Claude_
+
 Privacy first campaign measurement \| Part 1: The launch campaign \| [Part 2: Every channel]({% post_url 2026-10-12-campaign-measurement-2-every-channel %}) \| [Part 3: The next dollar]({% post_url 2026-10-12-campaign-measurement-3-the-next-dollar %})
 
 A six week launch campaign ran in 20 of 40 simulated regions, picked by coin flip. With no user level data, counting tagged installs prices it at $854 an install, and a before and after at $22 a new user. A Bayesian geo experiment, designed on data from before the campaign, puts it at $33 a new user against a $35 target, and because the data are simulated, I can check that answer against the truth.

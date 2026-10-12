@@ -7,6 +7,8 @@ tags: [Bayesian Inference, Marketing Mix Modeling, Experimentation, NumPyro, Cas
 description: "Calibrating a media mix model with a geo experiment by reweighting, without counting anything twice, then testing the budget it recommends against the truth and choosing the next experiment."
 ---
 
+_Co-written with Claude_
+
 Privacy first campaign measurement \| [Part 1: The launch campaign]({% post_url 2026-10-12-campaign-measurement-1-launch-campaign %}) \| [Part 2: Every channel]({% post_url 2026-10-12-campaign-measurement-2-every-channel %}) \| Part 3: The next dollar
 
 Part 1's experiment priced one campaign well. Part 2's model covers every channel and misprices most of them at the margin. Here I combine the two by Bayes' rule without counting the same weeks twice, then test the budget the combined model recommends against the simulation's answer key: the right direction, and about a third of the gain that was available.

@@ -7,6 +7,8 @@ tags: [Bayesian Inference, Marketing Mix Modeling, Marketing Measurement, NumPyr
 description: "A Bayesian media mix model in NumPyro for five marketing channels on simulated regional data: whether the data can tell the channels apart, making the sampler work, and every channel's cost graded against the truth."
 ---
 
+_Co-written with Claude_
+
 Privacy first campaign measurement \| [Part 1: The launch campaign]({% post_url 2026-10-12-campaign-measurement-1-launch-campaign %}) \| Part 2: Every channel \| [Part 3: The next dollar]({% post_url 2026-10-12-campaign-measurement-3-the-next-dollar %})
 
 The experiment in Part 1 priced one campaign. The always on budget behind it, five channels running on and off for two years, can only be split by a model. A Bayesian media mix model fits two years of simulated weekly data from 40 regions and passes the checks I can run without the answer key, yet it misprices the next dollar for four of five channels, worst for the two the campaign never touched.
